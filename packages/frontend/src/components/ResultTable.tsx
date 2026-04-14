@@ -67,10 +67,10 @@ export function ResultTable({ result, lang, glucoseUnit }: ResultTableProps) {
         <thead>
           <tr>
             <th>{t(lang, "item")}</th>
-            <th className="num">{t(lang, "amount")}</th>
-            <th className="num">/100g</th>
-            <th className="num">{t(lang, "netCarbs")}</th>
             <th className="num">GI</th>
+            <th className="num">{t(lang, "grams")}</th>
+            <th className="num">{t(lang, "carbsPer100g")}</th>
+            <th className="num">{t(lang, "netCarbs")}</th>
           </tr>
         </thead>
         <tbody>
@@ -124,9 +124,6 @@ export function ResultTable({ result, lang, glucoseUnit }: ResultTableProps) {
                     <span className="warning-text">{item.warning}</span>
                   )}
                 </td>
-                <td className="num">{item.weight_g}g</td>
-                <td className="num faded">{per100g}g</td>
-                <td className="num">{item.net_carbs_g}g</td>
                 <td className="num">
                   {gi != null ? (
                     <span
@@ -140,6 +137,9 @@ export function ResultTable({ result, lang, glucoseUnit }: ResultTableProps) {
                     <span className="faded">--</span>
                   )}
                 </td>
+                <td className="num">{item.weight_g}g</td>
+                <td className="num faded">{per100g}g</td>
+                <td className="num">{item.net_carbs_g}g</td>
               </tr>
             );
           })}
@@ -147,8 +147,8 @@ export function ResultTable({ result, lang, glucoseUnit }: ResultTableProps) {
             <td>{t(lang, "totalNetCarbs")}</td>
             <td />
             <td />
-            <td className="num">{result.total_net_carbs_g}g</td>
             <td />
+            <td className="num">{result.total_net_carbs_g}g</td>
           </tr>
         </tbody>
       </table>
