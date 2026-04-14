@@ -37,6 +37,7 @@ describe("API routes", () => {
         confidence: "high",
         notes: null,
         estimated_net_carbs_per_100g: null,
+        estimated_glycemic_index: 73,
         warning: null,
       },
     ]);
@@ -97,6 +98,7 @@ describe("API routes", () => {
         confidence: "medium",
         notes: null,
         estimated_net_carbs_per_100g: null,
+        estimated_glycemic_index: 51,
         warning: null,
       },
     ]);

@@ -35,6 +35,7 @@ describe("Calculator", () => {
         confidence: "high",
         notes: null,
         estimated_net_carbs_per_100g: null,
+        estimated_glycemic_index: 73,
         warning: null,
       },
       {
@@ -45,6 +46,7 @@ describe("Calculator", () => {
         confidence: "high",
         notes: null,
         estimated_net_carbs_per_100g: null,
+        estimated_glycemic_index: null,
         warning: null,
       },
     ]);
@@ -81,6 +83,7 @@ describe("Calculator", () => {
         confidence: "medium",
         notes: "Assumed medium banana (~120g)",
         estimated_net_carbs_per_100g: null,
+        estimated_glycemic_index: 51,
         warning: null,
       },
     ]);
@@ -110,6 +113,7 @@ describe("Calculator", () => {
         confidence: "medium",
         notes: null,
         estimated_net_carbs_per_100g: null,
+        estimated_glycemic_index: 51,
         warning: null,
       },
     ]);
@@ -127,6 +131,48 @@ describe("Calculator", () => {
     expect(result.correction!.total_dose).toBeGreaterThanOrEqual(0);
   });
 
+  it("uses DB glycemic index when available, LLM estimate otherwise", async () => {
+    parser.setResponse("150g rice and 100g acai bowl", [
+      {
+        description: "White rice (cooked)",
+        weight_g: 150,
+        db_key: "rice_white_cooked",
+        assumed_cooked: true,
+        confidence: "high",
+        notes: null,
+        estimated_net_carbs_per_100g: null,
+        estimated_glycemic_index: 70,
+        warning: null,
+      },
+      {
+        description: "Acai bowl",
+        weight_g: 100,
+        db_key: null,
+        assumed_cooked: false,
+        confidence: "low",
+        notes: null,
+        estimated_net_carbs_per_100g: 15.0,
+        estimated_glycemic_index: 35,
+        warning: null,
+      },
+    ]);
+
+    const result = await calculator.calculate(
+      "150g rice and 100g acai bowl",
+      TEST_SETTINGS,
+      undefined,
+      "lunch",
+    );
+
+    const rice = result.items[0]!;
+    expect(rice.glycemic_index).toBe(73);
+    expect(rice.gi_estimated).toBe(false);
+
+    const acai = result.items[1]!;
+    expect(acai.glycemic_index).toBe(35);
+    expect(acai.gi_estimated).toBe(true);
+  });
+
   it("uses LLM estimate when food is not in database", async () => {
     parser.setResponse("100g acai bowl", [
       {
@@ -137,6 +183,7 @@ describe("Calculator", () => {
         confidence: "low",
         notes: "Not in database, using estimate",
         estimated_net_carbs_per_100g: 15.0,
+        estimated_glycemic_index: 35,
         warning: null,
       },
     ]);
@@ -163,6 +210,7 @@ describe("Calculator", () => {
         confidence: "high",
         notes: null,
         estimated_net_carbs_per_100g: null,
+        estimated_glycemic_index: 65,
         warning: "500g of sugar is an unusually large amount for coffee",
       },
     ]);
@@ -189,6 +237,7 @@ describe("Calculator", () => {
         confidence: "high",
         notes: null,
         estimated_net_carbs_per_100g: null,
+        estimated_glycemic_index: 73,
         warning: null,
       },
     ]);

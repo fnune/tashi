@@ -80,7 +80,8 @@ export function ResultTable({ result, lang, glucoseUnit }: ResultTableProps) {
                 ? Math.round((item.net_carbs_g / item.weight_g) * 1000) / 10
                 : 0;
             const source = sourceLink(item);
-            const gi = item.food_item?.glycemic_index;
+            const gi = item.glycemic_index;
+            const giIsEstimated = item.gi_estimated;
 
             return (
               <tr
@@ -128,9 +129,23 @@ export function ResultTable({ result, lang, glucoseUnit }: ResultTableProps) {
                   {gi != null ? (
                     <span
                       className="gi-badge"
-                      style={{ background: giColor(gi) }}
-                      title={item.food_item?.gi_source ?? undefined}
+                      style={{
+                        background: giColor(gi),
+                        ...(giIsEstimated
+                          ? {
+                              borderStyle: "dashed",
+                              borderWidth: 1,
+                              borderColor: "rgba(255,255,255,0.6)",
+                            }
+                          : {}),
+                      }}
+                      title={
+                        giIsEstimated
+                          ? t(lang, "giEstimated")
+                          : (item.food_item?.gi_source ?? undefined)
+                      }
                     >
+                      {giIsEstimated ? "~" : ""}
                       {gi}
                     </span>
                   ) : (

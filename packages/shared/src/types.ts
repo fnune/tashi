@@ -23,6 +23,7 @@ export interface ParsedFoodItem {
   confidence: "high" | "medium" | "low";
   notes: string | null;
   estimated_net_carbs_per_100g: number | null;
+  estimated_glycemic_index: number | null;
   warning: string | null;
 }
 
@@ -36,6 +37,8 @@ export interface CalculatedItem {
   warning: string | null;
   data_source: string;
   estimated: boolean;
+  glycemic_index: number | null;
+  gi_estimated: boolean;
   food_item: FoodItem | null;
 }
 

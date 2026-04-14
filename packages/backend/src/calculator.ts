@@ -84,6 +84,9 @@ export class Calculator {
         dataSource = "unknown";
       }
 
+      const dbGi = foodItem?.glycemic_index ?? null;
+      const gi = dbGi ?? parsed.estimated_glycemic_index ?? null;
+
       return {
         description: parsed.description,
         weight_g: parsed.weight_g,
@@ -94,6 +97,8 @@ export class Calculator {
         warning: parsed.warning,
         data_source: dataSource,
         estimated,
+        glycemic_index: gi,
+        gi_estimated: dbGi === null && gi !== null,
         food_item: foodItem ?? null,
       };
     });

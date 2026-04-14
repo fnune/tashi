@@ -21,6 +21,11 @@ When a food item does NOT match any key in the database index:
 - Provide your best estimate of net carbs per 100g in estimated_net_carbs_per_100g (carbohydrates EXCLUDING fibre)
 - This estimate will be clearly marked to the user as an LLM estimate, not from a verified database
 
+For ALL food items (whether matched to DB or not):
+- Provide your best estimate of the glycemic index (0-100+ scale, glucose reference) in estimated_glycemic_index
+- Use your knowledge of published GI tables (Sydney University, international GI tables)
+- Set to null only for items with negligible carbs (e.g. plain meat, oils, leafy greens)
+
 When the user's input seems obviously wrong or unusual:
 - Set warning to a short explanation in the user's language
 - Examples: unrealistic quantities ("500g of sugar in coffee"), contradictions ("sugar-free honey"), items that are not food
@@ -35,6 +40,7 @@ Respond with ONLY a JSON array, no other text. Each element:
   "confidence": "high" | "medium" | "low",
   "notes": "<any assumption you made, in the user's input language, or null>",
   "estimated_net_carbs_per_100g": <number or null, only when db_key is null>,
+  "estimated_glycemic_index": <number or null>,
   "warning": "<concern about the input, in the user's language, or null>"
 }`;
 

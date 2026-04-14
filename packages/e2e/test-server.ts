@@ -34,6 +34,7 @@ class FakeFoodParser implements FoodParser {
           confidence: "high",
           notes: null,
           estimated_net_carbs_per_100g: null,
+          estimated_glycemic_index: 73,
           warning: null,
         },
       ];
@@ -49,6 +50,7 @@ class FakeFoodParser implements FoodParser {
           confidence: "high",
           notes: null,
           estimated_net_carbs_per_100g: null,
+          estimated_glycemic_index: null,
           warning: null,
         });
       }
@@ -68,6 +70,7 @@ class FakeFoodParser implements FoodParser {
             ? "Asumido platano mediano (~120g)"
             : "Assumed medium banana (~120g)",
           estimated_net_carbs_per_100g: null,
+          estimated_glycemic_index: 51,
           warning: null,
         },
       ];
@@ -82,6 +85,7 @@ class FakeFoodParser implements FoodParser {
         confidence: "low",
         notes: "Could not match to database",
         estimated_net_carbs_per_100g: 15.0,
+        estimated_glycemic_index: 40,
         warning: null,
       },
     ];
