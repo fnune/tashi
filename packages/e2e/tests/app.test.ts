@@ -143,8 +143,10 @@ test.describe("full user flow", () => {
     await page.locator("form").getByRole("button").click();
 
     await expect(page.locator(".result-dose")).toBeVisible({ timeout: 5000 });
-    await expect(page.locator(".correction-box")).toBeVisible();
-    const correctionText = await page.locator(".correction-box").textContent();
-    expect(correctionText).toContain("180");
+    const doseText = await page.locator(".dose-line").textContent();
+    expect(doseText).toContain("+");
+    expect(doseText).toContain("=");
+    const detailText = await page.locator(".dose-detail").textContent();
+    expect(detailText).toContain("180");
   });
 });

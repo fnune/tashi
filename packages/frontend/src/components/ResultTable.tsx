@@ -154,23 +154,22 @@ export function ResultTable({ result, lang, glucoseUnit }: ResultTableProps) {
         </tbody>
       </table>
 
-      {result.correction && (
-        <div className="correction-box">
-          {t(lang, "correction")}: {result.correction.current_blood_sugar}{" "}
-          {glucoseUnit} → {result.correction.target_blood_sugar} {glucoseUnit} |
-          +{result.correction.correction_dose}U
-          <br />
-          {t(lang, "totalDose")}: {result.correction.total_dose}U
-        </div>
-      )}
-
       <div className="result-dose">
-        {t(lang, "recommendedDose")}: {result.recommended_dose}U
-        {result.correction && (
-          <span>
-            {" "}
-            ({t(lang, "totalDose")}: {result.correction.total_dose}U)
-          </span>
+        {result.correction ? (
+          <>
+            <span className="dose-line">
+              {result.recommended_dose}U + {result.correction.correction_dose}U{" "}
+              = {result.correction.total_dose}U
+            </span>
+            <span className="dose-detail">
+              {t(lang, "recommendedDose")}: {result.recommended_dose}U |{" "}
+              {t(lang, "correction")}: {result.correction.current_blood_sugar} →{" "}
+              {result.correction.target_blood_sugar} {glucoseUnit} (+
+              {result.correction.correction_dose}U)
+            </span>
+          </>
+        ) : (
+          <span className="dose-line">{result.recommended_dose}U</span>
         )}
       </div>
     </div>

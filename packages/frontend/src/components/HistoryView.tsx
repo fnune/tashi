@@ -48,7 +48,11 @@ export function HistoryView({
               {new Date(entry.timestamp).toLocaleString()}
             </span>
             <span className="history-summary">{entry.input_text}</span>
-            <span className="history-dose">{entry.recommended_dose}U</span>
+            <span className="history-dose">
+              {entry.correction
+                ? `${entry.recommended_dose}U + ${entry.correction.correction_dose}U = ${entry.correction.total_dose}U`
+                : `${entry.recommended_dose}U`}
+            </span>
           </button>
           {expanded === entry.id && (
             <div>
