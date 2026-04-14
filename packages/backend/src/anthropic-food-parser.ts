@@ -14,6 +14,7 @@ Your task:
 - Match each item to the closest key in the food database index
 - If the user specifies "raw", "dry", or "crudo/seco" weight, set assumed_cooked to false. Otherwise default to true (cooked/as-served weight).
 - Set confidence: "high" if the user gave an explicit weight and the food clearly matches a DB entry, "medium" if you had to estimate a typical portion, "low" if the food is ambiguous or doesn't match well.
+- Always output one row per food item. Never split fractional quantities into separate rows. "1.5 avocados" is ONE item with the combined weight, not two items.
 
 When a food item does NOT match any key in the database index:
 - Set db_key to null
