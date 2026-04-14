@@ -14,6 +14,9 @@
     "rules": {
       "style": {
         "noNonNullAssertion": "error"
+      },
+      "suspicious": {
+        "noArrayIndexKey": "off"
       }
     }
   },
