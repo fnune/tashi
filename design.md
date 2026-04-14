@@ -220,7 +220,6 @@ This app influences medical decisions:
 - Show every item, every carb estimate, every assumption, every source
 - Make it trivial to edit any value (tap a row to override)
 - Always show which ratio was used and allow override
-- Include a clear disclaimer: this is a tool, not medical advice
 - Never connect to pumps or auto-inject (recommendation only)
 
 ## Engineering requirements

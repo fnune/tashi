@@ -131,12 +131,6 @@ function AppShell() {
         />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
-
-      <div className="disclaimer">
-        {lang === "es"
-          ? "Esta herramienta no sustituye el consejo médico. Verifica siempre con tu equipo de salud."
-          : "This tool does not replace medical advice. Always verify with your care team."}
-      </div>
     </div>
   );
 }
