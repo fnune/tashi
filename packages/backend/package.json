@@ -3,6 +3,12 @@
   "version": "0.0.1",
   "private": true,
   "type": "module",
+  "exports": {
+    "./calculator": "./src/calculator.ts",
+    "./food-parser": "./src/food-parser.ts",
+    "./routes": "./src/routes.ts",
+    "./storage": "./src/storage.ts"
+  },
   "scripts": {
     "dev": "tsx watch src/server.ts",
     "build": "tsc",

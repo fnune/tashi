@@ -37,6 +37,19 @@ Respond with ONLY a JSON array, no other text. Each element:
   "warning": "<concern about the input, in the user's language, or null>"
 }`;
 
+function extractJson(raw: string): string {
+  const fenced = raw.match(/```(?:json)?\s*\n?([\s\S]*?)```/);
+  if (fenced?.[1]) return fenced[1].trim();
+
+  const bracketStart = raw.indexOf("[");
+  const bracketEnd = raw.lastIndexOf("]");
+  if (bracketStart !== -1 && bracketEnd !== -1) {
+    return raw.slice(bracketStart, bracketEnd + 1);
+  }
+
+  return raw.trim();
+}
+
 export class AnthropicFoodParser implements FoodParser {
   private client: Anthropic;
   private model: string;
@@ -67,7 +80,8 @@ export class AnthropicFoodParser implements FoodParser {
       throw new Error("No text response from LLM");
     }
 
-    const parsed: unknown = JSON.parse(text.text);
+    const jsonStr = extractJson(text.text);
+    const parsed: unknown = JSON.parse(jsonStr);
     if (!Array.isArray(parsed)) {
       throw new Error("LLM response is not an array");
     }

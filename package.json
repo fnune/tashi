@@ -7,7 +7,8 @@
     "build": "pnpm -r build",
     "check": "biome check .",
     "check:fix": "biome check --write .",
-    "test": "pnpm --filter @pincho/backend test",
+    "test:unit": "pnpm --filter @pincho/backend test",
+    "test:e2e": "pnpm --filter @pincho/frontend build && pnpm --filter @pincho/e2e test",
     "typecheck": "pnpm -r exec tsc --noEmit"
   }
 }

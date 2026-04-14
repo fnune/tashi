@@ -1,0 +1,20 @@
+{
+  "name": "@pincho/e2e",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "playwright test"
+  },
+  "dependencies": {
+    "hono": "^4.7.0",
+    "@hono/node-server": "^1.14.0"
+  },
+  "devDependencies": {
+    "@pincho/backend": "workspace:*",
+    "@pincho/shared": "workspace:*",
+    "@playwright/test": "^1.52.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.8.0"
+  }
+}
