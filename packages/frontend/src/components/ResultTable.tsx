@@ -104,6 +104,18 @@ export function ResultTable({ result, lang, glucoseUnit }: ResultTableProps) {
                       )}
                     </>
                   )}
+                  {item.food_item?.glycemic_index != null && (
+                    <span
+                      className="gi-badge"
+                      title={
+                        item.food_item.gi_source
+                          ? `GI ${item.food_item.glycemic_index} (${item.food_item.gi_source})`
+                          : `GI ${item.food_item.glycemic_index}`
+                      }
+                    >
+                      GI {item.food_item.glycemic_index}
+                    </span>
+                  )}
                   {item.estimated && (
                     <span className="estimated-badge">
                       {t(lang, "estimated")}
