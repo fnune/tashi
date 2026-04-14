@@ -108,7 +108,8 @@ async function startServer(): Promise<void> {
         { name: "dinner", start_hour: 16, end_hour: 23, ratio: 12 },
       ],
       correction_factor: null,
-      target_blood_sugar: 6.0,
+      target_blood_sugar: 100,
+      glucose_unit: "mg/dL",
       pen_increment: 0.5,
       language: "en",
     });

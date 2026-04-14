@@ -21,6 +21,7 @@ const settingsSchema = z.object({
   ),
   correction_factor: z.number().positive().nullable(),
   target_blood_sugar: z.number().positive(),
+  glucose_unit: z.union([z.literal("mg/dL"), z.literal("mmol/L")]),
   pen_increment: z.union([z.literal(0.5), z.literal(1)]),
   language: z.union([z.literal("en"), z.literal("es")]),
 });

@@ -12,6 +12,10 @@ Describe what you're eating in plain language, and Pincho breaks it down into a 
 
 Works in Spanish and English. Every value is editable, every source is cited inline.
 
+## Future ideas
+
+- Voice/mic input with speech-to-text (preferably using the platform-native API to avoid extra costs)
+
 ## Development
 
 Requires [Nix](https://nixos.org/download/):

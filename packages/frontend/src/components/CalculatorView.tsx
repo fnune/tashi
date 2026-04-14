@@ -69,7 +69,8 @@ export function CalculatorView({
         <div className="input-row">
           <div className="input-group">
             <label htmlFor="blood-sugar">
-              {t(lang, "currentBloodSugar")} ({t(lang, "optional")})
+              {t(lang, "currentBloodSugar")} ({settings.glucose_unit},{" "}
+              {t(lang, "optional")})
             </label>
             <input
               id="blood-sugar"
@@ -107,7 +108,13 @@ export function CalculatorView({
 
       {error && <div className="error-box">{error}</div>}
 
-      {result && <ResultTable result={result} lang={lang} />}
+      {result && (
+        <ResultTable
+          result={result}
+          lang={lang}
+          glucoseUnit={settings.glucose_unit}
+        />
+      )}
     </div>
   );
 }

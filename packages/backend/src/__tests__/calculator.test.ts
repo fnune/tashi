@@ -11,6 +11,7 @@ const TEST_SETTINGS: Settings = {
   ],
   correction_factor: 2.2,
   target_blood_sugar: 6.0,
+  glucose_unit: "mg/dL",
   pen_increment: 0.5,
   language: "en",
 };

@@ -46,10 +46,13 @@ export interface MealWindow {
   ratio: number;
 }
 
+export type GlucoseUnit = "mg/dL" | "mmol/L";
+
 export interface Settings {
   meal_windows: MealWindow[];
   correction_factor: number | null;
   target_blood_sugar: number;
+  glucose_unit: GlucoseUnit;
   pen_increment: 0.5 | 1;
   language: "en" | "es";
 }
@@ -93,7 +96,8 @@ export const DEFAULT_SETTINGS: Settings = {
     { name: "dinner", start_hour: 16, end_hour: 23, ratio: 12 },
   ],
   correction_factor: null,
-  target_blood_sugar: 6.0,
+  target_blood_sugar: 100,
+  glucose_unit: "mg/dL",
   pen_increment: 0.5,
   language: "en",
 };

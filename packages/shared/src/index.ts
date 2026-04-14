@@ -10,6 +10,7 @@ export type {
   CalculationResult,
   ErrorResponse,
   FoodItem,
+  GlucoseUnit,
   MealWindow,
   ParsedFoodItem,
   Settings,

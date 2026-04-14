@@ -1,4 +1,4 @@
-import type { MealWindow, Settings } from "@pincho/shared";
+import type { GlucoseUnit, MealWindow, Settings } from "@pincho/shared";
 import { useState } from "react";
 import * as api from "../api.js";
 import { type Language, t } from "../i18n.js";
@@ -117,7 +117,10 @@ export function SettingsView({ settings, onSave, lang }: SettingsViewProps) {
       </div>
 
       <div className="settings-section">
-        <h3>{t(lang, "correctionFactor")}</h3>
+        <h3>
+          {t(lang, "correctionFactor")} ({t(lang, "correctionFactorHint")}{" "}
+          {local.glucose_unit})
+        </h3>
         <input
           type="number"
           step="0.1"
@@ -135,7 +138,9 @@ export function SettingsView({ settings, onSave, lang }: SettingsViewProps) {
       </div>
 
       <div className="settings-section">
-        <h3>{t(lang, "targetBloodSugar")}</h3>
+        <h3>
+          {t(lang, "targetBloodSugar")} ({local.glucose_unit})
+        </h3>
         <input
           type="number"
           step="0.1"
@@ -163,6 +168,22 @@ export function SettingsView({ settings, onSave, lang }: SettingsViewProps) {
         >
           <option value="0.5">0.5U</option>
           <option value="1">1U</option>
+        </select>
+      </div>
+
+      <div className="settings-section">
+        <h3>{t(lang, "glucoseUnit")}</h3>
+        <select
+          value={local.glucose_unit}
+          onChange={(e) =>
+            setLocal({
+              ...local,
+              glucose_unit: e.target.value as GlucoseUnit,
+            })
+          }
+        >
+          <option value="mg/dL">mg/dL</option>
+          <option value="mmol/L">mmol/L</option>
         </select>
       </div>
 

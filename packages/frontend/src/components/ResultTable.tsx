@@ -1,12 +1,13 @@
-import type { CalculationResult } from "@pincho/shared";
+import type { CalculationResult, GlucoseUnit } from "@pincho/shared";
 import { type Language, t } from "../i18n.js";
 
 interface ResultTableProps {
   result: CalculationResult;
   lang: Language;
+  glucoseUnit: GlucoseUnit;
 }
 
-export function ResultTable({ result, lang }: ResultTableProps) {
+export function ResultTable({ result, lang, glucoseUnit }: ResultTableProps) {
   const sources = [
     ...new Set(
       result.items.map((i) => i.data_source).filter((s) => s !== "unknown"),
@@ -62,8 +63,8 @@ export function ResultTable({ result, lang }: ResultTableProps) {
       {result.correction && (
         <div className="correction-box">
           {t(lang, "correction")}: {result.correction.current_blood_sugar}{" "}
-          mmol/L → {result.correction.target_blood_sugar} mmol/L | +
-          {result.correction.correction_dose}U
+          {glucoseUnit} → {result.correction.target_blood_sugar} {glucoseUnit} |
+          +{result.correction.correction_dose}U
           <br />
           {t(lang, "totalDose")}: {result.correction.total_dose}U
         </div>

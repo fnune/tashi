@@ -129,7 +129,7 @@ test.describe("full user flow", () => {
       .locator(".settings-section")
       .filter({ hasText: "Correction factor" })
       .locator("input");
-    await correctionInput.fill("2.2");
+    await correctionInput.fill("40");
 
     await page.getByRole("button", { name: "Save" }).click();
     await expect(page.getByRole("button", { name: "Saved" })).toBeVisible();
@@ -138,13 +138,13 @@ test.describe("full user flow", () => {
     await page.getByRole("navigation").getByText("Calculate").click();
 
     await page.locator("textarea").fill("a banana");
-    await page.locator("#blood-sugar").fill("10.0");
+    await page.locator("#blood-sugar").fill("180");
     await page.locator("#meal-window").selectOption({ index: 1 });
     await page.locator("form").getByRole("button").click();
 
     await expect(page.locator(".result-dose")).toBeVisible({ timeout: 5000 });
     await expect(page.locator(".correction-box")).toBeVisible();
     const correctionText = await page.locator(".correction-box").textContent();
-    expect(correctionText).toContain("10");
+    expect(correctionText).toContain("180");
   });
 });

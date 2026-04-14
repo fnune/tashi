@@ -80,6 +80,7 @@ export function App() {
         <HistoryView
           history={history}
           lang={lang}
+          glucoseUnit={settings.glucose_unit}
           onRefresh={refreshHistory}
           onReuse={handleReuse}
         />

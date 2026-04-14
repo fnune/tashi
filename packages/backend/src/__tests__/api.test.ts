@@ -45,6 +45,7 @@ describe("API routes", () => {
       meal_windows: [{ name: "lunch", start_hour: 0, end_hour: 24, ratio: 10 }],
       correction_factor: null,
       target_blood_sugar: 6.0,
+      glucose_unit: "mg/dL",
       pen_increment: 0.5,
       language: "en",
     });
@@ -106,6 +107,7 @@ describe("API routes", () => {
       ],
       correction_factor: null,
       target_blood_sugar: 6.0,
+      glucose_unit: "mg/dL",
       pen_increment: 0.5,
       language: "en",
     });

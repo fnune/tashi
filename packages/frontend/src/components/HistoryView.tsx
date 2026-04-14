@@ -1,4 +1,4 @@
-import type { CalculationResult } from "@pincho/shared";
+import type { CalculationResult, GlucoseUnit } from "@pincho/shared";
 import { useState } from "react";
 import * as api from "../api.js";
 import { type Language, t } from "../i18n.js";
@@ -7,6 +7,7 @@ import { ResultTable } from "./ResultTable.js";
 interface HistoryViewProps {
   history: CalculationResult[];
   lang: Language;
+  glucoseUnit: GlucoseUnit;
   onRefresh: () => void;
   onReuse: (text: string) => void;
 }
@@ -14,6 +15,7 @@ interface HistoryViewProps {
 export function HistoryView({
   history,
   lang,
+  glucoseUnit,
   onRefresh,
   onReuse,
 }: HistoryViewProps) {
@@ -51,7 +53,11 @@ export function HistoryView({
           {expanded === entry.id && (
             <div>
               <div style={{ padding: "8px 12px" }}>
-                <ResultTable result={entry} lang={lang} />
+                <ResultTable
+                  result={entry}
+                  lang={lang}
+                  glucoseUnit={glucoseUnit}
+                />
               </div>
               <div className="history-actions">
                 <button
