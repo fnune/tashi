@@ -1,4 +1,8 @@
-import type { CalculationResult, GlucoseUnit } from "@pincho/shared";
+import type {
+  CalculatedItem,
+  CalculationResult,
+  GlucoseUnit,
+} from "@pincho/shared";
 import { type Language, t } from "../i18n.js";
 
 interface ResultTableProps {
@@ -11,13 +15,39 @@ function formatTime(date: Date): string {
   return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 }
 
-export function ResultTable({ result, lang, glucoseUnit }: ResultTableProps) {
-  const sources = [
-    ...new Set(
-      result.items.map((i) => i.data_source).filter((s) => s !== "unknown"),
-    ),
-  ];
+function sourceLink(item: CalculatedItem): {
+  label: string;
+  url: string | null;
+  fibreSubtracted: boolean;
+} {
+  if (!item.food_item) {
+    if (item.estimated)
+      return { label: "LLM", url: null, fibreSubtracted: false };
+    return { label: "", url: null, fibreSubtracted: false };
+  }
+  const { data_source, data_source_id, carbs_include_fibre } = item.food_item;
+  if (data_source === "USDA FoodData Central") {
+    return {
+      label: "USDA",
+      url: `https://fdc.nal.usda.gov/food-details/${data_source_id}/nutrients`,
+      fibreSubtracted: carbs_include_fibre,
+    };
+  }
+  if (data_source === "BEDCA") {
+    return {
+      label: "BEDCA",
+      url: "https://www.bedca.net/bdpub/index.php",
+      fibreSubtracted: carbs_include_fibre,
+    };
+  }
+  return {
+    label: data_source,
+    url: null,
+    fibreSubtracted: carbs_include_fibre,
+  };
+}
 
+export function ResultTable({ result, lang, glucoseUnit }: ResultTableProps) {
   const time = formatTime(new Date(result.timestamp));
 
   return (
@@ -42,6 +72,7 @@ export function ResultTable({ result, lang, glucoseUnit }: ResultTableProps) {
               item.weight_g > 0
                 ? Math.round((item.net_carbs_g / item.weight_g) * 1000) / 10
                 : 0;
+            const source = sourceLink(item);
 
             return (
               <tr
@@ -50,6 +81,29 @@ export function ResultTable({ result, lang, glucoseUnit }: ResultTableProps) {
               >
                 <td>
                   {item.description}
+                  {source.label && (
+                    <>
+                      {" "}
+                      {source.url ? (
+                        <a
+                          className="source-link"
+                          href={source.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          title={
+                            source.fibreSubtracted
+                              ? `${source.label}: fibre subtracted from source carbs`
+                              : source.label
+                          }
+                        >
+                          {source.label}
+                          {source.fibreSubtracted && " -f"}
+                        </a>
+                      ) : (
+                        <span className="source-link">{source.label}</span>
+                      )}
+                    </>
+                  )}
                   {item.estimated && (
                     <span className="estimated-badge">
                       {t(lang, "estimated")}
@@ -96,8 +150,6 @@ export function ResultTable({ result, lang, glucoseUnit }: ResultTableProps) {
           </span>
         )}
       </div>
-
-      <div className="result-sources">{sources.join(", ")}</div>
     </div>
   );
 }

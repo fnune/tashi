@@ -237,20 +237,24 @@ body {
   background: #f0f7ff;
   border: 1px solid var(--border);
   border-top: none;
-  font-family: var(--mono);
-}
-
-.result-sources {
-  font-size: 0.7rem;
-  color: var(--text-secondary);
-  padding: 6px 12px;
-  border: 1px solid var(--border);
-  border-top: none;
   border-radius: 0 0 var(--radius) var(--radius);
+  font-family: var(--mono);
 }
 
 .result-table .faded {
   color: var(--text-secondary);
+}
+
+.source-link {
+  font-size: 0.65rem;
+  color: var(--text-secondary);
+  text-decoration: none;
+  margin-left: 4px;
+}
+
+a.source-link:hover {
+  text-decoration: underline;
+  color: var(--accent);
 }
 
 .estimated-badge {
