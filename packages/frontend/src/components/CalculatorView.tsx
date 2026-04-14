@@ -108,6 +108,15 @@ export function CalculatorView({
 
       {error && <div className="error-box">{error}</div>}
 
+      {loading && (
+        <div className="loading-box">
+          <span className="loading-dot" />
+          <span className="loading-dot" />
+          <span className="loading-dot" />
+          <span>{t(lang, "calculating")}</span>
+        </div>
+      )}
+
       {result && (
         <ResultTable
           result={result}

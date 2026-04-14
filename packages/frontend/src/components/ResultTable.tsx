@@ -7,6 +7,10 @@ interface ResultTableProps {
   glucoseUnit: GlucoseUnit;
 }
 
+function formatTime(date: Date): string {
+  return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+}
+
 export function ResultTable({ result, lang, glucoseUnit }: ResultTableProps) {
   const sources = [
     ...new Set(
@@ -14,46 +18,59 @@ export function ResultTable({ result, lang, glucoseUnit }: ResultTableProps) {
     ),
   ];
 
+  const time = formatTime(new Date(result.timestamp));
+
   return (
     <div className="result">
       <div className="result-header">
         <span>
-          {result.meal_window.name} | 1U : {result.meal_window.ratio}g
+          {time} — {result.meal_window.name} — 1U : {result.meal_window.ratio}g
         </span>
-        <span className="source-text">{sources.join(", ")}</span>
       </div>
       <table className="result-table">
         <thead>
           <tr>
             <th>{t(lang, "item")}</th>
             <th className="num">{t(lang, "amount")}</th>
+            <th className="num">/100g</th>
             <th className="num">{t(lang, "netCarbs")}</th>
           </tr>
         </thead>
         <tbody>
-          {result.items.map((item, i) => (
-            <tr
-              key={`${item.description}-${i}`}
-              className={item.warning ? "warning-row" : ""}
-            >
-              <td>
-                {item.description}
-                {item.estimated && (
-                  <span className="estimated-badge">
-                    {t(lang, "estimated")}
-                  </span>
-                )}
-                {item.notes && <span className="note-text">{item.notes}</span>}
-                {item.warning && (
-                  <span className="warning-text">{item.warning}</span>
-                )}
-              </td>
-              <td className="num">{item.weight_g}g</td>
-              <td className="num">{item.net_carbs_g}g</td>
-            </tr>
-          ))}
+          {result.items.map((item, i) => {
+            const per100g =
+              item.weight_g > 0
+                ? Math.round((item.net_carbs_g / item.weight_g) * 1000) / 10
+                : 0;
+
+            return (
+              <tr
+                key={`${item.description}-${i}`}
+                className={item.warning ? "warning-row" : ""}
+              >
+                <td>
+                  {item.description}
+                  {item.estimated && (
+                    <span className="estimated-badge">
+                      {t(lang, "estimated")}
+                    </span>
+                  )}
+                  {item.notes && (
+                    <span className="note-text">{item.notes}</span>
+                  )}
+                  {item.warning && (
+                    <span className="warning-text">{item.warning}</span>
+                  )}
+                </td>
+                <td className="num">{item.weight_g}g</td>
+                <td className="num faded">{per100g}g</td>
+                <td className="num">{item.net_carbs_g}g</td>
+              </tr>
+            );
+          })}
           <tr className="result-total">
             <td>{t(lang, "totalNetCarbs")}</td>
+            <td />
             <td />
             <td className="num">{result.total_net_carbs_g}g</td>
           </tr>
@@ -79,6 +96,8 @@ export function ResultTable({ result, lang, glucoseUnit }: ResultTableProps) {
           </span>
         )}
       </div>
+
+      <div className="result-sources">{sources.join(", ")}</div>
     </div>
   );
 }

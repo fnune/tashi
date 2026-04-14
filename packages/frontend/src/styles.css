@@ -237,8 +237,20 @@ body {
   background: #f0f7ff;
   border: 1px solid var(--border);
   border-top: none;
-  border-radius: 0 0 var(--radius) var(--radius);
   font-family: var(--mono);
+}
+
+.result-sources {
+  font-size: 0.7rem;
+  color: var(--text-secondary);
+  padding: 6px 12px;
+  border: 1px solid var(--border);
+  border-top: none;
+  border-radius: 0 0 var(--radius) var(--radius);
+}
+
+.result-table .faded {
+  color: var(--text-secondary);
 }
 
 .estimated-badge {
@@ -268,11 +280,6 @@ body {
   color: var(--text-secondary);
   display: block;
   margin-top: 2px;
-}
-
-.source-text {
-  font-size: 0.7rem;
-  color: var(--text-secondary);
 }
 
 .correction-box {
@@ -391,6 +398,46 @@ body {
   border-radius: var(--radius);
   color: var(--error);
   font-size: 0.875rem;
+}
+
+.loading-box {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 24px;
+  margin-top: 16px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+}
+
+.loading-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--accent);
+  animation: pulse 1s ease-in-out infinite;
+}
+
+.loading-dot:nth-child(2) {
+  animation-delay: 0.15s;
+}
+
+.loading-dot:nth-child(3) {
+  animation-delay: 0.3s;
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 0.3;
+  }
+  50% {
+    opacity: 1;
+  }
 }
 
 .disclaimer {
