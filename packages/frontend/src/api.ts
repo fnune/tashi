@@ -2,7 +2,6 @@ import type {
   CalculateRequest,
   CalculateResponse,
   CalculationResult,
-  ErrorResponse,
   Settings,
 } from "@pincho/shared";
 
@@ -14,11 +13,25 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
       ...options?.headers,
     },
   });
-  if (!res.ok) {
-    const body = (await res.json()) as ErrorResponse;
-    throw new Error(body.error ?? `Request failed: ${res.status}`);
+
+  const text = await res.text();
+  if (!text) {
+    throw new Error(`Empty response (${res.status}). Is the backend running?`);
   }
-  return res.json() as Promise<T>;
+
+  let body: unknown;
+  try {
+    body = JSON.parse(text);
+  } catch {
+    throw new Error(`Expected JSON but got: ${text.slice(0, 200)}`);
+  }
+
+  if (!res.ok) {
+    const err = body as { error?: string };
+    throw new Error(err.error ?? `Request failed: ${res.status}`);
+  }
+
+  return body as T;
 }
 
 export function getSettings(): Promise<Settings> {
