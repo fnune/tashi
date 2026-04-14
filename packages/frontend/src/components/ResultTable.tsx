@@ -47,6 +47,14 @@ function sourceLink(item: CalculatedItem): {
   };
 }
 
+function giColor(gi: number): string {
+  // 0-55 low (green), 56-69 medium (amber), 70-100 high (red)
+  const clamped = Math.max(0, Math.min(100, gi));
+  // hue: 120 (green) at 0, 30 (orange) at 65, 0 (red) at 100
+  const hue = 120 - (clamped / 100) * 120;
+  return `hsl(${hue}, 70%, 40%)`;
+}
+
 export function ResultTable({ result, lang, glucoseUnit }: ResultTableProps) {
   const time = formatTime(new Date(result.timestamp));
 
@@ -107,6 +115,9 @@ export function ResultTable({ result, lang, glucoseUnit }: ResultTableProps) {
                   {item.food_item?.glycemic_index != null && (
                     <span
                       className="gi-badge"
+                      style={{
+                        background: giColor(item.food_item.glycemic_index),
+                      }}
                       title={
                         item.food_item.gi_source
                           ? `GI ${item.food_item.glycemic_index} (${item.food_item.gi_source})`
