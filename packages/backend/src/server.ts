@@ -32,5 +32,11 @@ app.route("/", routes);
 
 app.use("/*", serveStatic({ root: "./public" }));
 
+app.get("/*", async (c) => {
+  const { readFile } = await import("node:fs/promises");
+  const html = await readFile("./public/index.html", "utf-8");
+  return c.html(html);
+});
+
 console.log(`Listening on http://localhost:${port}`);
 serve({ fetch: app.fetch, port });

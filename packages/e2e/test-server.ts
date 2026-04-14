@@ -121,6 +121,13 @@ async function startServer(): Promise<void> {
 
   app.use("/*", serveStatic({ root: "../frontend/dist" }));
 
+  // SPA fallback: serve index.html for any non-API, non-static route
+  app.get("/*", async (c) => {
+    const fs = await import("node:fs/promises");
+    const html = await fs.readFile("../frontend/dist/index.html", "utf-8");
+    return c.html(html);
+  });
+
   const port = 3100;
   console.log(`Test server listening on http://localhost:${port}`);
   serve({ fetch: app.fetch, port });
