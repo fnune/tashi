@@ -1,11 +1,11 @@
-import type { ParsedFoodItem } from "@t1d-aid/shared";
+import type { ParsedFoodItem } from "@pincho/shared";
 import {
   type CalculatedItem,
   type CalculationResult,
   calculateDose,
   findMealWindow,
   type Settings,
-} from "@t1d-aid/shared";
+} from "@pincho/shared";
 import { buildFoodIndex, getFoodById } from "./db/foods.js";
 import type { FoodParser } from "./food-parser.js";
 

@@ -4,7 +4,7 @@ import type {
   CalculationResult,
   ErrorResponse,
   Settings,
-} from "@t1d-aid/shared";
+} from "@pincho/shared";
 
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
   const res = await fetch(path, {

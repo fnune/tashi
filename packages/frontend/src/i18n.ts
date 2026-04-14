@@ -1,6 +1,6 @@
 const translations = {
   en: {
-    appTitle: "T1D Aid",
+    appTitle: "Pincho",
     settings: "Settings",
     history: "History",
     calculate: "Calculate",
@@ -45,7 +45,7 @@ const translations = {
     remove: "Remove",
   },
   es: {
-    appTitle: "T1D Aid",
+    appTitle: "Pincho",
     settings: "Ajustes",
     history: "Historial",
     calculate: "Calcular",

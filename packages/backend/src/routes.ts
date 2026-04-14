@@ -1,4 +1,4 @@
-import type { CalculateRequest, Settings } from "@t1d-aid/shared";
+import type { CalculateRequest, Settings } from "@pincho/shared";
 import { Hono } from "hono";
 import { z } from "zod";
 import type { Calculator } from "./calculator.js";

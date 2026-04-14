@@ -1,7 +1,7 @@
 import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import type { CalculateResponse } from "@t1d-aid/shared";
+import type { CalculateResponse } from "@pincho/shared";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { Calculator } from "../calculator.js";
 import { createRoutes } from "../routes.js";
@@ -15,7 +15,7 @@ describe("API routes", () => {
   let tmpDir: string;
 
   beforeEach(async () => {
-    tmpDir = await mkdtemp(join(tmpdir(), "t1d-aid-test-"));
+    tmpDir = await mkdtemp(join(tmpdir(), "pincho-test-"));
     storage = new FileStorage(tmpDir);
     await storage.init();
     parser = new FakeFoodParser();

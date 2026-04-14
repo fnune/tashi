@@ -1,4 +1,4 @@
-import type { Settings } from "@t1d-aid/shared";
+import type { Settings } from "@pincho/shared";
 import { beforeEach, describe, expect, it } from "vitest";
 import { Calculator } from "../calculator.js";
 import { FakeFoodParser } from "./fake-food-parser.js";

@@ -1,4 +1,4 @@
-# T1D fast insulin dose calculator
+# Pincho: T1D fast insulin dose calculator
 
 ## Problem
 
@@ -275,7 +275,7 @@ Since the task is pure parsing (not creative or reasoning-heavy), most capable m
 
 The app deploys as a NixOS service on Bilbo (https://github.com/fnune/bilbo). Each deployment is pre-configured with LLM credentials -- there is no user-facing API key management.
 
-- LLM API key stored in `/etc/nixos/secrets/t1d-aid-llm-key` (same pattern as other Bilbo secrets)
+- LLM API key stored in `/etc/nixos/secrets/pincho-llm-key` (same pattern as other Bilbo secrets)
 - LLM provider and model configured via the NixOS service definition or an environment file
 - The app reads credentials at startup from the filesystem, never exposes them to the frontend
 - The frontend is a static SPA; all LLM calls go through the app's backend

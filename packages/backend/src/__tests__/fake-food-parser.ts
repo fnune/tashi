@@ -1,4 +1,4 @@
-import type { ParsedFoodItem } from "@t1d-aid/shared";
+import type { ParsedFoodItem } from "@pincho/shared";
 import type { FoodParser } from "../food-parser.js";
 
 export class FakeFoodParser implements FoodParser {

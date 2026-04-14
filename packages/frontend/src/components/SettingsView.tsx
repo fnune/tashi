@@ -1,4 +1,4 @@
-import type { MealWindow, Settings } from "@t1d-aid/shared";
+import type { MealWindow, Settings } from "@pincho/shared";
 import { useState } from "react";
 import * as api from "../api.js";
 import { type Language, t } from "../i18n.js";

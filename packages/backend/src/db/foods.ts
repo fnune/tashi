@@ -1,4 +1,4 @@
-import type { FoodItem } from "@t1d-aid/shared";
+import type { FoodItem } from "@pincho/shared";
 
 // All nutritional values per 100g. Sources:
 // - USDA FoodData Central SR Legacy (https://fdc.nal.usda.gov/)

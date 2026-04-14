@@ -1,5 +1,5 @@
 {
-  "name": "@t1d-aid/frontend",
+  "name": "@pincho/frontend",
   "version": "0.0.1",
   "private": true,
   "type": "module",
@@ -9,7 +9,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@t1d-aid/shared": "workspace:*",
+    "@pincho/shared": "workspace:*",
     "react": "^19.1.0",
     "react-dom": "^19.1.0"
   },

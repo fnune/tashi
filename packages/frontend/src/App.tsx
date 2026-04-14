@@ -1,5 +1,5 @@
-import type { CalculationResult, Settings } from "@t1d-aid/shared";
-import { DEFAULT_SETTINGS } from "@t1d-aid/shared";
+import type { CalculationResult, Settings } from "@pincho/shared";
+import { DEFAULT_SETTINGS } from "@pincho/shared";
 import { useCallback, useEffect, useState } from "react";
 import * as api from "./api.js";
 import { CalculatorView } from "./components/CalculatorView.js";

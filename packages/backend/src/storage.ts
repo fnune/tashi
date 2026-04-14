@@ -1,7 +1,7 @@
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
-import type { CalculationResult, Settings } from "@t1d-aid/shared";
-import { DEFAULT_SETTINGS } from "@t1d-aid/shared";
+import type { CalculationResult, Settings } from "@pincho/shared";
+import { DEFAULT_SETTINGS } from "@pincho/shared";
 
 export class FileStorage {
   private dataDir: string;

@@ -1,4 +1,4 @@
-import type { ParsedFoodItem } from "@t1d-aid/shared";
+import type { ParsedFoodItem } from "@pincho/shared";
 
 export interface FoodParser {
   parse(foodDescription: string, foodIndex: string): Promise<ParsedFoodItem[]>;

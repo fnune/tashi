@@ -2,7 +2,7 @@ import type {
   CalculateRequest,
   CalculationResult,
   Settings,
-} from "@t1d-aid/shared";
+} from "@pincho/shared";
 import { useState } from "react";
 import * as api from "../api.js";
 import { type Language, t } from "../i18n.js";

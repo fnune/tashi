@@ -1,5 +1,5 @@
 import Anthropic from "@anthropic-ai/sdk";
-import type { ParsedFoodItem } from "@t1d-aid/shared";
+import type { ParsedFoodItem } from "@pincho/shared";
 import type { FoodParser } from "./food-parser.js";
 
 const SYSTEM_PROMPT = `You are a food parsing assistant for a diabetes insulin calculator. Your job is to parse natural language food descriptions into structured data.

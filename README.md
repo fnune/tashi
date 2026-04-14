@@ -1,0 +1,22 @@
+# Pincho
+
+Pincho is a fast-acting insulin dose calculator for people with Type 1 Diabetes.
+
+Describe what you're eating in plain language, and Pincho breaks it down into a carb-by-carb table with a recommended insulin dose. It uses an LLM to parse your input and a local nutritional database (USDA, BEDCA) to look up accurate values, so you're never relying on guesswork.
+
+## How it works
+
+1. Set up your insulin-to-carb ratios, correction factor, and pen increment once
+2. Type what you're eating: `150g arroz blanco cocido, 120g pechuga de pollo a la plancha`
+3. Get a breakdown table with net carbs per item, total carbs, and a dose recommendation
+
+Works in Spanish and English. Every value is editable, every source is cited inline.
+
+## Development
+
+Requires [Nix](https://nixos.org/download/):
+
+```sh
+nix develop
+pnpm install
+```
