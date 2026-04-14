@@ -170,9 +170,11 @@ function HistoryRoute({
   );
 }
 
+declare const __BASE_PATH__: string;
+
 export function App() {
   return (
-    <BrowserRouter>
+    <BrowserRouter basename={__BASE_PATH__ || "/"}>
       <AppShell />
     </BrowserRouter>
   );

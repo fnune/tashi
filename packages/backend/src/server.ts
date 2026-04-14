@@ -16,6 +16,7 @@ if (!apiKey) {
 const model = process.env.LLM_MODEL ?? "claude-haiku-4-5-20251001";
 const port = Number(process.env.PORT ?? "3000");
 const dataDir = process.env.DATA_DIR ?? "./data";
+const basePath = process.env.BASE_PATH ?? "";
 
 const storage = new FileStorage(dataDir);
 await storage.init();
@@ -25,14 +26,21 @@ const calculator = new Calculator(parser);
 
 const app = new Hono();
 
-app.use("/api/*", cors());
+app.use(`${basePath}/api/*`, cors());
 
 const routes = createRoutes(calculator, storage);
-app.route("/", routes);
+app.route(basePath || "/", routes);
 
-app.use("/*", serveStatic({ root: "./public" }));
+app.use(
+  `${basePath}/*`,
+  serveStatic({
+    root: "./public",
+    rewriteRequestPath: (path) =>
+      basePath ? path.replace(basePath, "") : path,
+  }),
+);
 
-app.get("/*", async (c) => {
+app.get(`${basePath}/*`, async (c) => {
   const { readFile } = await import("node:fs/promises");
   const html = await readFile("./public/index.html", "utf-8");
   return c.html(html);

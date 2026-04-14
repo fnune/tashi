@@ -5,8 +5,11 @@ import type {
   Settings,
 } from "@pincho/shared";
 
+declare const __BASE_PATH__: string;
+const BASE = __BASE_PATH__;
+
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
-  const res = await fetch(path, {
+  const res = await fetch(`${BASE}${path}`, {
     ...options,
     headers: {
       "Content-Type": "application/json",
