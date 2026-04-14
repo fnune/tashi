@@ -48,10 +48,8 @@ function sourceLink(item: CalculatedItem): {
 }
 
 function giColor(gi: number): string {
-  // Saturates to full red at GI 100, but values above 100 are valid
-  // (e.g. bread-based GI scales). Cap the color at red.
-  const t = Math.min(Math.max(0, gi), 100) / 100;
-  const hue = 120 * (1 - t);
+  const clamped = Math.min(Math.max(0, gi), 100) / 100;
+  const hue = 120 * (1 - clamped);
   return `hsl(${hue}, 70%, 40%)`;
 }
 
@@ -72,6 +70,7 @@ export function ResultTable({ result, lang, glucoseUnit }: ResultTableProps) {
             <th className="num">{t(lang, "amount")}</th>
             <th className="num">/100g</th>
             <th className="num">{t(lang, "netCarbs")}</th>
+            <th className="num">GI</th>
           </tr>
         </thead>
         <tbody>
@@ -81,6 +80,7 @@ export function ResultTable({ result, lang, glucoseUnit }: ResultTableProps) {
                 ? Math.round((item.net_carbs_g / item.weight_g) * 1000) / 10
                 : 0;
             const source = sourceLink(item);
+            const gi = item.food_item?.glycemic_index;
 
             return (
               <tr
@@ -112,21 +112,6 @@ export function ResultTable({ result, lang, glucoseUnit }: ResultTableProps) {
                       )}
                     </>
                   )}
-                  {item.food_item?.glycemic_index != null && (
-                    <span
-                      className="gi-badge"
-                      style={{
-                        background: giColor(item.food_item.glycemic_index),
-                      }}
-                      title={
-                        item.food_item.gi_source
-                          ? `GI ${item.food_item.glycemic_index} (${item.food_item.gi_source})`
-                          : `GI ${item.food_item.glycemic_index}`
-                      }
-                    >
-                      GI {item.food_item.glycemic_index}
-                    </span>
-                  )}
                   {item.estimated && (
                     <span className="estimated-badge">
                       {t(lang, "estimated")}
@@ -142,6 +127,19 @@ export function ResultTable({ result, lang, glucoseUnit }: ResultTableProps) {
                 <td className="num">{item.weight_g}g</td>
                 <td className="num faded">{per100g}g</td>
                 <td className="num">{item.net_carbs_g}g</td>
+                <td className="num">
+                  {gi != null ? (
+                    <span
+                      className="gi-badge"
+                      style={{ background: giColor(gi) }}
+                      title={item.food_item?.gi_source ?? undefined}
+                    >
+                      {gi}
+                    </span>
+                  ) : (
+                    <span className="faded">--</span>
+                  )}
+                </td>
               </tr>
             );
           })}
@@ -150,6 +148,7 @@ export function ResultTable({ result, lang, glucoseUnit }: ResultTableProps) {
             <td />
             <td />
             <td className="num">{result.total_net_carbs_g}g</td>
+            <td />
           </tr>
         </tbody>
       </table>
@@ -158,7 +157,7 @@ export function ResultTable({ result, lang, glucoseUnit }: ResultTableProps) {
         {result.correction ? (
           <>
             <span className="dose-line">
-              {result.recommended_dose}U + {result.correction.correction_dose}U{" "}
+              {result.recommended_dose}U + {result.correction.correction_dose}U
               = {result.correction.total_dose}U
             </span>
             <span className="dose-detail">

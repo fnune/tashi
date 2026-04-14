@@ -75,7 +75,7 @@ const translations = {
     auto: "Auto (por hora)",
     totalNetCarbs: "HC netos totales",
     recommendedDose: "Dosis recomendada",
-    correction: "Correccion",
+    correction: "Corrección",
     totalDose: "Dosis total",
     item: "Alimento",
     amount: "Cant.",
