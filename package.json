@@ -1,0 +1,12 @@
+{
+  "private": true,
+  "scripts": {
+    "dev": "pnpm --filter @t1d-aid/backend dev",
+    "dev:frontend": "pnpm --filter @t1d-aid/frontend dev",
+    "build": "pnpm -r build",
+    "check": "biome check .",
+    "check:fix": "biome check --write .",
+    "test": "pnpm -r test",
+    "test:backend": "pnpm --filter @t1d-aid/backend test"
+  }
+}
