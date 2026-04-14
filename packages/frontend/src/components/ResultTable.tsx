@@ -48,10 +48,10 @@ function sourceLink(item: CalculatedItem): {
 }
 
 function giColor(gi: number): string {
-  // 0-55 low (green), 56-69 medium (amber), 70-100 high (red)
-  const clamped = Math.max(0, Math.min(100, gi));
-  // hue: 120 (green) at 0, 30 (orange) at 65, 0 (red) at 100
-  const hue = 120 - (clamped / 100) * 120;
+  // Saturates to full red at GI 100, but values above 100 are valid
+  // (e.g. bread-based GI scales). Cap the color at red.
+  const t = Math.min(Math.max(0, gi), 100) / 100;
+  const hue = 120 * (1 - t);
   return `hsl(${hue}, 70%, 40%)`;
 }
 
