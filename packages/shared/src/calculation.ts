@@ -38,8 +38,7 @@ export function calculateDose(
 
   if (
     currentBloodSugar !== undefined &&
-    settings.correction_factor !== null &&
-    currentBloodSugar > settings.target_blood_sugar
+    settings.correction_factor !== null
   ) {
     const correctionDose =
       (currentBloodSugar - settings.target_blood_sugar) /
@@ -48,9 +47,9 @@ export function calculateDose(
       correctionDose,
       settings.pen_increment,
     );
-    const totalDose = roundToIncrement(
-      foodDose + roundedCorrection,
-      settings.pen_increment,
+    const totalDose = Math.max(
+      0,
+      roundToIncrement(foodDose + roundedCorrection, settings.pen_increment),
     );
     return {
       totalNetCarbs,

@@ -9,8 +9,8 @@ const TEST_SETTINGS: Settings = {
     { name: "lunch", start_hour: 11, end_hour: 16, ratio: 10 },
     { name: "dinner", start_hour: 16, end_hour: 23, ratio: 12 },
   ],
-  correction_factor: 2.2,
-  target_blood_sugar: 6.0,
+  correction_factor: 40,
+  target_blood_sugar: 100,
   glucose_unit: "mg/dL",
   pen_increment: 0.5,
   language: "en",
@@ -88,16 +88,43 @@ describe("Calculator", () => {
     const result = await calculator.calculate(
       "a banana",
       TEST_SETTINGS,
-      10.0,
+      180,
       "morning",
     );
 
     expect(result.correction).toBeDefined();
-    expect(result.correction!.current_blood_sugar).toBe(10.0);
+    expect(result.correction!.current_blood_sugar).toBe(180);
     expect(result.correction!.correction_dose).toBeGreaterThan(0);
     expect(result.correction!.total_dose).toBeGreaterThan(
       result.recommended_dose,
     );
+  });
+
+  it("reduces dose when blood sugar is below target (hypo)", async () => {
+    parser.setResponse("a banana", [
+      {
+        description: "Banana",
+        weight_g: 120,
+        db_key: "banana",
+        assumed_cooked: false,
+        confidence: "medium",
+        notes: null,
+        estimated_net_carbs_per_100g: null,
+        warning: null,
+      },
+    ]);
+
+    const result = await calculator.calculate(
+      "a banana",
+      TEST_SETTINGS,
+      45,
+      "morning",
+    );
+
+    expect(result.correction).toBeDefined();
+    expect(result.correction!.correction_dose).toBeLessThan(0);
+    expect(result.correction!.total_dose).toBeLessThan(result.recommended_dose);
+    expect(result.correction!.total_dose).toBeGreaterThanOrEqual(0);
   });
 
   it("uses LLM estimate when food is not in database", async () => {
