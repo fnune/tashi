@@ -8,10 +8,7 @@ export class FakeFoodParser implements FoodParser {
     this.responses.set(description, items);
   }
 
-  async parse(
-    foodDescription: string,
-    _foodIndex: string,
-  ): Promise<ParsedFoodItem[]> {
+  async parse(foodDescription: string): Promise<ParsedFoodItem[]> {
     const response = this.responses.get(foodDescription);
     if (response) return response;
 

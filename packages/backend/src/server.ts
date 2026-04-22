@@ -1,9 +1,11 @@
+import { join } from "node:path";
 import { serve } from "@hono/node-server";
 import { serveStatic } from "@hono/node-server/serve-static";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { AnthropicFoodParser } from "./anthropic-food-parser.js";
 import { Calculator } from "./calculator.js";
+import { FoodDatabase } from "./db/food-db.js";
 import { createRoutes } from "./routes.js";
 import { FileStorage } from "./storage.js";
 
@@ -17,12 +19,16 @@ const model = process.env.LLM_MODEL ?? "claude-haiku-4-5-20251001";
 const port = Number(process.env.PORT ?? "3000");
 const dataDir = process.env.DATA_DIR ?? "./data";
 const basePath = process.env.BASE_PATH ?? "";
+const foodsDbPath = process.env.FOODS_DB ?? join(dataDir, "foods.db");
 
 const storage = new FileStorage(dataDir);
 await storage.init();
 
+const foodDb = await FoodDatabase.open(foodsDbPath);
+console.log(`Food database loaded: ${foodDb.foodCount()} foods`);
+
 const parser = new AnthropicFoodParser(apiKey, model);
-const calculator = new Calculator(parser);
+const calculator = new Calculator(parser, foodDb);
 
 const app = new Hono();
 

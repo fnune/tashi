@@ -2,6 +2,7 @@ node_modules/
 dist/
 .env
 *.local
-data/
+data/settings.json
+data/history.json
 test-results/
 packages/backend/public/

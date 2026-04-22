@@ -11,11 +11,11 @@ import type { ParsedFoodItem } from "@pincho/shared";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 
+// E2E tests use the real food database
+import { FoodDatabase } from "@pincho/backend/db/food-db";
+
 class FakeFoodParser implements FoodParser {
-  async parse(
-    foodDescription: string,
-    _foodIndex: string,
-  ): Promise<ParsedFoodItem[]> {
+  async parse(foodDescription: string): Promise<ParsedFoodItem[]> {
     const lower = foodDescription.toLowerCase();
 
     if (lower.includes("arroz") || lower.includes("rice")) {
@@ -28,12 +28,12 @@ class FakeFoodParser implements FoodParser {
           description: lower.includes("arroz")
             ? "Arroz blanco (cocido)"
             : "White rice (cooked)",
+          search_text: "Rice white long grain cooked",
           weight_g: weight,
-          db_key: "rice_white_cooked",
           assumed_cooked: true,
           confidence: "high",
           notes: null,
-          estimated_net_carbs_per_100g: null,
+          estimated_net_carbs_per_100g: 28,
           estimated_glycemic_index: 73,
           warning: null,
         },
@@ -44,12 +44,12 @@ class FakeFoodParser implements FoodParser {
           description: lower.includes("pollo")
             ? "Pechuga de pollo (plancha)"
             : "Chicken breast (grilled)",
+          search_text: "Chicken breast grilled skinless",
           weight_g: 170,
-          db_key: "chicken_breast_grilled",
           assumed_cooked: true,
           confidence: "high",
           notes: null,
-          estimated_net_carbs_per_100g: null,
+          estimated_net_carbs_per_100g: 0,
           estimated_glycemic_index: null,
           warning: null,
         });
@@ -62,14 +62,14 @@ class FakeFoodParser implements FoodParser {
       return [
         {
           description: lower.includes("platano") ? "Platano" : "Banana",
+          search_text: "Bananas raw",
           weight_g: 120,
-          db_key: "banana",
           assumed_cooked: false,
           confidence: "medium",
           notes: lower.includes("platano")
             ? "Asumido platano mediano (~120g)"
             : "Assumed medium banana (~120g)",
-          estimated_net_carbs_per_100g: null,
+          estimated_net_carbs_per_100g: 20,
           estimated_glycemic_index: 51,
           warning: null,
         },
@@ -79,8 +79,8 @@ class FakeFoodParser implements FoodParser {
     return [
       {
         description: foodDescription,
+        search_text: foodDescription,
         weight_g: 100,
-        db_key: null,
         assumed_cooked: false,
         confidence: "low",
         notes: "Could not match to database",
@@ -97,8 +97,12 @@ async function startServer(): Promise<void> {
   const storage = new FileStorage(tmpDir);
   await storage.init();
 
+  const foodDb = await FoodDatabase.open(
+    join(import.meta.dirname, "../../data/foods.db"),
+  );
+
   const parser = new FakeFoodParser();
-  const calculator = new Calculator(parser);
+  const calculator = new Calculator(parser, foodDb);
 
   const app = new Hono();
   app.use("/api/*", cors());
@@ -125,7 +129,6 @@ async function startServer(): Promise<void> {
 
   app.use("/*", serveStatic({ root: "../frontend/dist" }));
 
-  // SPA fallback: serve index.html for any non-API, non-static route
   app.get("/*", async (c) => {
     const fs = await import("node:fs/promises");
     const html = await fs.readFile("../frontend/dist/index.html", "utf-8");

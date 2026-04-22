@@ -18,32 +18,21 @@ function formatTime(date: Date): string {
 function sourceLink(item: CalculatedItem): {
   label: string;
   url: string | null;
-  fibreSubtracted: boolean;
 } {
   if (!item.food_item) {
-    if (item.estimated)
-      return { label: "LLM", url: null, fibreSubtracted: false };
-    return { label: "?", url: null, fibreSubtracted: false };
+    if (item.estimated) return { label: "LLM", url: null };
+    return { label: "?", url: null };
   }
-  const { data_source, data_source_id, carbs_include_fibre } = item.food_item;
-  if (data_source === "USDA FoodData Central") {
-    return {
-      label: "USDA",
-      url: `https://fdc.nal.usda.gov/food-details/${data_source_id}/nutrients`,
-      fibreSubtracted: carbs_include_fibre,
-    };
-  }
-  if (data_source === "BEDCA") {
+  const { data_type, fdc_id } = item.food_item;
+  if (data_type === "curated") {
     return {
       label: "BEDCA",
       url: "https://www.bedca.net/bdpub/index.php",
-      fibreSubtracted: carbs_include_fibre,
     };
   }
   return {
-    label: data_source,
-    url: null,
-    fibreSubtracted: carbs_include_fibre,
+    label: "USDA",
+    url: `https://fdc.nal.usda.gov/food-details/${fdc_id}/nutrients`,
   };
 }
 
@@ -99,14 +88,9 @@ export function ResultTable({ result, lang, glucoseUnit }: ResultTableProps) {
                           href={source.url}
                           target="_blank"
                           rel="noopener noreferrer"
-                          title={
-                            source.fibreSubtracted
-                              ? `${source.label}: fibre subtracted from source carbs`
-                              : source.label
-                          }
+                          title={source.label}
                         >
                           {source.label}
-                          {source.fibreSubtracted && " -f"}
                         </a>
                       ) : (
                         <span

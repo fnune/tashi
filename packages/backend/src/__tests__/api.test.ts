@@ -4,14 +4,17 @@ import { join } from "node:path";
 import type { CalculateResponse } from "@pincho/shared";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { Calculator } from "../calculator.js";
+import type { FoodDatabase } from "../db/food-db.js";
 import { createRoutes } from "../routes.js";
 import { FileStorage } from "../storage.js";
 import { FakeFoodParser } from "./fake-food-parser.js";
+import { createTestFoodDb } from "./test-food-db.js";
 
 describe("API routes", () => {
   let app: ReturnType<typeof createRoutes>;
   let storage: FileStorage;
   let parser: FakeFoodParser;
+  let foodDb: FoodDatabase;
   let tmpDir: string;
 
   beforeEach(async () => {
@@ -19,11 +22,13 @@ describe("API routes", () => {
     storage = new FileStorage(tmpDir);
     await storage.init();
     parser = new FakeFoodParser();
-    const calculator = new Calculator(parser);
+    foodDb = await createTestFoodDb(tmpDir);
+    const calculator = new Calculator(parser, foodDb);
     app = createRoutes(calculator, storage);
   });
 
   afterEach(async () => {
+    foodDb.close();
     await rm(tmpDir, { recursive: true });
   });
 
@@ -31,12 +36,12 @@ describe("API routes", () => {
     parser.setResponse("100g white rice", [
       {
         description: "White rice (cooked)",
+        search_text: "Rice white long grain cooked",
         weight_g: 100,
-        db_key: "rice_white_cooked",
         assumed_cooked: true,
         confidence: "high",
         notes: null,
-        estimated_net_carbs_per_100g: null,
+        estimated_net_carbs_per_100g: 28,
         estimated_glycemic_index: 73,
         warning: null,
       },
@@ -92,12 +97,12 @@ describe("API routes", () => {
     parser.setResponse("a banana", [
       {
         description: "Banana",
+        search_text: "Bananas raw",
         weight_g: 120,
-        db_key: "banana",
         assumed_cooked: false,
         confidence: "medium",
         notes: null,
-        estimated_net_carbs_per_100g: null,
+        estimated_net_carbs_per_100g: 20,
         estimated_glycemic_index: 51,
         warning: null,
       },

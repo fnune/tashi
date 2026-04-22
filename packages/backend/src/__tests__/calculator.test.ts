@@ -1,7 +1,12 @@
+import { mkdtemp, rm } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import type { Settings } from "@pincho/shared";
-import { beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { Calculator } from "../calculator.js";
+import type { FoodDatabase } from "../db/food-db.js";
 import { FakeFoodParser } from "./fake-food-parser.js";
+import { createTestFoodDb } from "./test-food-db.js";
 
 const TEST_SETTINGS: Settings = {
   meal_windows: [
@@ -19,33 +24,42 @@ const TEST_SETTINGS: Settings = {
 describe("Calculator", () => {
   let parser: FakeFoodParser;
   let calculator: Calculator;
+  let foodDb: FoodDatabase;
+  let tmpDir: string;
 
-  beforeEach(() => {
+  beforeEach(async () => {
+    tmpDir = await mkdtemp(join(tmpdir(), "pincho-calc-test-"));
     parser = new FakeFoodParser();
-    calculator = new Calculator(parser);
+    foodDb = await createTestFoodDb(tmpDir);
+    calculator = new Calculator(parser, foodDb);
+  });
+
+  afterEach(async () => {
+    foodDb.close();
+    await rm(tmpDir, { recursive: true });
   });
 
   it("calculates carbs and dose for a simple meal", async () => {
     parser.setResponse("150g white rice, grilled chicken breast", [
       {
         description: "White rice (cooked)",
+        search_text: "Rice white long grain cooked",
         weight_g: 150,
-        db_key: "rice_white_cooked",
         assumed_cooked: true,
         confidence: "high",
         notes: null,
-        estimated_net_carbs_per_100g: null,
+        estimated_net_carbs_per_100g: 28,
         estimated_glycemic_index: 73,
         warning: null,
       },
       {
         description: "Chicken breast (grilled)",
+        search_text: "Chicken breast grilled skinless",
         weight_g: 170,
-        db_key: "chicken_breast_grilled",
         assumed_cooked: true,
         confidence: "high",
         notes: null,
-        estimated_net_carbs_per_100g: null,
+        estimated_net_carbs_per_100g: 0,
         estimated_glycemic_index: null,
         warning: null,
       },
@@ -62,7 +76,7 @@ describe("Calculator", () => {
 
     const rice = result.items[0]!;
     expect(rice.net_carbs_g).toBeCloseTo(41.7, 0);
-    expect(rice.data_source).toBe("USDA FoodData Central");
+    expect(rice.food_item).not.toBeNull();
     expect(rice.estimated).toBe(false);
 
     const chicken = result.items[1]!;
@@ -77,12 +91,12 @@ describe("Calculator", () => {
     parser.setResponse("a banana", [
       {
         description: "Banana",
+        search_text: "Bananas raw",
         weight_g: 120,
-        db_key: "banana",
         assumed_cooked: false,
         confidence: "medium",
         notes: "Assumed medium banana (~120g)",
-        estimated_net_carbs_per_100g: null,
+        estimated_net_carbs_per_100g: 20,
         estimated_glycemic_index: 51,
         warning: null,
       },
@@ -107,12 +121,12 @@ describe("Calculator", () => {
     parser.setResponse("a banana", [
       {
         description: "Banana",
+        search_text: "Bananas raw",
         weight_g: 120,
-        db_key: "banana",
         assumed_cooked: false,
         confidence: "medium",
         notes: null,
-        estimated_net_carbs_per_100g: null,
+        estimated_net_carbs_per_100g: 20,
         estimated_glycemic_index: 51,
         warning: null,
       },
@@ -135,19 +149,19 @@ describe("Calculator", () => {
     parser.setResponse("150g rice and 100g acai bowl", [
       {
         description: "White rice (cooked)",
+        search_text: "Rice white long grain cooked",
         weight_g: 150,
-        db_key: "rice_white_cooked",
         assumed_cooked: true,
         confidence: "high",
         notes: null,
-        estimated_net_carbs_per_100g: null,
+        estimated_net_carbs_per_100g: 28,
         estimated_glycemic_index: 70,
         warning: null,
       },
       {
         description: "Acai bowl",
+        search_text: "acai bowl smoothie",
         weight_g: 100,
-        db_key: null,
         assumed_cooked: false,
         confidence: "low",
         notes: null,
@@ -177,8 +191,8 @@ describe("Calculator", () => {
     parser.setResponse("100g acai bowl", [
       {
         description: "Acai bowl",
+        search_text: "acai bowl smoothie",
         weight_g: 100,
-        db_key: null,
         assumed_cooked: false,
         confidence: "low",
         notes: "Not in database, using estimate",
@@ -204,12 +218,12 @@ describe("Calculator", () => {
     parser.setResponse("500g of sugar in my coffee", [
       {
         description: "Sugar",
+        search_text: "Sugars granulated",
         weight_g: 500,
-        db_key: "sugar_white",
         assumed_cooked: false,
         confidence: "high",
         notes: null,
-        estimated_net_carbs_per_100g: null,
+        estimated_net_carbs_per_100g: 100,
         estimated_glycemic_index: 65,
         warning: "500g of sugar is an unusually large amount for coffee",
       },
@@ -231,12 +245,12 @@ describe("Calculator", () => {
     parser.setResponse("200g cooked rice", [
       {
         description: "White rice (cooked)",
+        search_text: "Rice white long grain cooked",
         weight_g: 200,
-        db_key: "rice_white_cooked",
         assumed_cooked: true,
         confidence: "high",
         notes: null,
-        estimated_net_carbs_per_100g: null,
+        estimated_net_carbs_per_100g: 28,
         estimated_glycemic_index: 73,
         warning: null,
       },
@@ -260,62 +274,5 @@ describe("Calculator", () => {
 
     expect(result05.recommended_dose % 0.5).toBe(0);
     expect(result1.recommended_dose % 1).toBe(0);
-  });
-
-  it("falls back to LLM estimate when db_key does not match", async () => {
-    parser.setResponse("100g mystery grain", [
-      {
-        description: "Mystery grain",
-        weight_g: 100,
-        db_key: "grain_that_does_not_exist",
-        assumed_cooked: true,
-        confidence: "medium",
-        notes: null,
-        estimated_net_carbs_per_100g: 25.0,
-        estimated_glycemic_index: 60,
-        warning: null,
-      },
-    ]);
-
-    const result = await calculator.calculate(
-      "100g mystery grain",
-      TEST_SETTINGS,
-      undefined,
-      "lunch",
-    );
-
-    const item = result.items[0]!;
-    expect(item.net_carbs_g).toBe(25.0);
-    expect(item.estimated).toBe(true);
-    expect(item.data_source).toBe("LLM estimate");
-    expect(item.warning).toContain("grain_that_does_not_exist");
-  });
-
-  it("warns when db_key fails and no LLM estimate results in zero carbs", async () => {
-    parser.setResponse("100g exotic fruit", [
-      {
-        description: "Exotic fruit",
-        weight_g: 100,
-        db_key: "fruit_that_does_not_exist",
-        assumed_cooked: false,
-        confidence: "low",
-        notes: null,
-        estimated_net_carbs_per_100g: null,
-        estimated_glycemic_index: 50,
-        warning: null,
-      },
-    ]);
-
-    const result = await calculator.calculate(
-      "100g exotic fruit",
-      TEST_SETTINGS,
-      undefined,
-      "lunch",
-    );
-
-    const item = result.items[0]!;
-    expect(item.net_carbs_g).toBe(0);
-    expect(item.data_source).toBe("unknown");
-    expect(item.warning).toContain("fruit_that_does_not_exist");
   });
 });

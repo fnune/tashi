@@ -1,4 +1,4 @@
-import type { ParsedFoodItem } from "@pincho/shared";
+import type { FoodItem, ParsedFoodItem } from "@pincho/shared";
 import {
   type CalculatedItem,
   type CalculationResult,
@@ -6,16 +6,35 @@ import {
   findMealWindow,
   type Settings,
 } from "@pincho/shared";
-import { buildFoodIndex, getFoodById } from "./db/foods.js";
+import type { FoodDatabase, FoodMatch } from "./db/food-db.js";
 import type { FoodParser } from "./food-parser.js";
+
+function matchToFoodItem(match: FoodMatch): FoodItem {
+  return {
+    fdc_id: match.fdc_id,
+    description: match.description,
+    data_type: match.data_type,
+    category: match.category,
+    net_carbs_per_100g: match.net_carbs_per_100g,
+    total_carbs_per_100g: match.total_carbs_per_100g,
+    fiber_per_100g: match.fiber_per_100g,
+    sugars_per_100g: match.sugars_per_100g,
+    serving_g: match.serving_g,
+    serving_desc: match.serving_desc,
+    name_es: match.name_es,
+    glycemic_index: match.glycemic_index,
+    gi_source: match.gi_source,
+    cooking_multiplier: match.cooking_multiplier,
+  };
+}
 
 export class Calculator {
   private parser: FoodParser;
-  private foodIndex: string;
+  private foodDb: FoodDatabase;
 
-  constructor(parser: FoodParser) {
+  constructor(parser: FoodParser, foodDb: FoodDatabase) {
     this.parser = parser;
-    this.foodIndex = buildFoodIndex();
+    this.foodDb = foodDb;
   }
 
   async calculate(
@@ -24,10 +43,7 @@ export class Calculator {
     currentBloodSugar?: number,
     mealWindowOverride?: string,
   ): Promise<CalculationResult> {
-    const parsedItems = await this.parser.parse(
-      foodDescription,
-      this.foodIndex,
-    );
+    const parsedItems = await this.parser.parse(foodDescription);
     const items = this.resolveItems(parsedItems);
 
     const mealWindow = mealWindowOverride
@@ -62,16 +78,18 @@ export class Calculator {
 
   private resolveItems(parsedItems: ParsedFoodItem[]): CalculatedItem[] {
     return parsedItems.map((parsed) => {
-      const foodItem = parsed.db_key ? getFoodById(parsed.db_key) : undefined;
-      const dbKeyMissed = parsed.db_key != null && foodItem === undefined;
+      const results = this.foodDb.search(parsed.search_text, 1);
+      const match = results[0] ?? null;
 
       let netCarbsG: number;
       let estimated = false;
       let dataSource: string;
+      let foodItem: FoodItem | null = null;
 
-      if (foodItem) {
-        netCarbsG = (foodItem.net_carbs_per_100g / 100) * parsed.weight_g;
-        dataSource = foodItem.data_source;
+      if (match) {
+        foodItem = matchToFoodItem(match);
+        netCarbsG = (match.net_carbs_per_100g / 100) * parsed.weight_g;
+        dataSource = match.data_type;
       } else if (
         parsed.estimated_net_carbs_per_100g !== null &&
         parsed.estimated_net_carbs_per_100g !== undefined
@@ -85,15 +103,10 @@ export class Calculator {
         dataSource = "unknown";
       }
 
-      if (dbKeyMissed) {
+      if (!match) {
         console.warn(
-          `DB key "${parsed.db_key}" not found for "${parsed.description}", using ${dataSource}`,
+          `No DB match for "${parsed.search_text}" ("${parsed.description}"), using ${dataSource}`,
         );
-      }
-
-      let warning = parsed.warning;
-      if (dbKeyMissed && !warning) {
-        warning = `db_key "${parsed.db_key}" not found in database`;
       }
 
       const dbGi = foodItem?.glycemic_index ?? null;
@@ -106,12 +119,12 @@ export class Calculator {
         assumed_cooked: parsed.assumed_cooked,
         confidence: parsed.confidence,
         notes: parsed.notes,
-        warning,
+        warning: parsed.warning,
         data_source: dataSource,
         estimated,
         glycemic_index: gi,
         gi_estimated: dbGi === null && gi !== null,
-        food_item: foodItem ?? null,
+        food_item: foodItem,
       };
     });
   }

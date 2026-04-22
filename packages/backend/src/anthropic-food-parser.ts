@@ -4,25 +4,19 @@ import type { FoodParser } from "./food-parser.js";
 
 const SYSTEM_PROMPT = `You are a food parsing assistant for a diabetes insulin calculator. Your job is to parse natural language food descriptions into structured data.
 
-You will receive:
-1. A food description from the user (may be in English or Spanish)
-2. A food database index listing all available food items with their keys
+You will receive a food description from the user (may be in English or Spanish).
 
 Your task:
 - Split the description into individual food items
 - For each item, estimate the weight in grams
-- Match each item to the closest key in the food database index
+- Provide a standardized English food description for database lookup in search_text. Use common USDA-style naming: "Rice, white, long-grain, cooked" not "arroz blanco". Include cooking state (raw/cooked) when relevant.
 - If the user specifies "raw", "dry", or "crudo/seco" weight, set assumed_cooked to false. Otherwise default to true (cooked/as-served weight).
-- Set confidence: "high" if the user gave an explicit weight and the food clearly matches a DB entry, "medium" if you had to estimate a typical portion, "low" if the food is ambiguous or doesn't match well.
+- Set confidence: "high" if the user gave an explicit weight and the food is common, "medium" if you had to estimate a typical portion, "low" if the food is ambiguous.
 - Always output one row per food item. Never split fractional quantities into separate rows. "1.5 avocados" is ONE item with the combined weight, not two items.
 
-ALWAYS provide estimated_net_carbs_per_100g for EVERY food item (your best estimate of net carbs per 100g, carbohydrates EXCLUDING fibre). This serves as a safety fallback when a db_key match fails at lookup time.
+ALWAYS provide estimated_net_carbs_per_100g for EVERY food item (your best estimate of net carbs per 100g, carbohydrates EXCLUDING fibre). This serves as a safety fallback when the database search finds no match.
 
-When a food item does NOT match any key in the database index:
-- Set db_key to null
-- The estimated_net_carbs_per_100g will be used as the primary value and clearly marked to the user as an LLM estimate
-
-For ALL food items (whether matched to DB or not):
+For ALL food items:
 - Provide your best estimate of the glycemic index (0-100+ scale, glucose reference) in estimated_glycemic_index
 - Use your knowledge of published GI tables (Sydney University, international GI tables)
 - Set to null only for items with negligible carbs (e.g. plain meat, oils, leafy greens)
@@ -35,8 +29,8 @@ When the user's input seems obviously wrong or unusual:
 Respond with ONLY a JSON array, no other text. Each element:
 {
   "description": "human-readable name of the food item in the user's input language",
+  "search_text": "standardized English food description for USDA database lookup",
   "weight_g": <number>,
-  "db_key": "<key from the food index, or null if no good match>",
   "assumed_cooked": <boolean>,
   "confidence": "high" | "medium" | "low",
   "notes": "<any assumption you made, in the user's input language, or null>",
@@ -67,10 +61,7 @@ export class AnthropicFoodParser implements FoodParser {
     this.model = model;
   }
 
-  async parse(
-    foodDescription: string,
-    foodIndex: string,
-  ): Promise<ParsedFoodItem[]> {
+  async parse(foodDescription: string): Promise<ParsedFoodItem[]> {
     const response = await this.client.messages.create({
       model: this.model,
       max_tokens: 1024,
@@ -78,7 +69,7 @@ export class AnthropicFoodParser implements FoodParser {
       messages: [
         {
           role: "user",
-          content: `Food database index:\n${foodIndex}\n\nFood description:\n${foodDescription}`,
+          content: foodDescription,
         },
       ],
     });

@@ -1,24 +1,24 @@
 export interface FoodItem {
-  id: string;
-  name_en: string;
-  name_es: string;
-  total_carbs_per_100g: number;
-  fibre_per_100g: number;
+  fdc_id: number;
+  description: string;
+  data_type: string;
+  category: string | null;
   net_carbs_per_100g: number;
-  carbs_include_fibre: boolean;
+  total_carbs_per_100g: number;
+  fiber_per_100g: number;
   sugars_per_100g: number;
+  serving_g: number | null;
+  serving_desc: string | null;
+  name_es: string | null;
   glycemic_index: number | null;
   gi_source: string | null;
-  typical_serving_g: number;
   cooking_multiplier: number | null;
-  data_source: string;
-  data_source_id: string;
 }
 
 export interface ParsedFoodItem {
   description: string;
   weight_g: number;
-  db_key: string | null;
+  search_text: string;
   assumed_cooked: boolean;
   confidence: "high" | "medium" | "low";
   notes: string | null;

@@ -7,19 +7,22 @@
     "./calculator": "./src/calculator.ts",
     "./food-parser": "./src/food-parser.ts",
     "./routes": "./src/routes.ts",
-    "./storage": "./src/storage.ts"
+    "./storage": "./src/storage.ts",
+    "./db/food-db": "./src/db/food-db.ts"
   },
   "scripts": {
     "dev": "tsx watch --env-file=../../.env src/server.ts",
     "build": "tsc",
     "start": "node dist/server.js",
-    "test": "vitest run"
+    "test": "vitest run",
+    "import-usda": "tsx scripts/import-usda.ts ../../data/usda ../../data/foods.db"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.52.0",
+    "@hono/node-server": "^1.14.0",
     "@pincho/shared": "workspace:*",
     "hono": "^4.7.0",
-    "@hono/node-server": "^1.14.0",
+    "sql.js": "^1.14.1",
     "zod": "^3.24.0"
   },
   "devDependencies": {
