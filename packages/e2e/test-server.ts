@@ -108,7 +108,7 @@ async function startServer(): Promise<void> {
   app.use("/api/*", cors());
 
   app.post("/api/__reset", async (c) => {
-    await storage.clearHistory();
+    await storage.clearTimeline();
     await storage.saveSettings({
       meal_windows: [
         { name: "morning", start_hour: 6, end_hour: 11, ratio: 8 },

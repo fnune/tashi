@@ -78,19 +78,68 @@ export interface CalculationResult {
   };
 }
 
+// --- Timeline entries ---
+
+interface BaseEntry {
+  id: string;
+  timestamp: string;
+}
+
+export interface MealEntry extends BaseEntry {
+  type: "meal";
+  input_text: string;
+  language: "en" | "es";
+  meal_window: MealWindow;
+  items: CalculatedItem[];
+  total_net_carbs_g: number;
+}
+
+export interface FastInsulinEntry extends BaseEntry {
+  type: "fast_insulin";
+  units: number;
+  related_meal_id: string | null;
+}
+
+export interface SlowInsulinEntry extends BaseEntry {
+  type: "slow_insulin";
+  units: number;
+}
+
+export interface GlucoseEntry extends BaseEntry {
+  type: "glucose_reading";
+  value: number;
+  unit: GlucoseUnit;
+}
+
+export type TimelineEntry =
+  | MealEntry
+  | FastInsulinEntry
+  | SlowInsulinEntry
+  | GlucoseEntry;
+
+// --- API ---
+
 export interface CalculateRequest {
   food_description: string;
   current_blood_sugar?: number;
   meal_window_override?: string;
+  pre_bolus_minutes?: number;
 }
 
 export interface CalculateResponse {
   result: CalculationResult;
+  meal_entry_id: string;
+  insulin_entry_id: string;
 }
 
 export interface ErrorResponse {
   error: string;
 }
+
+export type CreateTimelineRequest =
+  | { type: "fast_insulin"; units: number }
+  | { type: "slow_insulin"; units: number }
+  | { type: "glucose_reading"; value: number; unit: GlucoseUnit };
 
 export const DEFAULT_SETTINGS: Settings = {
   meal_windows: [

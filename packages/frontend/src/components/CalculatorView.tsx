@@ -24,6 +24,7 @@ export function CalculatorView({
   const [foodText, setFoodText] = useState(prefill ?? "");
   const [bloodSugar, setBloodSugar] = useState("");
   const [mealOverride, setMealOverride] = useState("");
+  const [preBolus, setPreBolus] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<CalculationResult | null>(null);
@@ -45,10 +46,13 @@ export function CalculatorView({
     if (mealOverride) {
       req.meal_window_override = mealOverride;
     }
+    if (preBolus) {
+      req.pre_bolus_minutes = Number.parseInt(preBolus, 10);
+    }
 
     try {
       const res = await api.calculate(req);
-      setResult(res);
+      setResult(res.result);
       onNewResult();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unknown error");
@@ -95,6 +99,21 @@ export function CalculatorView({
                 </option>
               ))}
             </select>
+          </div>
+          <div className="input-group">
+            <label htmlFor="pre-bolus">
+              {t(lang, "preBolus")} ({t(lang, "preBolusMinutes")})
+            </label>
+            <input
+              id="pre-bolus"
+              type="number"
+              min="0"
+              max="60"
+              step="5"
+              value={preBolus}
+              onChange={(e) => setPreBolus(e.target.value)}
+              placeholder="0"
+            />
           </div>
         </div>
         <button

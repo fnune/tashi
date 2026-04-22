@@ -1,7 +1,25 @@
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
-import type { CalculationResult, Settings } from "@pincho/shared";
+import type {
+  CalculationResult,
+  MealEntry,
+  Settings,
+  TimelineEntry,
+} from "@pincho/shared";
 import { DEFAULT_SETTINGS } from "@pincho/shared";
+
+function migrateHistoryEntry(old: CalculationResult): MealEntry {
+  return {
+    id: old.id,
+    timestamp: old.timestamp,
+    type: "meal",
+    input_text: old.input_text,
+    language: old.language,
+    meal_window: old.meal_window,
+    items: old.items,
+    total_net_carbs_g: old.total_net_carbs_g,
+  };
+}
 
 export class FileStorage {
   private dataDir: string;
@@ -34,36 +52,60 @@ export class FileStorage {
     );
   }
 
-  async getHistory(): Promise<CalculationResult[]> {
+  async getTimeline(): Promise<TimelineEntry[]> {
     try {
-      const raw = await readFile(this.path("history.json"), "utf-8");
-      return JSON.parse(raw) as CalculationResult[];
+      const raw = await readFile(this.path("timeline.json"), "utf-8");
+      return JSON.parse(raw) as TimelineEntry[];
     } catch {
-      return [];
+      // Migrate from legacy history.json if it exists
+      try {
+        const raw = await readFile(this.path("history.json"), "utf-8");
+        const history = JSON.parse(raw) as CalculationResult[];
+        const entries = history.map(migrateHistoryEntry);
+        await this.saveTimeline(entries);
+        return entries;
+      } catch {
+        return [];
+      }
     }
   }
 
-  async addToHistory(result: CalculationResult): Promise<void> {
-    const history = await this.getHistory();
-    history.unshift(result);
-    await writeFile(
-      this.path("history.json"),
-      JSON.stringify(history, null, 2),
+  async addTimelineEntry(entry: TimelineEntry): Promise<void> {
+    const timeline = await this.getTimeline();
+    timeline.unshift(entry);
+    timeline.sort(
+      (a, b) =>
+        new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime(),
     );
+    await this.saveTimeline(timeline);
   }
 
-  async deleteFromHistory(id: string): Promise<boolean> {
-    const history = await this.getHistory();
-    const filtered = history.filter((h) => h.id !== id);
-    if (filtered.length === history.length) return false;
-    await writeFile(
-      this.path("history.json"),
-      JSON.stringify(filtered, null, 2),
+  async addTimelineEntries(entries: TimelineEntry[]): Promise<void> {
+    const timeline = await this.getTimeline();
+    timeline.push(...entries);
+    timeline.sort(
+      (a, b) =>
+        new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime(),
     );
+    await this.saveTimeline(timeline);
+  }
+
+  async deleteTimelineEntry(id: string): Promise<boolean> {
+    const timeline = await this.getTimeline();
+    const filtered = timeline.filter((e) => e.id !== id);
+    if (filtered.length === timeline.length) return false;
+    await this.saveTimeline(filtered);
     return true;
   }
 
-  async clearHistory(): Promise<void> {
-    await writeFile(this.path("history.json"), "[]");
+  async clearTimeline(): Promise<void> {
+    await this.saveTimeline([]);
+  }
+
+  private async saveTimeline(entries: TimelineEntry[]): Promise<void> {
+    await writeFile(
+      this.path("timeline.json"),
+      JSON.stringify(entries, null, 2),
+    );
   }
 }

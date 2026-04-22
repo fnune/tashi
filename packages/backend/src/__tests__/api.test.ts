@@ -1,7 +1,7 @@
 import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import type { CalculateResponse } from "@pincho/shared";
+import type { CalculateResponse, TimelineEntry } from "@pincho/shared";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { Calculator } from "../calculator.js";
 import type { FoodDatabase } from "../db/food-db.js";
@@ -32,7 +32,7 @@ describe("API routes", () => {
     await rm(tmpDir, { recursive: true });
   });
 
-  it("POST /api/calculate returns carb breakdown and dose", async () => {
+  it("POST /api/calculate creates paired timeline entries", async () => {
     parser.setResponse("100g white rice", [
       {
         description: "White rice (cooked)",
@@ -66,34 +66,23 @@ describe("API routes", () => {
     const body = (await res.json()) as CalculateResponse;
     expect(body.result.items).toHaveLength(1);
     expect(body.result.total_net_carbs_g).toBeCloseTo(27.8, 0);
-    expect(body.result.recommended_dose).toBeGreaterThan(0);
+    expect(body.meal_entry_id).toBeDefined();
+    expect(body.insulin_entry_id).toBeDefined();
+
+    const timelineRes = await app.request("/api/timeline");
+    const timeline = (await timelineRes.json()) as TimelineEntry[];
+    expect(timeline).toHaveLength(2);
+
+    const insulin = timeline.find((e) => e.type === "fast_insulin");
+    const meal = timeline.find((e) => e.type === "meal");
+    expect(insulin).toBeDefined();
+    expect(meal).toBeDefined();
+    if (insulin?.type === "fast_insulin") {
+      expect(insulin.related_meal_id).toBe(meal?.id);
+    }
   });
 
-  it("GET/PUT /api/settings round-trips", async () => {
-    const getRes = await app.request("/api/settings");
-    expect(getRes.status).toBe(200);
-
-    const settings = await getRes.json();
-    const updated = {
-      ...settings,
-      pen_increment: 1,
-      language: "es",
-    };
-
-    const putRes = await app.request("/api/settings", {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(updated),
-    });
-    expect(putRes.status).toBe(200);
-
-    const getRes2 = await app.request("/api/settings");
-    const saved = await getRes2.json();
-    expect(saved.pen_increment).toBe(1);
-    expect(saved.language).toBe("es");
-  });
-
-  it("history CRUD works end-to-end", async () => {
+  it("POST /api/calculate offsets meal timestamp by pre_bolus_minutes", async () => {
     parser.setResponse("a banana", [
       {
         description: "Banana",
@@ -122,21 +111,96 @@ describe("API routes", () => {
     await app.request("/api/calculate", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ food_description: "a banana" }),
+      body: JSON.stringify({
+        food_description: "a banana",
+        pre_bolus_minutes: 15,
+      }),
     });
 
-    const historyRes = await app.request("/api/history");
-    const history = (await historyRes.json()) as Array<{ id: string }>;
-    expect(history).toHaveLength(1);
+    const timelineRes = await app.request("/api/timeline");
+    const timeline = (await timelineRes.json()) as TimelineEntry[];
+    const insulin = timeline.find((e) => e.type === "fast_insulin")!;
+    const meal = timeline.find((e) => e.type === "meal")!;
 
-    const deleteRes = await app.request(`/api/history/${history[0]!.id}`, {
+    const insulinTime = new Date(insulin.timestamp).getTime();
+    const mealTime = new Date(meal.timestamp).getTime();
+    const diffMinutes = (mealTime - insulinTime) / 60_000;
+    expect(diffMinutes).toBeCloseTo(15, 0);
+  });
+
+  it("POST /api/timeline creates manual entries", async () => {
+    const fastRes = await app.request("/api/timeline", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ type: "fast_insulin", units: 4 }),
+    });
+    expect(fastRes.status).toBe(201);
+
+    const slowRes = await app.request("/api/timeline", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ type: "slow_insulin", units: 10 }),
+    });
+    expect(slowRes.status).toBe(201);
+
+    const glucoseRes = await app.request("/api/timeline", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        type: "glucose_reading",
+        value: 120,
+        unit: "mg/dL",
+      }),
+    });
+    expect(glucoseRes.status).toBe(201);
+
+    const timelineRes = await app.request("/api/timeline");
+    const timeline = (await timelineRes.json()) as TimelineEntry[];
+    expect(timeline).toHaveLength(3);
+
+    const types = timeline.map((e) => e.type).sort();
+    expect(types).toEqual(["fast_insulin", "glucose_reading", "slow_insulin"]);
+  });
+
+  it("DELETE /api/timeline/:id removes a single entry", async () => {
+    await app.request("/api/timeline", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ type: "slow_insulin", units: 10 }),
+    });
+
+    const timelineRes = await app.request("/api/timeline");
+    const timeline = (await timelineRes.json()) as TimelineEntry[];
+    expect(timeline).toHaveLength(1);
+
+    const deleteRes = await app.request(`/api/timeline/${timeline[0]!.id}`, {
       method: "DELETE",
     });
     expect(deleteRes.status).toBe(200);
 
-    const historyRes2 = await app.request("/api/history");
-    const history2 = await historyRes2.json();
-    expect(history2).toHaveLength(0);
+    const afterRes = await app.request("/api/timeline");
+    const after = (await afterRes.json()) as TimelineEntry[];
+    expect(after).toHaveLength(0);
+  });
+
+  it("GET/PUT /api/settings round-trips", async () => {
+    const getRes = await app.request("/api/settings");
+    expect(getRes.status).toBe(200);
+
+    const settings = await getRes.json();
+    const updated = { ...settings, pen_increment: 1, language: "es" };
+
+    const putRes = await app.request("/api/settings", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(updated),
+    });
+    expect(putRes.status).toBe(200);
+
+    const getRes2 = await app.request("/api/settings");
+    const saved = await getRes2.json();
+    expect(saved.pen_increment).toBe(1);
+    expect(saved.language).toBe("es");
   });
 
   it("rejects invalid calculate request", async () => {

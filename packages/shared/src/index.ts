@@ -8,11 +8,17 @@ export type {
   CalculateRequest,
   CalculateResponse,
   CalculationResult,
+  CreateTimelineRequest,
   ErrorResponse,
+  FastInsulinEntry,
   FoodItem,
+  GlucoseEntry,
   GlucoseUnit,
+  MealEntry,
   MealWindow,
   ParsedFoodItem,
   Settings,
+  SlowInsulinEntry,
+  TimelineEntry,
 } from "./types.js";
 export { DEFAULT_SETTINGS } from "./types.js";

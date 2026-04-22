@@ -1,8 +1,9 @@
 import type {
   CalculateRequest,
   CalculateResponse,
-  CalculationResult,
+  CreateTimelineRequest,
   Settings,
+  TimelineEntry,
 } from "@pincho/shared";
 
 declare const __BASE_PATH__: string;
@@ -48,24 +49,30 @@ export function saveSettings(settings: Settings): Promise<Settings> {
   });
 }
 
-export async function calculate(
-  req: CalculateRequest,
-): Promise<CalculationResult> {
-  const res = await request<CalculateResponse>("/api/calculate", {
+export function calculate(req: CalculateRequest): Promise<CalculateResponse> {
+  return request<CalculateResponse>("/api/calculate", {
     method: "POST",
     body: JSON.stringify(req),
   });
-  return res.result;
 }
 
-export function getHistory(): Promise<CalculationResult[]> {
-  return request<CalculationResult[]>("/api/history");
+export function getTimeline(): Promise<TimelineEntry[]> {
+  return request<TimelineEntry[]>("/api/timeline");
 }
 
-export function deleteHistoryEntry(id: string): Promise<void> {
-  return request(`/api/history/${id}`, { method: "DELETE" });
+export function createTimelineEntry(
+  req: CreateTimelineRequest,
+): Promise<TimelineEntry> {
+  return request<TimelineEntry>("/api/timeline", {
+    method: "POST",
+    body: JSON.stringify(req),
+  });
 }
 
-export function clearHistory(): Promise<void> {
-  return request("/api/history", { method: "DELETE" });
+export function deleteTimelineEntry(id: string): Promise<void> {
+  return request(`/api/timeline/${id}`, { method: "DELETE" });
+}
+
+export function clearTimeline(): Promise<void> {
+  return request("/api/timeline", { method: "DELETE" });
 }

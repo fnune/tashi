@@ -495,6 +495,41 @@ a.source-link:hover {
   border-top: 1px solid var(--border);
 }
 
+/* Quick-add and timeline entries */
+
+.quick-add-buttons {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.quick-add-form label {
+  display: block;
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  margin-bottom: 4px;
+}
+
+.quick-add-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.quick-add-row input {
+  width: 80px;
+  padding: 6px 8px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  font-size: 0.875rem;
+}
+
+.entry-badge {
+  flex-shrink: 0;
+  margin-right: 8px;
+  font-size: 1rem;
+}
+
 .error-box {
   padding: 12px;
   background: var(--error-bg);

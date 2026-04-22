@@ -1,4 +1,4 @@
-import type { CalculationResult, Settings } from "@pincho/shared";
+import type { Settings, TimelineEntry } from "@pincho/shared";
 import { DEFAULT_SETTINGS } from "@pincho/shared";
 import { useCallback, useEffect, useState } from "react";
 import {
@@ -13,8 +13,8 @@ import {
 } from "react-router";
 import * as api from "./api.js";
 import { CalculatorView } from "./components/CalculatorView.js";
-import { HistoryView } from "./components/HistoryView.js";
 import { SettingsView } from "./components/SettingsView.js";
+import { TimelineView } from "./components/TimelineView.js";
 import type { Language } from "./i18n.js";
 import { t } from "./i18n.js";
 
@@ -32,7 +32,7 @@ function AppShell() {
     language: getSavedLanguage(),
   });
   const [settingsLoaded, setSettingsLoaded] = useState(false);
-  const [history, setHistory] = useState<CalculationResult[]>([]);
+  const [timeline, setTimeline] = useState<TimelineEntry[]>([]);
   const [prefill, setPrefill] = useState<string | undefined>();
 
   const lang = settings.language;
@@ -43,11 +43,11 @@ function AppShell() {
       localStorage.setItem("pincho-lang", s.language);
       setSettingsLoaded(true);
     });
-    api.getHistory().then(setHistory);
+    api.getTimeline().then(setTimeline);
   }, []);
 
-  const refreshHistory = useCallback(() => {
-    api.getHistory().then(setHistory);
+  const refreshTimeline = useCallback(() => {
+    api.getTimeline().then(setTimeline);
   }, []);
 
   function handleSaveSettings(s: Settings) {
@@ -83,11 +83,11 @@ function AppShell() {
             {t(lang, "calculate")}
           </Link>
           <Link
-            to="/history"
-            className={navClass("/history")}
-            onClick={refreshHistory}
+            to="/timeline"
+            className={navClass("/timeline")}
+            onClick={refreshTimeline}
           >
-            {t(lang, "history")}
+            {t(lang, "timeline")}
           </Link>
           <Link to="/settings" className={navClass("/settings")}>
             {t(lang, "settings")}
@@ -102,7 +102,7 @@ function AppShell() {
             <CalculatorView
               settings={settings}
               lang={lang}
-              onNewResult={refreshHistory}
+              onNewResult={refreshTimeline}
               prefill={prefill}
             />
           }
@@ -118,16 +118,20 @@ function AppShell() {
           }
         />
         <Route
-          path="/history/:id?"
+          path="/timeline/:id?"
           element={
-            <HistoryRoute
-              history={history}
-              lang={lang}
+            <TimelineRoute
+              timeline={timeline}
               settings={settings}
-              onRefresh={refreshHistory}
+              lang={lang}
+              onRefresh={refreshTimeline}
               onReuse={handleReuse}
             />
           }
+        />
+        <Route
+          path="/history/*"
+          element={<Navigate to="/timeline" replace />}
         />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
@@ -135,14 +139,13 @@ function AppShell() {
   );
 }
 
-function HistoryRoute({
-  history,
+function TimelineRoute({
+  timeline,
   lang,
   settings,
   onRefresh,
-  onReuse,
 }: {
-  history: CalculationResult[];
+  timeline: TimelineEntry[];
   lang: Language;
   settings: Settings;
   onRefresh: () => void;
@@ -152,18 +155,17 @@ function HistoryRoute({
   const navigate = useNavigate();
 
   function handleExpand(expandedId: string | undefined) {
-    navigate(expandedId ? `/history/${expandedId}` : "/history", {
+    navigate(expandedId ? `/timeline/${expandedId}` : "/timeline", {
       replace: true,
     });
   }
 
   return (
-    <HistoryView
-      history={history}
+    <TimelineView
+      timeline={timeline}
+      settings={settings}
       lang={lang}
-      glucoseUnit={settings.glucose_unit}
       onRefresh={onRefresh}
-      onReuse={onReuse}
       expandedId={id}
       onExpand={handleExpand}
     />
