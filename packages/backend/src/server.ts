@@ -19,7 +19,8 @@ const model = process.env.LLM_MODEL ?? "claude-haiku-4-5-20251001";
 const port = Number(process.env.PORT ?? "3000");
 const dataDir = process.env.DATA_DIR ?? "./data";
 const basePath = process.env.BASE_PATH ?? "";
-const foodsDbPath = process.env.FOODS_DB ?? join(dataDir, "foods.db");
+const foodsDbPath =
+  process.env.FOODS_DB ?? join(import.meta.dirname, "../../../data/foods.db");
 
 const storage = new FileStorage(dataDir);
 await storage.init();
