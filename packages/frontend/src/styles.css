@@ -531,6 +531,21 @@ a.source-link:hover {
   font-size: 1rem;
 }
 
+.entry-edit {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px 12px;
+}
+
+.entry-edit input {
+  padding: 6px 8px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  font-size: 0.875rem;
+  width: 100%;
+}
+
 .error-box {
   padding: 12px;
   background: var(--error-bg);
