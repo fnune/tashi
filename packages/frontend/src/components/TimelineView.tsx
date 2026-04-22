@@ -3,6 +3,7 @@ import type {
   GlucoseUnit,
   Settings,
   TimelineEntry,
+  UpdateTimelineRequest,
 } from "@pincho/shared";
 import { useState } from "react";
 import * as api from "../api.js";
@@ -20,6 +21,12 @@ interface TimelineViewProps {
 
 function formatTime(iso: string): string {
   return new Date(iso).toLocaleString();
+}
+
+function toLocalDatetime(iso: string): string {
+  const d = new Date(iso);
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 
 function QuickAdd({
@@ -126,6 +133,7 @@ function EntryCard({
   expanded,
   onToggle,
   onDelete,
+  onUpdated,
 }: {
   entry: TimelineEntry;
   lang: Language;
@@ -133,7 +141,62 @@ function EntryCard({
   expanded: boolean;
   onToggle: () => void;
   onDelete: () => void;
+  onUpdated: () => void;
 }) {
+  const [editTimestamp, setEditTimestamp] = useState(
+    toLocalDatetime(entry.timestamp),
+  );
+  const [editValue, setEditValue] = useState(() => {
+    if (entry.type === "fast_insulin" || entry.type === "slow_insulin")
+      return String(entry.units);
+    if (entry.type === "glucose_reading") return String(entry.value);
+    return "";
+  });
+  const [saving, setSaving] = useState(false);
+
+  const hasValueField = entry.type !== "meal";
+
+  async function handleSave() {
+    setSaving(true);
+    const timestamp = new Date(editTimestamp).toISOString();
+    let updates: UpdateTimelineRequest;
+    if (entry.type === "fast_insulin") {
+      updates = {
+        type: "fast_insulin",
+        timestamp,
+        units: Number.parseFloat(editValue),
+      };
+    } else if (entry.type === "slow_insulin") {
+      updates = {
+        type: "slow_insulin",
+        timestamp,
+        units: Number.parseFloat(editValue),
+      };
+    } else if (entry.type === "glucose_reading") {
+      updates = {
+        type: "glucose_reading",
+        timestamp,
+        value: Number.parseFloat(editValue),
+      };
+    } else {
+      updates = { type: "meal", timestamp };
+    }
+    await api.updateTimelineEntry(entry.id, updates);
+    setSaving(false);
+    onUpdated();
+  }
+
+  const dirty =
+    editTimestamp !== toLocalDatetime(entry.timestamp) ||
+    (hasValueField && editValue !== getOriginalValue());
+
+  function getOriginalValue(): string {
+    if (entry.type === "fast_insulin" || entry.type === "slow_insulin")
+      return String(entry.units);
+    if (entry.type === "glucose_reading") return String(entry.value);
+    return "";
+  }
+
   function renderSummary() {
     switch (entry.type) {
       case "meal":
@@ -172,6 +235,14 @@ function EntryCard({
     }
   }
 
+  function valueLabel(): string {
+    if (entry.type === "fast_insulin") return `${t(lang, "fastInsulin")} (U)`;
+    if (entry.type === "slow_insulin") return `${t(lang, "slowInsulin")} (U)`;
+    if (entry.type === "glucose_reading")
+      return `${t(lang, "glucoseReading")} (${glucoseUnit})`;
+    return "";
+  }
+
   return (
     <div className="history-entry">
       <button type="button" className="history-entry-header" onClick={onToggle}>
@@ -199,7 +270,41 @@ function EntryCard({
               />
             </div>
           )}
+          <div className="entry-edit">
+            <div className="input-group">
+              <label htmlFor={`ts-${entry.id}`}>{t(lang, "dateTime")}</label>
+              <input
+                id={`ts-${entry.id}`}
+                type="datetime-local"
+                value={editTimestamp}
+                onChange={(e) => setEditTimestamp(e.target.value)}
+              />
+            </div>
+            {hasValueField && (
+              <div className="input-group">
+                <label htmlFor={`val-${entry.id}`}>{valueLabel()}</label>
+                <input
+                  id={`val-${entry.id}`}
+                  type="number"
+                  step="0.1"
+                  min="0"
+                  value={editValue}
+                  onChange={(e) => setEditValue(e.target.value)}
+                />
+              </div>
+            )}
+          </div>
           <div className="history-actions">
+            {dirty && (
+              <button
+                type="button"
+                className="btn btn-small btn-primary"
+                onClick={handleSave}
+                disabled={saving}
+              >
+                {t(lang, "save")}
+              </button>
+            )}
             <button
               type="button"
               className="btn btn-small btn-danger"
@@ -256,6 +361,7 @@ export function TimelineView({
             onExpand(expandedId === entry.id ? undefined : entry.id)
           }
           onDelete={() => handleDelete(entry.id)}
+          onUpdated={onRefresh}
         />
       ))}
 

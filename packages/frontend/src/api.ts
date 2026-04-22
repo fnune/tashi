@@ -4,6 +4,7 @@ import type {
   CreateTimelineRequest,
   Settings,
   TimelineEntry,
+  UpdateTimelineRequest,
 } from "@pincho/shared";
 
 declare const __BASE_PATH__: string;
@@ -66,6 +67,16 @@ export function createTimelineEntry(
   return request<TimelineEntry>("/api/timeline", {
     method: "POST",
     body: JSON.stringify(req),
+  });
+}
+
+export function updateTimelineEntry(
+  id: string,
+  updates: UpdateTimelineRequest,
+): Promise<TimelineEntry> {
+  return request<TimelineEntry>(`/api/timeline/${id}`, {
+    method: "PUT",
+    body: JSON.stringify(updates),
   });
 }
 

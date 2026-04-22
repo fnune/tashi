@@ -6,6 +6,7 @@ import type {
   MealEntry,
   Settings,
   SlowInsulinEntry,
+  UpdateTimelineRequest,
 } from "@pincho/shared";
 import { Hono } from "hono";
 import { z } from "zod";
@@ -176,6 +177,16 @@ export function createRoutes(
     };
     await storage.addTimelineEntry(entry);
     return c.json(entry, 201);
+  });
+
+  api.put("/api/timeline/:id", async (c) => {
+    const id = c.req.param("id");
+    const body = await c.req.json<UpdateTimelineRequest>();
+    const updated = await storage.updateTimelineEntry(id, body);
+    if (!updated) {
+      return c.json({ error: "Not found" }, 404);
+    }
+    return c.json(updated);
   });
 
   api.delete("/api/timeline/:id", async (c) => {

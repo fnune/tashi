@@ -141,6 +141,12 @@ export type CreateTimelineRequest =
   | { type: "slow_insulin"; units: number }
   | { type: "glucose_reading"; value: number; unit: GlucoseUnit };
 
+export type UpdateTimelineRequest =
+  | { type: "meal"; timestamp?: string }
+  | { type: "fast_insulin"; timestamp?: string; units?: number }
+  | { type: "slow_insulin"; timestamp?: string; units?: number }
+  | { type: "glucose_reading"; timestamp?: string; value?: number };
+
 export const DEFAULT_SETTINGS: Settings = {
   meal_windows: [
     { name: "morning", start_hour: 6, end_hour: 11, ratio: 8 },

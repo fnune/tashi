@@ -5,6 +5,7 @@ import type {
   MealEntry,
   Settings,
   TimelineEntry,
+  UpdateTimelineRequest,
 } from "@pincho/shared";
 import { DEFAULT_SETTINGS } from "@pincho/shared";
 
@@ -88,6 +89,47 @@ export class FileStorage {
         new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime(),
     );
     await this.saveTimeline(timeline);
+  }
+
+  async updateTimelineEntry(
+    id: string,
+    updates: UpdateTimelineRequest,
+  ): Promise<TimelineEntry | null> {
+    const timeline = await this.getTimeline();
+    const idx = timeline.findIndex((e) => e.id === id);
+    if (idx === -1) return null;
+    const existing = timeline[idx];
+    if (!existing || existing.type !== updates.type) return null;
+
+    if (updates.timestamp) existing.timestamp = updates.timestamp;
+    if (
+      existing.type === "fast_insulin" &&
+      updates.type === "fast_insulin" &&
+      updates.units !== undefined
+    ) {
+      existing.units = updates.units;
+    }
+    if (
+      existing.type === "slow_insulin" &&
+      updates.type === "slow_insulin" &&
+      updates.units !== undefined
+    ) {
+      existing.units = updates.units;
+    }
+    if (
+      existing.type === "glucose_reading" &&
+      updates.type === "glucose_reading" &&
+      updates.value !== undefined
+    ) {
+      existing.value = updates.value;
+    }
+
+    timeline.sort(
+      (a, b) =>
+        new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime(),
+    );
+    await this.saveTimeline(timeline);
+    return existing;
   }
 
   async deleteTimelineEntry(id: string): Promise<boolean> {

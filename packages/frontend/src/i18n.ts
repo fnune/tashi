@@ -60,6 +60,7 @@ const translations = {
     noTimeline: "No entries yet",
     clearTimeline: "Clear timeline",
     confirmClearTimeline: "Delete all timeline entries?",
+    dateTime: "Date and time",
   },
   es: {
     appTitle: "Pincho",
@@ -122,6 +123,7 @@ const translations = {
     noTimeline: "Aun no hay entradas",
     clearTimeline: "Borrar linea temporal",
     confirmClearTimeline: "¿Borrar toda la linea temporal?",
+    dateTime: "Fecha y hora",
   },
 } as const;
 
