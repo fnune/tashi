@@ -102,7 +102,7 @@ export function CalculatorView({
           </div>
           <div className="input-group">
             <label htmlFor="pre-bolus">
-              {t(lang, "preBolus")} ({t(lang, "preBolusMinutes")})
+              {t(lang, "eatingIn")} ({t(lang, "minutes")})
             </label>
             <input
               id="pre-bolus"
