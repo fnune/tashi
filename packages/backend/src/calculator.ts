@@ -63,6 +63,7 @@ export class Calculator {
   private resolveItems(parsedItems: ParsedFoodItem[]): CalculatedItem[] {
     return parsedItems.map((parsed) => {
       const foodItem = parsed.db_key ? getFoodById(parsed.db_key) : undefined;
+      const dbKeyMissed = parsed.db_key != null && foodItem === undefined;
 
       let netCarbsG: number;
       let estimated = false;
@@ -84,6 +85,17 @@ export class Calculator {
         dataSource = "unknown";
       }
 
+      if (dbKeyMissed) {
+        console.warn(
+          `DB key "${parsed.db_key}" not found for "${parsed.description}", using ${dataSource}`,
+        );
+      }
+
+      let warning = parsed.warning;
+      if (dbKeyMissed && !warning) {
+        warning = `db_key "${parsed.db_key}" not found in database`;
+      }
+
       const dbGi = foodItem?.glycemic_index ?? null;
       const gi = dbGi ?? parsed.estimated_glycemic_index ?? null;
 
@@ -94,7 +106,7 @@ export class Calculator {
         assumed_cooked: parsed.assumed_cooked,
         confidence: parsed.confidence,
         notes: parsed.notes,
-        warning: parsed.warning,
+        warning,
         data_source: dataSource,
         estimated,
         glycemic_index: gi,

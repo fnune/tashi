@@ -16,10 +16,11 @@ Your task:
 - Set confidence: "high" if the user gave an explicit weight and the food clearly matches a DB entry, "medium" if you had to estimate a typical portion, "low" if the food is ambiguous or doesn't match well.
 - Always output one row per food item. Never split fractional quantities into separate rows. "1.5 avocados" is ONE item with the combined weight, not two items.
 
+ALWAYS provide estimated_net_carbs_per_100g for EVERY food item (your best estimate of net carbs per 100g, carbohydrates EXCLUDING fibre). This serves as a safety fallback when a db_key match fails at lookup time.
+
 When a food item does NOT match any key in the database index:
 - Set db_key to null
-- Provide your best estimate of net carbs per 100g in estimated_net_carbs_per_100g (carbohydrates EXCLUDING fibre)
-- This estimate will be clearly marked to the user as an LLM estimate, not from a verified database
+- The estimated_net_carbs_per_100g will be used as the primary value and clearly marked to the user as an LLM estimate
 
 For ALL food items (whether matched to DB or not):
 - Provide your best estimate of the glycemic index (0-100+ scale, glucose reference) in estimated_glycemic_index
@@ -39,7 +40,7 @@ Respond with ONLY a JSON array, no other text. Each element:
   "assumed_cooked": <boolean>,
   "confidence": "high" | "medium" | "low",
   "notes": "<any assumption you made, in the user's input language, or null>",
-  "estimated_net_carbs_per_100g": <number or null, only when db_key is null>,
+  "estimated_net_carbs_per_100g": <number, always provided as safety fallback>,
   "estimated_glycemic_index": <number or null>,
   "warning": "<concern about the input, in the user's language, or null>"
 }`;

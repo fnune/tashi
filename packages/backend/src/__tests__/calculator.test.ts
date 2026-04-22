@@ -261,4 +261,61 @@ describe("Calculator", () => {
     expect(result05.recommended_dose % 0.5).toBe(0);
     expect(result1.recommended_dose % 1).toBe(0);
   });
+
+  it("falls back to LLM estimate when db_key does not match", async () => {
+    parser.setResponse("100g mystery grain", [
+      {
+        description: "Mystery grain",
+        weight_g: 100,
+        db_key: "grain_that_does_not_exist",
+        assumed_cooked: true,
+        confidence: "medium",
+        notes: null,
+        estimated_net_carbs_per_100g: 25.0,
+        estimated_glycemic_index: 60,
+        warning: null,
+      },
+    ]);
+
+    const result = await calculator.calculate(
+      "100g mystery grain",
+      TEST_SETTINGS,
+      undefined,
+      "lunch",
+    );
+
+    const item = result.items[0]!;
+    expect(item.net_carbs_g).toBe(25.0);
+    expect(item.estimated).toBe(true);
+    expect(item.data_source).toBe("LLM estimate");
+    expect(item.warning).toContain("grain_that_does_not_exist");
+  });
+
+  it("warns when db_key fails and no LLM estimate results in zero carbs", async () => {
+    parser.setResponse("100g exotic fruit", [
+      {
+        description: "Exotic fruit",
+        weight_g: 100,
+        db_key: "fruit_that_does_not_exist",
+        assumed_cooked: false,
+        confidence: "low",
+        notes: null,
+        estimated_net_carbs_per_100g: null,
+        estimated_glycemic_index: 50,
+        warning: null,
+      },
+    ]);
+
+    const result = await calculator.calculate(
+      "100g exotic fruit",
+      TEST_SETTINGS,
+      undefined,
+      "lunch",
+    );
+
+    const item = result.items[0]!;
+    expect(item.net_carbs_g).toBe(0);
+    expect(item.data_source).toBe("unknown");
+    expect(item.warning).toContain("fruit_that_does_not_exist");
+  });
 });
