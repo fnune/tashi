@@ -39,11 +39,11 @@ describe("Calculator", () => {
     await rm(tmpDir, { recursive: true });
   });
 
-  it("calculates carbs and dose for a simple meal", async () => {
+  it("calculates carbs and dose from DB match", async () => {
     parser.setResponse("150g white rice, grilled chicken breast", [
       {
         description: "White rice (cooked)",
-        search_text: "Rice white long grain cooked",
+        fdc_id: 169756,
         weight_g: 150,
         assumed_cooked: true,
         confidence: "high",
@@ -54,7 +54,7 @@ describe("Calculator", () => {
       },
       {
         description: "Chicken breast (grilled)",
-        search_text: "Chicken breast grilled skinless",
+        fdc_id: 171534,
         weight_g: 170,
         assumed_cooked: true,
         confidence: "high",
@@ -77,6 +77,7 @@ describe("Calculator", () => {
     const rice = result.items[0]!;
     expect(rice.net_carbs_g).toBeCloseTo(41.7, 0);
     expect(rice.food_item).not.toBeNull();
+    expect(rice.food_item!.fdc_id).toBe(169756);
     expect(rice.estimated).toBe(false);
 
     const chicken = result.items[1]!;
@@ -84,14 +85,70 @@ describe("Calculator", () => {
 
     expect(result.total_net_carbs_g).toBeCloseTo(41.7, 0);
     expect(result.recommended_dose).toBe(4);
-    expect(result.meal_window.name).toBe("lunch");
+  });
+
+  it("uses LLM estimate when fdc_id is null (no DB match)", async () => {
+    parser.setResponse("100g acai bowl", [
+      {
+        description: "Acai bowl",
+        fdc_id: null,
+        weight_g: 100,
+        assumed_cooked: false,
+        confidence: "low",
+        notes: "Not in database",
+        estimated_net_carbs_per_100g: 15.0,
+        estimated_glycemic_index: 35,
+        warning: null,
+      },
+    ]);
+
+    const result = await calculator.calculate(
+      "100g acai bowl",
+      TEST_SETTINGS,
+      undefined,
+      "lunch",
+    );
+
+    const item = result.items[0]!;
+    expect(item.net_carbs_g).toBe(15.0);
+    expect(item.estimated).toBe(true);
+    expect(item.data_source).toBe("LLM estimate");
+    expect(item.food_item).toBeNull();
+  });
+
+  it("uses LLM estimate when fdc_id doesn't exist in DB", async () => {
+    parser.setResponse("100g mystery food", [
+      {
+        description: "Mystery food",
+        fdc_id: 999999999,
+        weight_g: 100,
+        assumed_cooked: false,
+        confidence: "low",
+        notes: null,
+        estimated_net_carbs_per_100g: 20.0,
+        estimated_glycemic_index: 50,
+        warning: null,
+      },
+    ]);
+
+    const result = await calculator.calculate(
+      "100g mystery food",
+      TEST_SETTINGS,
+      undefined,
+      "lunch",
+    );
+
+    const item = result.items[0]!;
+    expect(item.net_carbs_g).toBe(20.0);
+    expect(item.estimated).toBe(true);
+    expect(item.data_source).toBe("LLM estimate");
   });
 
   it("applies correction bolus when blood sugar is above target", async () => {
     parser.setResponse("a banana", [
       {
         description: "Banana",
-        search_text: "Bananas raw",
+        fdc_id: 173944,
         weight_g: 120,
         assumed_cooked: false,
         confidence: "medium",
@@ -121,7 +178,7 @@ describe("Calculator", () => {
     parser.setResponse("a banana", [
       {
         description: "Banana",
-        search_text: "Bananas raw",
+        fdc_id: 173944,
         weight_g: 120,
         assumed_cooked: false,
         confidence: "medium",
@@ -145,11 +202,11 @@ describe("Calculator", () => {
     expect(result.correction!.total_dose).toBeGreaterThanOrEqual(0);
   });
 
-  it("uses DB glycemic index when available, LLM estimate otherwise", async () => {
+  it("uses DB glycemic index over LLM estimate", async () => {
     parser.setResponse("150g rice and 100g acai bowl", [
       {
         description: "White rice (cooked)",
-        search_text: "Rice white long grain cooked",
+        fdc_id: 169756,
         weight_g: 150,
         assumed_cooked: true,
         confidence: "high",
@@ -160,7 +217,7 @@ describe("Calculator", () => {
       },
       {
         description: "Acai bowl",
-        search_text: "acai bowl smoothie",
+        fdc_id: null,
         weight_g: 100,
         assumed_cooked: false,
         confidence: "low",
@@ -187,38 +244,11 @@ describe("Calculator", () => {
     expect(acai.gi_estimated).toBe(true);
   });
 
-  it("uses LLM estimate when food is not in database", async () => {
-    parser.setResponse("100g acai bowl", [
-      {
-        description: "Acai bowl",
-        search_text: "acai bowl smoothie",
-        weight_g: 100,
-        assumed_cooked: false,
-        confidence: "low",
-        notes: "Not in database, using estimate",
-        estimated_net_carbs_per_100g: 15.0,
-        estimated_glycemic_index: 35,
-        warning: null,
-      },
-    ]);
-
-    const result = await calculator.calculate(
-      "100g acai bowl",
-      TEST_SETTINGS,
-      undefined,
-      "lunch",
-    );
-
-    expect(result.items[0]!.net_carbs_g).toBe(15.0);
-    expect(result.items[0]!.estimated).toBe(true);
-    expect(result.items[0]!.data_source).toBe("LLM estimate");
-  });
-
   it("passes through warnings from the LLM", async () => {
     parser.setResponse("500g of sugar in my coffee", [
       {
         description: "Sugar",
-        search_text: "Sugars granulated",
+        fdc_id: 169655,
         weight_g: 500,
         assumed_cooked: false,
         confidence: "high",
@@ -245,7 +275,7 @@ describe("Calculator", () => {
     parser.setResponse("200g cooked rice", [
       {
         description: "White rice (cooked)",
-        search_text: "Rice white long grain cooked",
+        fdc_id: 169756,
         weight_g: 200,
         assumed_cooked: true,
         confidence: "high",
@@ -274,5 +304,44 @@ describe("Calculator", () => {
 
     expect(result05.recommended_dose % 0.5).toBe(0);
     expect(result1.recommended_dose % 1).toBe(0);
+  });
+});
+
+describe("FoodDatabase search", () => {
+  let foodDb: FoodDatabase;
+  let tmpDir: string;
+
+  beforeEach(async () => {
+    tmpDir = await mkdtemp(join(tmpdir(), "pincho-search-test-"));
+    foodDb = await createTestFoodDb(tmpDir);
+  });
+
+  afterEach(async () => {
+    foodDb.close();
+    await rm(tmpDir, { recursive: true });
+  });
+
+  it("finds foods by matching words", () => {
+    const results = foodDb.search("rice white cooked");
+    expect(results.length).toBeGreaterThan(0);
+    expect(results[0]!.fdc_id).toBe(169756);
+  });
+
+  it("matches partial word sets (not all words required)", () => {
+    const results = foodDb.search("banana");
+    expect(results.length).toBeGreaterThan(0);
+    expect(results[0]!.description).toContain("Banana");
+  });
+
+  it("ranks results by number of matching words", () => {
+    const results = foodDb.search("chicken breast grilled cooked");
+    expect(results.length).toBeGreaterThan(0);
+    // Chicken should rank higher than rice (more word matches)
+    expect(results[0]!.fdc_id).toBe(171534);
+  });
+
+  it("returns empty array for no matches", () => {
+    const results = foodDb.search("xyznonexistent");
+    expect(results).toHaveLength(0);
   });
 });

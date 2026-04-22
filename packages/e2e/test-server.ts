@@ -28,7 +28,7 @@ class FakeFoodParser implements FoodParser {
           description: lower.includes("arroz")
             ? "Arroz blanco (cocido)"
             : "White rice (cooked)",
-          search_text: "Rice white long grain cooked",
+          fdc_id: 169756,
           weight_g: weight,
           assumed_cooked: true,
           confidence: "high",
@@ -44,7 +44,7 @@ class FakeFoodParser implements FoodParser {
           description: lower.includes("pollo")
             ? "Pechuga de pollo (plancha)"
             : "Chicken breast (grilled)",
-          search_text: "Chicken breast grilled skinless",
+          fdc_id: 171534,
           weight_g: 170,
           assumed_cooked: true,
           confidence: "high",
@@ -62,7 +62,7 @@ class FakeFoodParser implements FoodParser {
       return [
         {
           description: lower.includes("platano") ? "Platano" : "Banana",
-          search_text: "Bananas raw",
+          fdc_id: 173944,
           weight_g: 120,
           assumed_cooked: false,
           confidence: "medium",
@@ -79,7 +79,7 @@ class FakeFoodParser implements FoodParser {
     return [
       {
         description: foodDescription,
-        search_text: foodDescription,
+        fdc_id: null,
         weight_g: 100,
         assumed_cooked: false,
         confidence: "low",

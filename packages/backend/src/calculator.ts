@@ -78,8 +78,8 @@ export class Calculator {
 
   private resolveItems(parsedItems: ParsedFoodItem[]): CalculatedItem[] {
     return parsedItems.map((parsed) => {
-      const results = this.foodDb.search(parsed.search_text, 1);
-      const match = results[0] ?? null;
+      const match =
+        parsed.fdc_id !== null ? this.foodDb.getByFdcId(parsed.fdc_id) : null;
 
       let netCarbsG: number;
       let estimated = false;
@@ -101,12 +101,6 @@ export class Calculator {
       } else {
         netCarbsG = 0;
         dataSource = "unknown";
-      }
-
-      if (!match) {
-        console.warn(
-          `No DB match for "${parsed.search_text}" ("${parsed.description}"), using ${dataSource}`,
-        );
       }
 
       const dbGi = foodItem?.glycemic_index ?? null;

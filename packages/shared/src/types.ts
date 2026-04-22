@@ -18,7 +18,7 @@ export interface FoodItem {
 export interface ParsedFoodItem {
   description: string;
   weight_g: number;
-  search_text: string;
+  fdc_id: number | null;
   assumed_cooked: boolean;
   confidence: "high" | "medium" | "low";
   notes: string | null;

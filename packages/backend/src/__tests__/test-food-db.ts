@@ -3,6 +3,19 @@ import { join } from "node:path";
 import initSqlJs from "sql.js";
 import { FoodDatabase } from "../db/food-db.js";
 
+function tokenize(text: string): string[] {
+  return [
+    ...new Set(
+      text
+        .toLowerCase()
+        .replace(/[^a-z0-9\s]/g, " ")
+        .split(/\s+/)
+        .filter((w) => w.length > 1)
+        .map((w) => (w.length > 3 && w.endsWith("s") ? w.slice(0, -1) : w)),
+    ),
+  ];
+}
+
 export async function createTestFoodDb(tmpDir: string): Promise<FoodDatabase> {
   const wasmPath = join(
     import.meta.dirname,
@@ -38,11 +51,24 @@ export async function createTestFoodDb(tmpDir: string): Promise<FoodDatabase> {
       gi_source TEXT,
       cooking_multiplier REAL
     );
-    CREATE INDEX idx_foods_description ON foods(description COLLATE NOCASE);
+    CREATE TABLE food_words (
+      word TEXT NOT NULL,
+      fdc_id INTEGER NOT NULL
+    );
+    CREATE INDEX idx_food_words_word ON food_words(word);
   `);
 
-  // Insert a few test foods
-  const foods = [
+  const foods: [
+    number,
+    string,
+    string,
+    string,
+    number,
+    number,
+    number,
+    number,
+    number,
+  ][] = [
     [
       169756,
       "sr_legacy_food",
@@ -111,9 +137,11 @@ export async function createTestFoodDb(tmpDir: string): Promise<FoodDatabase> {
       net,
       serving,
     ]);
+    for (const word of tokenize(desc)) {
+      db.run("INSERT INTO food_words VALUES (?, ?)", [word, fdc_id]);
+    }
   }
 
-  // Add curated overlays
   db.run("INSERT INTO curated VALUES (?, ?, ?, ?, ?, ?)", [
     169756,
     "rice_white_cooked",

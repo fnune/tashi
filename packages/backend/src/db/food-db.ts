@@ -17,7 +17,12 @@ export interface FoodMatch {
   glycemic_index: number | null;
   gi_source: string | null;
   cooking_multiplier: number | null;
-  rank: number;
+  match_count: number;
+}
+
+function normalizeWord(w: string): string {
+  if (w.length > 3 && w.endsWith("s")) return w.slice(0, -1);
+  return w;
 }
 
 export class FoodDatabase {
@@ -42,20 +47,21 @@ export class FoodDatabase {
 
   search(query: string, limit = 10): FoodMatch[] {
     const words = query
-      .replace(/[^\w\s]/g, " ")
-      .trim()
+      .toLowerCase()
+      .replace(/[^a-z0-9\s]/g, " ")
       .split(/\s+/)
-      .filter((w) => w.length > 1);
+      .filter((w) => w.length > 1)
+      .map(normalizeWord);
 
     if (words.length === 0) return [];
 
-    // Build WHERE clause: each word must appear in description (case-insensitive)
-    const conditions = words.map((_, i) => `f.description LIKE :w${i}`);
+    const placeholders = words.map((_, i) => `:w${i}`).join(", ");
     const params: Record<string, string | number> = {};
     for (let i = 0; i < words.length; i++) {
-      params[`:w${i}`] = `%${words[i]}%`;
+      params[`:w${i}`] = words[i] as string;
     }
     params[":limit"] = limit;
+    params[":total_words"] = words.length;
 
     const stmt = this.db.prepare(`
       SELECT
@@ -73,11 +79,13 @@ export class FoodDatabase {
         c.glycemic_index,
         c.gi_source,
         c.cooking_multiplier,
-        length(f.description) AS rank
-      FROM foods f
+        COUNT(DISTINCT fw.word) AS match_count
+      FROM food_words fw
+      JOIN foods f ON f.fdc_id = fw.fdc_id
       LEFT JOIN curated c ON c.fdc_id = f.fdc_id
-      WHERE ${conditions.join(" AND ")}
-      ORDER BY rank ASC
+      WHERE fw.word IN (${placeholders})
+      GROUP BY f.fdc_id
+      ORDER BY match_count DESC, length(f.description) ASC
       LIMIT :limit
     `);
 
@@ -108,7 +116,7 @@ export class FoodDatabase {
         c.glycemic_index,
         c.gi_source,
         c.cooking_multiplier,
-        0 AS rank
+        0 AS match_count
       FROM foods f
       LEFT JOIN curated c ON c.fdc_id = f.fdc_id
       WHERE f.fdc_id = :fdc_id
@@ -139,7 +147,7 @@ export class FoodDatabase {
       glycemic_index: (row.glycemic_index as number) ?? null,
       gi_source: (row.gi_source as string) ?? null,
       cooking_multiplier: (row.cooking_multiplier as number) ?? null,
-      rank: row.rank as number,
+      match_count: (row.match_count as number) ?? 0,
     };
   }
 

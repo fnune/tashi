@@ -1,43 +1,54 @@
 import Anthropic from "@anthropic-ai/sdk";
 import type { ParsedFoodItem } from "@pincho/shared";
+import type { FoodDatabase } from "./db/food-db.js";
 import type { FoodParser } from "./food-parser.js";
 
-const SYSTEM_PROMPT = `You are a food parsing assistant for a diabetes insulin calculator. Your job is to parse natural language food descriptions into structured data.
+const SYSTEM_PROMPT = `You are a food parsing assistant for a diabetes insulin calculator.
 
-You will receive a food description from the user (may be in English or Spanish).
+You will receive a food description (may be in English or Spanish). Your job:
+1. Split it into individual food items with estimated weights in grams.
+2. For EACH item, use the search_foods tool to find it in the USDA database. Try different search terms if the first attempt doesn't return a good match. Search in English using USDA-style naming (e.g. "rice white cooked", "chicken breast grilled").
+3. Once you've found a good match for each item (or determined there is no match), return a final JSON array.
 
-Your task:
-- Split the description into individual food items
-- For each item, estimate the weight in grams
-- Provide a standardized English food description for database lookup in search_text. Use common USDA-style naming: "Rice, white, long-grain, cooked" not "arroz blanco". Include cooking state (raw/cooked) when relevant.
-- If the user specifies "raw", "dry", or "crudo/seco" weight, set assumed_cooked to false. Otherwise default to true (cooked/as-served weight).
-- Set confidence: "high" if the user gave an explicit weight and the food is common, "medium" if you had to estimate a typical portion, "low" if the food is ambiguous.
-- Always output one row per food item. Never split fractional quantities into separate rows. "1.5 avocados" is ONE item with the combined weight, not two items.
+Rules:
+- One row per food item. Never split fractional quantities ("1.5 avocados" = ONE item).
+- If the user specifies "raw"/"dry"/"crudo"/"seco", set assumed_cooked to false. Otherwise true.
+- confidence: "high" = explicit weight + clear food, "medium" = estimated portion, "low" = ambiguous.
+- ALWAYS provide estimated_net_carbs_per_100g (net carbs EXCLUDING fibre) as a safety fallback.
+- ALWAYS provide estimated_glycemic_index (0-100, glucose reference) unless negligible carbs (meat, oil, greens).
+- Set warning for suspicious input (huge quantities, non-food items) in the user's language.
 
-ALWAYS provide estimated_net_carbs_per_100g for EVERY food item (your best estimate of net carbs per 100g, carbohydrates EXCLUDING fibre). This serves as a safety fallback when the database search finds no match.
-
-For ALL food items:
-- Provide your best estimate of the glycemic index (0-100+ scale, glucose reference) in estimated_glycemic_index
-- Use your knowledge of published GI tables (Sydney University, international GI tables)
-- Set to null only for items with negligible carbs (e.g. plain meat, oils, leafy greens)
-
-When the user's input seems obviously wrong or unusual:
-- Set warning to a short explanation in the user's language
-- Examples: unrealistic quantities ("500g of sugar in coffee"), contradictions ("sugar-free honey"), items that are not food
-- Still process the item if it's food, but flag the concern
-
-Respond with ONLY a JSON array, no other text. Each element:
-{
-  "description": "human-readable name of the food item in the user's input language",
-  "search_text": "standardized English food description for USDA database lookup",
+Your final response must be ONLY a JSON array:
+[{
+  "description": "human-readable name in user's language",
+  "fdc_id": <number from search results, or null if no good match>,
   "weight_g": <number>,
   "assumed_cooked": <boolean>,
   "confidence": "high" | "medium" | "low",
-  "notes": "<any assumption you made, in the user's input language, or null>",
-  "estimated_net_carbs_per_100g": <number, always provided as safety fallback>,
+  "notes": "<assumptions, in user's language, or null>",
+  "estimated_net_carbs_per_100g": <number>,
   "estimated_glycemic_index": <number or null>,
-  "warning": "<concern about the input, in the user's language, or null>"
-}`;
+  "warning": "<concern, in user's language, or null>"
+}]`;
+
+const SEARCH_TOOL: Anthropic.Messages.Tool = {
+  name: "search_foods",
+  description:
+    "Search the USDA food database by keywords. Returns up to 10 matches ranked by relevance. Use English search terms.",
+  input_schema: {
+    type: "object" as const,
+    properties: {
+      query: {
+        type: "string",
+        description:
+          'Search keywords in English, e.g. "rice white cooked" or "banana raw"',
+      },
+    },
+    required: ["query"],
+  },
+};
+
+const MAX_TOOL_ROUNDS = 10;
 
 function extractJson(raw: string): string {
   const fenced = raw.match(/```(?:json)?\s*\n?([\s\S]*?)```/);
@@ -55,36 +66,76 @@ function extractJson(raw: string): string {
 export class AnthropicFoodParser implements FoodParser {
   private client: Anthropic;
   private model: string;
+  private foodDb: FoodDatabase;
 
-  constructor(apiKey: string, model = "claude-haiku-4-5-20251001") {
+  constructor(
+    apiKey: string,
+    foodDb: FoodDatabase,
+    model = "claude-haiku-4-5-20251001",
+  ) {
     this.client = new Anthropic({ apiKey });
     this.model = model;
+    this.foodDb = foodDb;
   }
 
   async parse(foodDescription: string): Promise<ParsedFoodItem[]> {
-    const response = await this.client.messages.create({
-      model: this.model,
-      max_tokens: 1024,
-      system: SYSTEM_PROMPT,
-      messages: [
-        {
-          role: "user",
-          content: foodDescription,
-        },
-      ],
-    });
+    const messages: Anthropic.Messages.MessageParam[] = [
+      { role: "user", content: foodDescription },
+    ];
 
-    const text = response.content.find((block) => block.type === "text");
-    if (!text || text.type !== "text") {
-      throw new Error("No text response from LLM");
+    for (let round = 0; round < MAX_TOOL_ROUNDS; round++) {
+      const response = await this.client.messages.create({
+        model: this.model,
+        max_tokens: 2048,
+        system: SYSTEM_PROMPT,
+        tools: [SEARCH_TOOL],
+        messages,
+      });
+
+      if (response.stop_reason === "end_turn") {
+        const text = response.content.find((b) => b.type === "text");
+        if (!text || text.type !== "text") {
+          throw new Error("No text in final LLM response");
+        }
+        const jsonStr = extractJson(text.text);
+        const parsed: unknown = JSON.parse(jsonStr);
+        if (!Array.isArray(parsed)) {
+          throw new Error("LLM response is not an array");
+        }
+        return parsed as ParsedFoodItem[];
+      }
+
+      if (response.stop_reason !== "tool_use") {
+        throw new Error(`Unexpected stop_reason: ${response.stop_reason}`);
+      }
+
+      // Process tool calls
+      const toolResults: Anthropic.Messages.ToolResultBlockParam[] = [];
+      for (const block of response.content) {
+        if (block.type !== "tool_use") continue;
+        if (block.name === "search_foods") {
+          const input = block.input as { query: string };
+          const results = this.foodDb.search(input.query, 10);
+          const formatted = results.map((r) => ({
+            fdc_id: r.fdc_id,
+            description: r.description,
+            category: r.category,
+            net_carbs_per_100g: r.net_carbs_per_100g,
+            fiber_per_100g: r.fiber_per_100g,
+            match_count: r.match_count,
+          }));
+          toolResults.push({
+            type: "tool_result",
+            tool_use_id: block.id,
+            content: JSON.stringify(formatted),
+          });
+        }
+      }
+
+      messages.push({ role: "assistant", content: response.content });
+      messages.push({ role: "user", content: toolResults });
     }
 
-    const jsonStr = extractJson(text.text);
-    const parsed: unknown = JSON.parse(jsonStr);
-    if (!Array.isArray(parsed)) {
-      throw new Error("LLM response is not an array");
-    }
-
-    return parsed as ParsedFoodItem[];
+    throw new Error("LLM exceeded maximum tool call rounds");
   }
 }

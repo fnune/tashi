@@ -27,7 +27,7 @@ await storage.init();
 const foodDb = await FoodDatabase.open(foodsDbPath);
 console.log(`Food database loaded: ${foodDb.foodCount()} foods`);
 
-const parser = new AnthropicFoodParser(apiKey, model);
+const parser = new AnthropicFoodParser(apiKey, foodDb, model);
 const calculator = new Calculator(parser, foodDb);
 
 const app = new Hono();

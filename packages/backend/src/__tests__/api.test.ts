@@ -36,7 +36,7 @@ describe("API routes", () => {
     parser.setResponse("100g white rice", [
       {
         description: "White rice (cooked)",
-        search_text: "Rice white long grain cooked",
+        fdc_id: 169756,
         weight_g: 100,
         assumed_cooked: true,
         confidence: "high",
@@ -97,7 +97,7 @@ describe("API routes", () => {
     parser.setResponse("a banana", [
       {
         description: "Banana",
-        search_text: "Bananas raw",
+        fdc_id: 173944,
         weight_g: 120,
         assumed_cooked: false,
         confidence: "medium",
