@@ -317,6 +317,80 @@ a.source-link:hover {
   margin-top: 2px;
 }
 
+/* Mobile card layout for result table */
+
+@media (max-width: 480px) {
+  .result-table thead {
+    display: none;
+  }
+
+  .result-table {
+    border: none;
+    border-left: 1px solid var(--border);
+    border-right: 1px solid var(--border);
+  }
+
+  .result-table tr {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 2px 12px;
+    padding: 10px 12px;
+  }
+
+  .result-table td {
+    padding: 0;
+    border: none;
+  }
+
+  .result-table td:first-child {
+    flex: 0 0 100%;
+    margin-bottom: 2px;
+  }
+
+  .result-table td.num {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    font-size: 0.8rem;
+  }
+
+  .result-table td.num::before {
+    content: attr(data-label);
+    font-size: 0.65rem;
+    font-family: var(--font);
+    color: var(--text-secondary);
+  }
+
+  .result-table tr + tr {
+    border-top: 1px solid var(--border);
+  }
+
+  .result-table tr:last-child td {
+    border-bottom: none;
+  }
+
+  .result-table .result-total {
+    border-top: 2px solid var(--text);
+  }
+
+  .result-table .result-total td:first-child {
+    flex: 1;
+  }
+
+  .result-table .result-total td.num::before {
+    display: none;
+  }
+
+  .result-table .hide-mobile {
+    display: none;
+  }
+
+  .dose-detail {
+    word-break: break-word;
+  }
+}
+
 /* Settings */
 
 .settings {

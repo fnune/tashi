@@ -125,7 +125,7 @@ export function ResultTable({ result, lang, glucoseUnit }: ResultTableProps) {
                     <span className="warning-text">{item.warning}</span>
                   )}
                 </td>
-                <td className="num">
+                <td className="num" data-label="GI">
                   {gi != null ? (
                     <span
                       className="gi-badge"
@@ -152,17 +152,17 @@ export function ResultTable({ result, lang, glucoseUnit }: ResultTableProps) {
                     <span className="faded">--</span>
                   )}
                 </td>
-                <td className="num">{item.weight_g}g</td>
-                <td className="num faded">{per100g}g</td>
-                <td className="num">{item.net_carbs_g}g</td>
+                <td className="num" data-label={t(lang, "grams")}>{item.weight_g}g</td>
+                <td className="num faded" data-label={t(lang, "carbsPer100g")}>{per100g}g</td>
+                <td className="num" data-label={t(lang, "netCarbs")}>{item.net_carbs_g}g</td>
               </tr>
             );
           })}
           <tr className="result-total">
             <td>{t(lang, "totalNetCarbs")}</td>
-            <td />
-            <td />
-            <td />
+            <td className="hide-mobile" />
+            <td className="hide-mobile" />
+            <td className="hide-mobile" />
             <td className="num">{result.total_net_carbs_g}g</td>
           </tr>
         </tbody>
