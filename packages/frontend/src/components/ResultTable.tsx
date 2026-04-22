@@ -23,7 +23,7 @@ function sourceLink(item: CalculatedItem): {
   if (!item.food_item) {
     if (item.estimated)
       return { label: "LLM", url: null, fibreSubtracted: false };
-    return { label: "", url: null, fibreSubtracted: false };
+    return { label: "?", url: null, fibreSubtracted: false };
   }
   const { data_source, data_source_id, carbs_include_fibre } = item.food_item;
   if (data_source === "USDA FoodData Central") {
@@ -109,7 +109,16 @@ export function ResultTable({ result, lang, glucoseUnit }: ResultTableProps) {
                           {source.fibreSubtracted && " -f"}
                         </a>
                       ) : (
-                        <span className="source-link">{source.label}</span>
+                        <span
+                          className={`source-link${source.label === "?" ? " source-unknown" : ""}`}
+                          title={
+                            source.label === "?"
+                              ? "Unknown data source"
+                              : source.label
+                          }
+                        >
+                          {source.label}
+                        </span>
                       )}
                     </>
                   )}
@@ -152,9 +161,15 @@ export function ResultTable({ result, lang, glucoseUnit }: ResultTableProps) {
                     <span className="faded">--</span>
                   )}
                 </td>
-                <td className="num" data-label={t(lang, "grams")}>{item.weight_g}g</td>
-                <td className="num faded" data-label={t(lang, "carbsPer100g")}>{per100g}g</td>
-                <td className="num" data-label={t(lang, "netCarbs")}>{item.net_carbs_g}g</td>
+                <td className="num" data-label={t(lang, "grams")}>
+                  {item.weight_g}g
+                </td>
+                <td className="num faded" data-label={t(lang, "carbsPer100g")}>
+                  {per100g}g
+                </td>
+                <td className="num" data-label={t(lang, "netCarbs")}>
+                  {item.net_carbs_g}g
+                </td>
               </tr>
             );
           })}

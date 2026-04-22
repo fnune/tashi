@@ -268,6 +268,10 @@ body {
   margin-left: 4px;
 }
 
+.source-unknown {
+  color: var(--warning);
+}
+
 a.source-link {
   color: var(--accent);
   text-decoration: underline;
