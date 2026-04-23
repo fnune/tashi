@@ -44,6 +44,8 @@ describe("API routes", () => {
         estimated_net_carbs_per_100g: 28,
         user_carbs: null,
         estimated_glycemic_index: 73,
+        estimated_fat_per_100g: null,
+        estimated_protein_per_100g: null,
         warning: null,
       },
     ]);
@@ -54,6 +56,7 @@ describe("API routes", () => {
       target_blood_sugar: 6.0,
       glucose_unit: "mg/dL",
       pen_increment: 0.5,
+      fat_protein_multiplier: 0.2,
       language: "en",
     });
 
@@ -99,6 +102,8 @@ describe("API routes", () => {
         estimated_net_carbs_per_100g: 20,
         user_carbs: null,
         estimated_glycemic_index: 51,
+        estimated_fat_per_100g: null,
+        estimated_protein_per_100g: null,
         warning: null,
       },
     ]);
@@ -111,6 +116,7 @@ describe("API routes", () => {
       target_blood_sugar: 6.0,
       glucose_unit: "mg/dL",
       pen_increment: 0.5,
+      fat_protein_multiplier: 0.2,
       language: "en",
     });
 
@@ -221,6 +227,8 @@ describe("API routes", () => {
         estimated_net_carbs_per_100g: 28,
         user_carbs: null,
         estimated_glycemic_index: 73,
+        estimated_fat_per_100g: null,
+        estimated_protein_per_100g: null,
         warning: null,
       },
     ]);
@@ -231,6 +239,7 @@ describe("API routes", () => {
       target_blood_sugar: 6.0,
       glucose_unit: "mg/dL",
       pen_increment: 0.5,
+      fat_protein_multiplier: 0.2,
       language: "en",
     });
 
@@ -270,6 +279,8 @@ describe("API routes", () => {
         estimated_net_carbs_per_100g: 15.0,
         user_carbs: null,
         estimated_glycemic_index: 35,
+        estimated_fat_per_100g: null,
+        estimated_protein_per_100g: null,
         warning: null,
       },
     ]);
@@ -280,6 +291,7 @@ describe("API routes", () => {
       target_blood_sugar: 6.0,
       glucose_unit: "mg/dL",
       pen_increment: 0.5,
+      fat_protein_multiplier: 0.2,
       language: "en",
     });
 

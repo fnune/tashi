@@ -142,6 +142,26 @@ export function SettingsView({ settings, onSave, lang }: SettingsViewProps) {
       </div>
 
       <div className="settings-section">
+        <h3>{t(lang, "fatProteinMultiplier")}</h3>
+        <span className="settings-hint">
+          {t(lang, "fatProteinMultiplierHint")}
+        </span>
+        <input
+          type="number"
+          step="0.05"
+          min="0"
+          max="1"
+          value={local.fat_protein_multiplier}
+          onChange={(e) =>
+            setLocal({
+              ...local,
+              fat_protein_multiplier: Number.parseFloat(e.target.value) || 0,
+            })
+          }
+        />
+      </div>
+
+      <div className="settings-section">
         <h3>
           {t(lang, "targetBloodSugar")} ({local.glucose_unit})
         </h3>

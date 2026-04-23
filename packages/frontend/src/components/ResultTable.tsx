@@ -3,7 +3,14 @@ import type {
   CalculationResult,
   GlucoseUnit,
 } from "@pincho/shared";
-import { type Language, t } from "../i18n.js";
+import { Link } from "react-router";
+import { type Language, type TranslationKey, t } from "../i18n.js";
+
+const THRESHOLD_I18N: Record<string, TranslationKey> = {
+  high_fat: "highFat",
+  fat_and_protein: "fatAndProtein",
+  energy_ratio: "energyRatio",
+};
 
 interface ResultTableProps {
   result: Omit<CalculationResult, "recommended_dose"> & {
@@ -42,6 +49,71 @@ function giColor(gi: number): string {
   const clamped = Math.min(Math.max(0, gi), 100) / 100;
   const hue = 120 * (1 - clamped);
   return `hsl(${hue}, 70%, 40%)`;
+}
+
+function DoseDisplay({
+  result,
+  lang,
+  glucoseUnit,
+}: {
+  result: ResultTableProps["result"];
+  lang: Language;
+  glucoseUnit: GlucoseUnit;
+}) {
+  const dose = result.recommended_dose;
+  if (dose == null) {
+    return (
+      <div className="result-dose">
+        <span className="dose-line faded">--</span>
+      </div>
+    );
+  }
+
+  const corr = result.correction;
+  const fp = result.fat_protein_adjustment;
+  const hasCorr = corr !== undefined;
+  const hasFp = fp !== undefined;
+
+  const grandTotal = fp?.total_dose ?? corr?.total_dose ?? dose;
+  const parts: string[] = [`${dose}U`];
+  if (hasCorr) parts.push(`${corr.correction_dose}U`);
+  if (hasFp) parts.push(`${fp.adjustment_dose}U`);
+
+  const showFormula = parts.length > 1;
+
+  const details: string[] = [];
+  details.push(`${t(lang, "recommendedDose")}: ${dose}U`);
+  if (hasCorr) {
+    details.push(
+      `${t(lang, "correction")}: ${corr.current_blood_sugar} → ${corr.target_blood_sugar} ${glucoseUnit} (${corr.correction_dose >= 0 ? "+" : ""}${corr.correction_dose}U)`,
+    );
+  }
+
+  const thresholdKey = fp ? THRESHOLD_I18N[fp.threshold_met] : undefined;
+
+  return (
+    <div className="result-dose">
+      <span className="dose-line">
+        {showFormula ? `${parts.join(" + ")} = ${grandTotal}U` : `${dose}U`}
+      </span>
+      {(hasCorr || hasFp) && (
+        <span className="dose-detail">
+          {details.join(" | ")}
+          {hasFp && (
+            <>
+              {details.length > 0 && " | "}
+              {t(lang, "fatProteinAdjustment")}: +
+              {Math.round(fp.multiplier * 100)}% (+{fp.adjustment_dose}U)
+              {thresholdKey && ` [${t(lang, thresholdKey)}]`}{" "}
+              <Link to="/fat-protein-info" className="fp-learn-more">
+                {t(lang, "fatProteinLearnMore")}
+              </Link>
+            </>
+          )}
+        </span>
+      )}
+    </div>
+  );
 }
 
 export function ResultTable({ result, lang, glucoseUnit }: ResultTableProps) {
@@ -166,26 +238,7 @@ export function ResultTable({ result, lang, glucoseUnit }: ResultTableProps) {
         </tbody>
       </table>
 
-      <div className="result-dose">
-        {result.recommended_dose == null ? (
-          <span className="dose-line faded">--</span>
-        ) : result.correction ? (
-          <>
-            <span className="dose-line">
-              {result.recommended_dose}U + {result.correction.correction_dose}U
-              = {result.correction.total_dose}U
-            </span>
-            <span className="dose-detail">
-              {t(lang, "recommendedDose")}: {result.recommended_dose}U |{" "}
-              {t(lang, "correction")}: {result.correction.current_blood_sugar} →{" "}
-              {result.correction.target_blood_sugar} {glucoseUnit} (+
-              {result.correction.correction_dose}U)
-            </span>
-          </>
-        ) : (
-          <span className="dose-line">{result.recommended_dose}U</span>
-        )}
-      </div>
+      <DoseDisplay result={result} lang={lang} glucoseUnit={glucoseUnit} />
     </div>
   );
 }

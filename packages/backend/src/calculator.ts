@@ -19,6 +19,8 @@ function matchToFoodItem(match: FoodMatch): FoodItem {
     total_carbs_per_100g: match.total_carbs_per_100g,
     fiber_per_100g: match.fiber_per_100g,
     sugars_per_100g: match.sugars_per_100g,
+    fat_per_100g: match.fat_per_100g,
+    protein_per_100g: match.protein_per_100g,
     serving_g: match.serving_g,
     serving_desc: match.serving_desc,
     name_es: match.name_es,
@@ -77,6 +79,7 @@ export class Calculator {
       total_net_carbs_g: Math.round(dose.totalNetCarbs * 10) / 10,
       recommended_dose: dose.foodDose,
       correction: dose.correction,
+      fat_protein_adjustment: dose.fat_protein_adjustment,
       trace,
     };
   }
@@ -134,11 +137,22 @@ export class Calculator {
       const dbGi = foodItem?.glycemic_index ?? null;
       const gi = dbGi ?? parsed.estimated_glycemic_index ?? null;
 
+      const fatPer100g =
+        foodItem?.fat_per_100g ?? parsed.estimated_fat_per_100g ?? 0;
+      const proteinPer100g =
+        foodItem?.protein_per_100g ?? parsed.estimated_protein_per_100g ?? 0;
+      const fatG = (fatPer100g / 100) * parsed.weight_g;
+      const proteinG = (proteinPer100g / 100) * parsed.weight_g;
+
       return {
         description: parsed.description,
         weight_g: parsed.weight_g,
         net_carbs_per_100g: Math.round(netCarbsPer100g * 10) / 10,
         net_carbs_g: Math.round(netCarbsG * 10) / 10,
+        fat_per_100g: Math.round(fatPer100g * 100) / 100,
+        protein_per_100g: Math.round(proteinPer100g * 100) / 100,
+        fat_g: Math.round(fatG * 10) / 10,
+        protein_g: Math.round(proteinG * 10) / 10,
         assumed_cooked: parsed.assumed_cooked,
         confidence: parsed.confidence,
         notes: parsed.notes,

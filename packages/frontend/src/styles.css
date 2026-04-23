@@ -594,3 +594,48 @@ a.source-link:hover {
     opacity: 1;
   }
 }
+
+.fp-learn-more {
+  color: var(--accent);
+  text-decoration: underline;
+  text-decoration-style: dotted;
+  font-size: 0.75rem;
+}
+
+.settings-hint {
+  display: block;
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  margin-bottom: 6px;
+}
+
+.info-page {
+  max-width: 600px;
+  line-height: 1.6;
+  font-size: 0.92rem;
+}
+
+.info-page h2 {
+  margin-top: 0;
+}
+
+.info-page h3 {
+  margin: 1.2em 0 0.4em;
+}
+
+.info-page p {
+  margin: 0.5em 0;
+}
+
+.info-page ul {
+  padding-left: 1.2em;
+}
+
+.info-page .references li {
+  margin-bottom: 0.5em;
+}
+
+.info-back {
+  margin-bottom: 12px;
+  display: inline-block;
+}

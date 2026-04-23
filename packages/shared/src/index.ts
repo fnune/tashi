@@ -1,5 +1,8 @@
 export {
+  calculateCorrectionDose,
   calculateDose,
+  calculateFatProteinAdjustment,
+  evaluateFatProteinThreshold,
   findMealWindow,
   roundToIncrement,
 } from "./calculation.js";

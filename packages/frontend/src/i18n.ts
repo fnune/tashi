@@ -61,6 +61,14 @@ const translations = {
     clearTimeline: "Clear timeline",
     confirmClearTimeline: "Delete all timeline entries?",
     dateTime: "Date and time",
+    fatProteinAdjustment: "Fat/protein adj.",
+    fatProteinMultiplier: "Fat/protein multiplier",
+    fatProteinMultiplierHint: "Extra insulin % for high-fat/protein meals",
+    highFat: "Fat > 30g",
+    fatAndProtein: "Fat > 15g & protein > 25g",
+    energyRatio: "Fat+protein > 80% energy",
+    fatProteinLearnMore: "Why?",
+    fatProteinInfoTitle: "Fat and protein adjustment",
   },
   es: {
     appTitle: "Pincho",
@@ -124,6 +132,15 @@ const translations = {
     clearTimeline: "Borrar línea temporal",
     confirmClearTimeline: "¿Borrar toda la línea temporal?",
     dateTime: "Fecha y hora",
+    fatProteinAdjustment: "Aj. grasa/proteína",
+    fatProteinMultiplier: "Multiplicador grasa/proteína",
+    fatProteinMultiplierHint:
+      "% insulina extra para comidas altas en grasa/proteína",
+    highFat: "Grasa > 30g",
+    fatAndProtein: "Grasa > 15g y proteína > 25g",
+    energyRatio: "Grasa+proteína > 80% energía",
+    fatProteinLearnMore: "¿Por qué?",
+    fatProteinInfoTitle: "Ajuste por grasa y proteína",
   },
 } as const;
 

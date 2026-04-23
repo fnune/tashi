@@ -7,6 +7,8 @@ export interface FoodItem {
   total_carbs_per_100g: number;
   fiber_per_100g: number;
   sugars_per_100g: number;
+  fat_per_100g: number;
+  protein_per_100g: number;
   serving_g: number | null;
   serving_desc: string | null;
   name_es: string | null;
@@ -29,6 +31,8 @@ export interface ParsedFoodItem {
   estimated_net_carbs_per_100g: number | null;
   user_carbs: UserCarbs | null;
   estimated_glycemic_index: number | null;
+  estimated_fat_per_100g: number | null;
+  estimated_protein_per_100g: number | null;
   warning: string | null;
 }
 
@@ -53,6 +57,10 @@ export interface CalculatedItem {
   weight_g: number;
   net_carbs_per_100g: number;
   net_carbs_g: number;
+  fat_per_100g: number;
+  protein_per_100g: number;
+  fat_g: number;
+  protein_g: number;
   assumed_cooked: boolean;
   confidence: "high" | "medium" | "low";
   notes: string | null;
@@ -79,6 +87,7 @@ export interface Settings {
   target_blood_sugar: number;
   glucose_unit: GlucoseUnit;
   pen_increment: 0.5 | 1;
+  fat_protein_multiplier: number;
   language: "en" | "es";
 }
 
@@ -96,6 +105,14 @@ export interface CalculationResult {
     target_blood_sugar: number;
     correction_factor: number;
     correction_dose: number;
+    total_dose: number;
+  };
+  fat_protein_adjustment?: {
+    total_fat_g: number;
+    total_protein_g: number;
+    threshold_met: string;
+    multiplier: number;
+    adjustment_dose: number;
     total_dose: number;
   };
   trace?: ParseTrace;
@@ -117,6 +134,7 @@ export interface MealEntry extends BaseEntry {
   total_net_carbs_g: number;
   recommended_dose?: number;
   correction?: CalculationResult["correction"];
+  fat_protein_adjustment?: CalculationResult["fat_protein_adjustment"];
   trace?: ParseTrace;
 }
 
@@ -194,5 +212,6 @@ export const DEFAULT_SETTINGS: Settings = {
   target_blood_sugar: 100,
   glucose_unit: "mg/dL",
   pen_increment: 0.5,
+  fat_protein_multiplier: 0.2,
   language: "en",
 };

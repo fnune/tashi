@@ -19,6 +19,7 @@ Rules:
 - If the user specifies "raw"/"dry"/"crudo"/"seco", set assumed_cooked to false. Otherwise true.
 - confidence: "high" = explicit weight + clear food, "medium" = estimated portion, "low" = ambiguous.
 - ALWAYS provide estimated_net_carbs_per_100g (net carbs EXCLUDING fibre) as a safety fallback.
+- ALWAYS provide estimated_fat_per_100g (total fat in grams per 100g) and estimated_protein_per_100g (total protein in grams per 100g).
 - ALWAYS provide estimated_glycemic_index (0-100, glucose reference) unless negligible carbs (meat, oil, greens).
 - Set warning for suspicious input (huge quantities, non-food items) in the user's language.
 - user_carbs: when the user explicitly states carb/nutritional info (e.g. from a food label), capture it:
@@ -36,6 +37,8 @@ Your final response must be ONLY a JSON array:
   "confidence": "high" | "medium" | "low",
   "notes": "<assumptions, in user's language, or null>",
   "estimated_net_carbs_per_100g": <number>,
+  "estimated_fat_per_100g": <number>,
+  "estimated_protein_per_100g": <number>,
   "user_carbs": { "basis": "per_100g" | "total", "net_carbs": <number> } | null,
   "estimated_glycemic_index": <number or null>,
   "warning": "<concern, in user's language, or null>"
@@ -166,6 +169,8 @@ export class AnthropicFoodParser implements FoodParser {
             category: r.category,
             net_carbs_per_100g: r.net_carbs_per_100g,
             fiber_per_100g: r.fiber_per_100g,
+            fat_per_100g: r.fat_per_100g,
+            protein_per_100g: r.protein_per_100g,
             match_count: r.match_count,
           }));
 

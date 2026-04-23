@@ -31,7 +31,7 @@ export class FileStorage {
   async getSettings(): Promise<Settings> {
     try {
       const raw = await readFile(this.path("settings.json"), "utf-8");
-      return JSON.parse(raw) as Settings;
+      return { ...DEFAULT_SETTINGS, ...JSON.parse(raw) };
     } catch (e: unknown) {
       if (isFileNotFound(e)) return { ...DEFAULT_SETTINGS };
       throw e;

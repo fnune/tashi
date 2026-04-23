@@ -33,6 +33,7 @@ const settingsSchema = z.object({
   target_blood_sugar: z.number().positive(),
   glucose_unit: z.union([z.literal("mg/dL"), z.literal("mmol/L")]),
   pen_increment: z.union([z.literal(0.5), z.literal(1)]),
+  fat_protein_multiplier: z.number().min(0).max(1),
   language: z.union([z.literal("en"), z.literal("es")]),
 });
 
@@ -80,9 +81,10 @@ export function createRoutes(
       const preBolusMs = (parsed.data.pre_bolus_minutes ?? 0) * 60_000;
       const now = new Date();
 
-      const doseUnits = result.correction
-        ? result.correction.total_dose
-        : result.recommended_dose;
+      const doseUnits =
+        result.fat_protein_adjustment?.total_dose ??
+        result.correction?.total_dose ??
+        result.recommended_dose;
 
       const mealEntry: MealEntry = {
         id: result.id,
@@ -95,6 +97,7 @@ export function createRoutes(
         total_net_carbs_g: result.total_net_carbs_g,
         recommended_dose: result.recommended_dose,
         correction: result.correction,
+        fat_protein_adjustment: result.fat_protein_adjustment,
         trace: result.trace,
       };
 

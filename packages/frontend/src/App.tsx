@@ -13,6 +13,7 @@ import {
 } from "react-router";
 import * as api from "./api.js";
 import { CalculatorView } from "./components/CalculatorView.js";
+import { FatProteinInfoView } from "./components/FatProteinInfoView.js";
 import { SettingsView } from "./components/SettingsView.js";
 import { TimelineView } from "./components/TimelineView.js";
 import type { Language } from "./i18n.js";
@@ -145,6 +146,10 @@ function AppShell() {
               onReuse={handleReuse}
             />
           }
+        />
+        <Route
+          path="/fat-protein-info"
+          element={<FatProteinInfoView lang={lang} />}
         />
         <Route
           path="/history/*"

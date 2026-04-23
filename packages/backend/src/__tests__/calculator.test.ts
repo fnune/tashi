@@ -18,6 +18,7 @@ const TEST_SETTINGS: Settings = {
   target_blood_sugar: 100,
   glucose_unit: "mg/dL",
   pen_increment: 0.5,
+  fat_protein_multiplier: 0.2,
   language: "en",
 };
 
@@ -50,6 +51,8 @@ describe("Calculator", () => {
         notes: null,
         estimated_net_carbs_per_100g: 28,
         estimated_glycemic_index: 73,
+        estimated_fat_per_100g: null,
+        estimated_protein_per_100g: null,
         user_carbs: null,
         warning: null,
       },
@@ -63,6 +66,8 @@ describe("Calculator", () => {
         estimated_net_carbs_per_100g: 0,
         user_carbs: null,
         estimated_glycemic_index: null,
+        estimated_fat_per_100g: null,
+        estimated_protein_per_100g: null,
         warning: null,
       },
     ]);
@@ -105,6 +110,8 @@ describe("Calculator", () => {
         notes: "Not in database",
         estimated_net_carbs_per_100g: 15.0,
         estimated_glycemic_index: 35,
+        estimated_fat_per_100g: null,
+        estimated_protein_per_100g: null,
         user_carbs: null,
         warning: null,
       },
@@ -135,6 +142,8 @@ describe("Calculator", () => {
         notes: null,
         estimated_net_carbs_per_100g: 20.0,
         estimated_glycemic_index: 50,
+        estimated_fat_per_100g: null,
+        estimated_protein_per_100g: null,
         user_carbs: null,
         warning: null,
       },
@@ -164,6 +173,8 @@ describe("Calculator", () => {
         notes: "Assumed medium banana (~120g)",
         estimated_net_carbs_per_100g: 20,
         estimated_glycemic_index: 51,
+        estimated_fat_per_100g: null,
+        estimated_protein_per_100g: null,
         user_carbs: null,
         warning: null,
       },
@@ -195,6 +206,8 @@ describe("Calculator", () => {
         notes: null,
         estimated_net_carbs_per_100g: 20,
         estimated_glycemic_index: 51,
+        estimated_fat_per_100g: null,
+        estimated_protein_per_100g: null,
         user_carbs: null,
         warning: null,
       },
@@ -224,6 +237,8 @@ describe("Calculator", () => {
         notes: null,
         estimated_net_carbs_per_100g: 28,
         estimated_glycemic_index: 70,
+        estimated_fat_per_100g: null,
+        estimated_protein_per_100g: null,
         user_carbs: null,
         warning: null,
       },
@@ -236,6 +251,8 @@ describe("Calculator", () => {
         notes: null,
         estimated_net_carbs_per_100g: 15.0,
         estimated_glycemic_index: 35,
+        estimated_fat_per_100g: null,
+        estimated_protein_per_100g: null,
         user_carbs: null,
         warning: null,
       },
@@ -268,6 +285,8 @@ describe("Calculator", () => {
         notes: null,
         estimated_net_carbs_per_100g: 100,
         estimated_glycemic_index: 65,
+        estimated_fat_per_100g: null,
+        estimated_protein_per_100g: null,
         user_carbs: null,
         warning: "500g of sugar is an unusually large amount for coffee",
       },
@@ -296,6 +315,8 @@ describe("Calculator", () => {
         notes: null,
         estimated_net_carbs_per_100g: 28,
         estimated_glycemic_index: 73,
+        estimated_fat_per_100g: null,
+        estimated_protein_per_100g: null,
         user_carbs: null,
         warning: null,
       },
@@ -333,6 +354,8 @@ describe("Calculator", () => {
         estimated_net_carbs_per_100g: 14,
         user_carbs: { basis: "per_100g", net_carbs: 14 },
         estimated_glycemic_index: 73,
+        estimated_fat_per_100g: null,
+        estimated_protein_per_100g: null,
         warning: null,
       },
     ]);
@@ -363,6 +386,8 @@ describe("Calculator", () => {
         estimated_net_carbs_per_100g: 13,
         user_carbs: { basis: "total", net_carbs: 2 },
         estimated_glycemic_index: 35,
+        estimated_fat_per_100g: null,
+        estimated_protein_per_100g: null,
         warning: null,
       },
     ]);
@@ -391,6 +416,8 @@ describe("Calculator", () => {
         estimated_net_carbs_per_100g: 5,
         user_carbs: { basis: "per_100g", net_carbs: 5 },
         estimated_glycemic_index: 73,
+        estimated_fat_per_100g: null,
+        estimated_protein_per_100g: null,
         warning: null,
       },
     ]);
@@ -420,6 +447,8 @@ describe("Calculator", () => {
         estimated_net_carbs_per_100g: 20,
         user_carbs: null,
         estimated_glycemic_index: 51,
+        estimated_fat_per_100g: null,
+        estimated_protein_per_100g: null,
         warning: null,
       },
     ]);
@@ -432,6 +461,156 @@ describe("Calculator", () => {
     );
 
     expect(result.items[0]!.net_carbs_per_100g).toBe(20.2);
+  });
+
+  it("populates fat/protein from DB match", async () => {
+    parser.setResponse("170g grilled chicken", [
+      {
+        description: "Chicken breast (grilled)",
+        fdc_id: 171534,
+        weight_g: 170,
+        assumed_cooked: true,
+        confidence: "high",
+        notes: null,
+        estimated_net_carbs_per_100g: 0,
+        user_carbs: null,
+        estimated_glycemic_index: null,
+        estimated_fat_per_100g: 5,
+        estimated_protein_per_100g: 28,
+        warning: null,
+      },
+    ]);
+
+    const result = await calculator.calculate(
+      "170g grilled chicken",
+      TEST_SETTINGS,
+      undefined,
+      "lunch",
+    );
+
+    const chicken = result.items[0]!;
+    expect(chicken.fat_per_100g).toBeCloseTo(3.57, 1);
+    expect(chicken.protein_per_100g).toBeCloseTo(31.02, 1);
+    expect(chicken.fat_g).toBeCloseTo(6.07, 0);
+    expect(chicken.protein_g).toBeCloseTo(52.73, 0);
+  });
+
+  it("uses LLM estimates for fat/protein when no DB match", async () => {
+    parser.setResponse("100g mystery high-fat food", [
+      {
+        description: "Mystery fatty food",
+        fdc_id: null,
+        weight_g: 100,
+        assumed_cooked: false,
+        confidence: "low",
+        notes: null,
+        estimated_net_carbs_per_100g: 10,
+        user_carbs: null,
+        estimated_glycemic_index: null,
+        estimated_fat_per_100g: 40,
+        estimated_protein_per_100g: 20,
+        warning: null,
+      },
+    ]);
+
+    const result = await calculator.calculate(
+      "100g mystery high-fat food",
+      TEST_SETTINGS,
+      undefined,
+      "lunch",
+    );
+
+    const item = result.items[0]!;
+    expect(item.fat_per_100g).toBe(40);
+    expect(item.protein_per_100g).toBe(20);
+    expect(item.fat_g).toBe(40);
+    expect(item.protein_g).toBe(20);
+  });
+
+  it("produces fat_protein_adjustment for high-fat meal", async () => {
+    parser.setResponse("200g bacon", [
+      {
+        description: "Bacon",
+        fdc_id: null,
+        weight_g: 200,
+        assumed_cooked: true,
+        confidence: "medium",
+        notes: null,
+        estimated_net_carbs_per_100g: 1,
+        user_carbs: null,
+        estimated_glycemic_index: null,
+        estimated_fat_per_100g: 42,
+        estimated_protein_per_100g: 12,
+        warning: null,
+      },
+    ]);
+
+    const result = await calculator.calculate(
+      "200g bacon",
+      TEST_SETTINGS,
+      undefined,
+      "lunch",
+    );
+
+    expect(result.fat_protein_adjustment).toBeDefined();
+    expect(result.fat_protein_adjustment!.threshold_met).toBe("high_fat");
+    expect(result.fat_protein_adjustment!.total_fat_g).toBeCloseTo(84, 0);
+  });
+
+  it("no fat_protein_adjustment for low-fat meal", async () => {
+    parser.setResponse("150g rice", [
+      {
+        description: "White rice (cooked)",
+        fdc_id: 169756,
+        weight_g: 150,
+        assumed_cooked: true,
+        confidence: "high",
+        notes: null,
+        estimated_net_carbs_per_100g: 28,
+        user_carbs: null,
+        estimated_glycemic_index: 73,
+        estimated_fat_per_100g: null,
+        estimated_protein_per_100g: null,
+        warning: null,
+      },
+    ]);
+
+    const result = await calculator.calculate(
+      "150g rice",
+      TEST_SETTINGS,
+      undefined,
+      "lunch",
+    );
+
+    expect(result.fat_protein_adjustment).toBeUndefined();
+  });
+
+  it("no fat_protein_adjustment when multiplier is 0", async () => {
+    parser.setResponse("200g bacon disabled", [
+      {
+        description: "Bacon",
+        fdc_id: null,
+        weight_g: 200,
+        assumed_cooked: true,
+        confidence: "medium",
+        notes: null,
+        estimated_net_carbs_per_100g: 1,
+        user_carbs: null,
+        estimated_glycemic_index: null,
+        estimated_fat_per_100g: 42,
+        estimated_protein_per_100g: 12,
+        warning: null,
+      },
+    ]);
+
+    const result = await calculator.calculate(
+      "200g bacon disabled",
+      { ...TEST_SETTINGS, fat_protein_multiplier: 0 },
+      undefined,
+      "lunch",
+    );
+
+    expect(result.fat_protein_adjustment).toBeUndefined();
   });
 });
 

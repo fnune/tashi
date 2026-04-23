@@ -11,6 +11,8 @@ export interface FoodMatch {
   total_carbs_per_100g: number;
   fiber_per_100g: number;
   sugars_per_100g: number;
+  fat_per_100g: number;
+  protein_per_100g: number;
   serving_g: number | null;
   serving_desc: string | null;
   name_es: string | null;
@@ -78,6 +80,8 @@ export class FoodDatabase {
         COALESCE(f.total_carbs, 0.0) AS total_carbs_per_100g,
         COALESCE(f.fiber, 0.0) AS fiber_per_100g,
         COALESCE(f.sugars, 0.0) AS sugars_per_100g,
+        COALESCE(f.fat, 0.0) AS fat_per_100g,
+        COALESCE(f.protein, 0.0) AS protein_per_100g,
         f.serving_g,
         f.serving_desc,
         c.name_es,
@@ -124,6 +128,8 @@ export class FoodDatabase {
         COALESCE(f.total_carbs, 0.0) AS total_carbs_per_100g,
         COALESCE(f.fiber, 0.0) AS fiber_per_100g,
         COALESCE(f.sugars, 0.0) AS sugars_per_100g,
+        COALESCE(f.fat, 0.0) AS fat_per_100g,
+        COALESCE(f.protein, 0.0) AS protein_per_100g,
         f.serving_g,
         f.serving_desc,
         c.name_es,
@@ -155,6 +161,8 @@ export class FoodDatabase {
       total_carbs_per_100g: row.total_carbs_per_100g as number,
       fiber_per_100g: row.fiber_per_100g as number,
       sugars_per_100g: row.sugars_per_100g as number,
+      fat_per_100g: row.fat_per_100g as number,
+      protein_per_100g: row.protein_per_100g as number,
       serving_g: (row.serving_g as number) ?? null,
       serving_desc: (row.serving_desc as string) ?? null,
       name_es: (row.name_es as string) ?? null,

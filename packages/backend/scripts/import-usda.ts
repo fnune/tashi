@@ -20,11 +20,15 @@ const NUTRIENT_CARBS = 1005;
 const NUTRIENT_FIBER = 1079;
 const NUTRIENT_SUGARS_NLEA = 1063;
 const NUTRIENT_SUGARS_TOTAL = 2000;
+const NUTRIENT_FAT = 1004;
+const NUTRIENT_PROTEIN = 1003;
 
 // Survey (FNDDS) uses legacy nutrient_nbr values in the nutrient_id column
 const NUTRIENT_NBR_CARBS = 205;
 const NUTRIENT_NBR_FIBER = 291;
 const NUTRIENT_NBR_SUGARS = 269;
+const NUTRIENT_NBR_FAT = 204;
+const NUTRIENT_NBR_PROTEIN = 203;
 
 interface RawFood {
   fdc_id: number;
@@ -134,6 +138,8 @@ const NBR_TO_ID = new Map<number, number>([
   [NUTRIENT_NBR_CARBS, NUTRIENT_CARBS],
   [NUTRIENT_NBR_FIBER, NUTRIENT_FIBER],
   [NUTRIENT_NBR_SUGARS, NUTRIENT_SUGARS_TOTAL],
+  [NUTRIENT_NBR_FAT, NUTRIENT_FAT],
+  [NUTRIENT_NBR_PROTEIN, NUTRIENT_PROTEIN],
 ]);
 
 async function loadNutrients(dir: string): Promise<NutrientRow[]> {
@@ -142,10 +148,14 @@ async function loadNutrients(dir: string): Promise<NutrientRow[]> {
     NUTRIENT_FIBER,
     NUTRIENT_SUGARS_NLEA,
     NUTRIENT_SUGARS_TOTAL,
+    NUTRIENT_FAT,
+    NUTRIENT_PROTEIN,
     // Survey uses legacy nutrient_nbr in the nutrient_id column
     NUTRIENT_NBR_CARBS,
     NUTRIENT_NBR_FIBER,
     NUTRIENT_NBR_SUGARS,
+    NUTRIENT_NBR_FAT,
+    NUTRIENT_NBR_PROTEIN,
   ]);
   return readCsv(join(dir, "food_nutrient.csv"), (fields, headers) => {
     let nutrient_id = Number(fieldByName(fields, headers, "nutrient_id"));
@@ -225,6 +235,8 @@ async function main() {
       fiber        REAL,
       sugars       REAL,
       net_carbs    REAL,
+      fat          REAL,
+      protein      REAL,
       serving_g    REAL,
       serving_desc TEXT
     );
@@ -254,7 +266,7 @@ async function main() {
     "INSERT OR IGNORE INTO foods (fdc_id, data_type, description, category) VALUES (?, ?, ?, ?)",
   );
   const updateNutrients = db.prepare(
-    "UPDATE foods SET total_carbs = ?, fiber = ?, sugars = ?, net_carbs = ? WHERE fdc_id = ?",
+    "UPDATE foods SET total_carbs = ?, fiber = ?, sugars = ?, net_carbs = ?, fat = ?, protein = ? WHERE fdc_id = ?",
   );
   const updatePortion = db.prepare(
     "UPDATE foods SET serving_g = ?, serving_desc = ? WHERE fdc_id = ? AND serving_g IS NULL",
@@ -311,8 +323,18 @@ async function main() {
         nutMap.get(NUTRIENT_SUGARS_TOTAL) ??
         null;
       const netCarbs = carbs !== null ? carbs - (fiber ?? 0) : null;
+      const fat = nutMap.get(NUTRIENT_FAT) ?? null;
+      const protein = nutMap.get(NUTRIENT_PROTEIN) ?? null;
 
-      updateNutrients.bind([carbs, fiber, sugars, netCarbs, fdcId]);
+      updateNutrients.bind([
+        carbs,
+        fiber,
+        sugars,
+        netCarbs,
+        fat,
+        protein,
+        fdcId,
+      ]);
       updateNutrients.step();
       updateNutrients.reset();
     }
@@ -339,7 +361,7 @@ async function main() {
   console.log(`\nInserting ${BEDCA_FOODS.length} BEDCA foods...`);
   db.run("BEGIN TRANSACTION");
   const insertBedca = db.prepare(
-    "INSERT INTO foods (fdc_id, data_type, description, category, total_carbs, fiber, sugars, net_carbs, serving_g) VALUES (?, 'curated', ?, 'BEDCA', ?, ?, ?, ?, ?)",
+    "INSERT INTO foods (fdc_id, data_type, description, category, total_carbs, fiber, sugars, net_carbs, fat, protein, serving_g) VALUES (?, 'curated', ?, 'BEDCA', ?, ?, ?, ?, ?, ?, ?)",
   );
   for (const f of BEDCA_FOODS) {
     insertBedca.bind([
@@ -349,6 +371,8 @@ async function main() {
       f.fiber,
       f.sugars,
       f.net_carbs,
+      f.fat,
+      f.protein,
       f.typical_serving_g,
     ]);
     insertBedca.step();

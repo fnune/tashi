@@ -24,6 +24,8 @@ export interface BedcaFood {
   fiber: number;
   sugars: number;
   net_carbs: number;
+  fat: number;
+  protein: number;
   glycemic_index: number | null;
   gi_source: string | null;
   typical_serving_g: number;
@@ -42,6 +44,8 @@ export const BEDCA_FOODS: BedcaFood[] = [
     fiber: 0.0,
     sugars: 0.5,
     net_carbs: 0.5,
+    fat: 32.0,
+    protein: 25.0,
     glycemic_index: null,
     gi_source: null,
     typical_serving_g: 30,
@@ -56,6 +60,8 @@ export const BEDCA_FOODS: BedcaFood[] = [
     fiber: 0.8,
     sugars: 1.0,
     net_carbs: 9.7,
+    fat: 8.0,
+    protein: 7.5,
     glycemic_index: null,
     gi_source: null,
     typical_serving_g: 150,
@@ -70,6 +76,8 @@ export const BEDCA_FOODS: BedcaFood[] = [
     fiber: 0.0,
     sugars: 0.0,
     net_carbs: 0.0,
+    fat: 16.0,
+    protein: 31.0,
     glycemic_index: null,
     gi_source: null,
     typical_serving_g: 50,
@@ -84,6 +92,8 @@ export const BEDCA_FOODS: BedcaFood[] = [
     fiber: 0.0,
     sugars: 1.9,
     net_carbs: 1.9,
+    fat: 38.0,
+    protein: 22.0,
     glycemic_index: null,
     gi_source: null,
     typical_serving_g: 30,
@@ -98,6 +108,8 @@ export const BEDCA_FOODS: BedcaFood[] = [
     fiber: 0.5,
     sugars: 1.5,
     net_carbs: 17.5,
+    fat: 12.0,
+    protein: 8.0,
     glycemic_index: null,
     gi_source: null,
     typical_serving_g: 30,
@@ -112,6 +124,8 @@ export const BEDCA_FOODS: BedcaFood[] = [
     fiber: 1.0,
     sugars: 1.2,
     net_carbs: 17.0,
+    fat: 5.0,
+    protein: 10.0,
     glycemic_index: null,
     gi_source: null,
     typical_serving_g: 350,
@@ -126,6 +140,8 @@ export const BEDCA_FOODS: BedcaFood[] = [
     fiber: 0.5,
     sugars: 2.5,
     net_carbs: 3.0,
+    fat: 3.5,
+    protein: 1.0,
     glycemic_index: null,
     gi_source: null,
     typical_serving_g: 250,
@@ -140,6 +156,8 @@ export const BEDCA_FOODS: BedcaFood[] = [
     fiber: 2.9,
     sugars: 3.0,
     net_carbs: 48.5,
+    fat: 1.6,
+    protein: 8.5,
     glycemic_index: 95,
     gi_source: "SUGiRS",
     typical_serving_g: 60,
@@ -154,6 +172,8 @@ export const BEDCA_FOODS: BedcaFood[] = [
     fiber: 1.5,
     sugars: 2.0,
     net_carbs: 22.5,
+    fat: 14.0,
+    protein: 10.0,
     glycemic_index: null,
     gi_source: null,
     typical_serving_g: 150,

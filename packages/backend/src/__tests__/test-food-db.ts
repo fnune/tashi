@@ -27,6 +27,8 @@ export async function createTestFoodDb(tmpDir: string): Promise<FoodDatabase> {
       fiber REAL,
       sugars REAL,
       net_carbs REAL,
+      fat REAL,
+      protein REAL,
       serving_g REAL,
       serving_desc TEXT
     );
@@ -40,11 +42,14 @@ export async function createTestFoodDb(tmpDir: string): Promise<FoodDatabase> {
     );
   `);
 
+  // [fdc_id, data_type, description, category, total_carbs, fiber, sugars, net_carbs, fat, protein, serving_g]
   const foods: [
     number,
     string,
     string,
     string,
+    number,
+    number,
     number,
     number,
     number,
@@ -60,6 +65,8 @@ export async function createTestFoodDb(tmpDir: string): Promise<FoodDatabase> {
       0.4,
       0.05,
       27.77,
+      0.28,
+      2.69,
       150,
     ],
     [
@@ -71,6 +78,8 @@ export async function createTestFoodDb(tmpDir: string): Promise<FoodDatabase> {
       2.6,
       12.23,
       20.24,
+      0.33,
+      1.09,
       120,
     ],
     [
@@ -82,6 +91,8 @@ export async function createTestFoodDb(tmpDir: string): Promise<FoodDatabase> {
       0.0,
       0.0,
       0.0,
+      3.57,
+      31.02,
       170,
     ],
     [
@@ -93,6 +104,8 @@ export async function createTestFoodDb(tmpDir: string): Promise<FoodDatabase> {
       0.0,
       99.8,
       99.98,
+      0.0,
+      0.0,
       5,
     ],
   ];
@@ -106,9 +119,11 @@ export async function createTestFoodDb(tmpDir: string): Promise<FoodDatabase> {
     fiber,
     sugars,
     net,
+    fat,
+    protein,
     serving,
   ] of foods) {
-    db.run("INSERT INTO foods VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NULL)", [
+    db.run("INSERT INTO foods VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL)", [
       fdc_id,
       data_type,
       desc,
@@ -117,6 +132,8 @@ export async function createTestFoodDb(tmpDir: string): Promise<FoodDatabase> {
       fiber,
       sugars,
       net,
+      fat,
+      protein,
       serving,
     ]);
   }
