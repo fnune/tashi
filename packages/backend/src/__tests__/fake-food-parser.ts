@@ -1,5 +1,5 @@
 import type { ParsedFoodItem } from "@pincho/shared";
-import type { FoodParser } from "../food-parser.js";
+import type { FoodParser, ParseResult } from "../food-parser.js";
 
 export class FakeFoodParser implements FoodParser {
   private responses: Map<string, ParsedFoodItem[]> = new Map();
@@ -8,12 +8,22 @@ export class FakeFoodParser implements FoodParser {
     this.responses.set(description, items);
   }
 
-  async parse(foodDescription: string): Promise<ParsedFoodItem[]> {
+  async parse(foodDescription: string): Promise<ParseResult> {
     const response = this.responses.get(foodDescription);
-    if (response) return response;
+    if (!response) {
+      throw new Error(
+        `FakeFoodParser: no response configured for "${foodDescription}"`,
+      );
+    }
 
-    throw new Error(
-      `FakeFoodParser: no response configured for "${foodDescription}"`,
-    );
+    return {
+      items: response,
+      trace: {
+        searches: [],
+        raw_response: JSON.stringify(response),
+        model: "fake",
+        duration_ms: 0,
+      },
+    };
   }
 }

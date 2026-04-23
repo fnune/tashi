@@ -20,9 +20,21 @@ export interface FoodMatch {
   match_count: number;
 }
 
-function normalizeWord(w: string): string {
-  if (w.length > 3 && w.endsWith("s")) return w.slice(0, -1);
-  return w;
+function countMatchingPhrases(buf: Uint8Array): number {
+  const view = new DataView(buf.buffer, buf.byteOffset, buf.byteLength);
+  const p = view.getUint32(0, true);
+  const c = view.getUint32(4, true);
+  let count = 0;
+  for (let i = 0; i < p; i++) {
+    for (let j = 0; j < c; j++) {
+      const off = 8 + (i * c + j) * 3 * 4;
+      if (view.getUint32(off, true) > 0) {
+        count++;
+        break;
+      }
+    }
+  }
+  return count;
 }
 
 export class FoodDatabase {
@@ -50,18 +62,11 @@ export class FoodDatabase {
       .toLowerCase()
       .replace(/[^a-z0-9\s]/g, " ")
       .split(/\s+/)
-      .filter((w) => w.length > 1)
-      .map(normalizeWord);
+      .filter((w) => w.length > 1);
 
     if (words.length === 0) return [];
 
-    const placeholders = words.map((_, i) => `:w${i}`).join(", ");
-    const params: Record<string, string | number> = {};
-    for (let i = 0; i < words.length; i++) {
-      params[`:w${i}`] = words[i] as string;
-    }
-    params[":limit"] = limit;
-    params[":total_words"] = words.length;
+    const ftsQuery = words.join(" OR ");
 
     const stmt = this.db.prepare(`
       SELECT
@@ -79,24 +84,33 @@ export class FoodDatabase {
         c.glycemic_index,
         c.gi_source,
         c.cooking_multiplier,
-        COUNT(DISTINCT fw.word) AS match_count
-      FROM food_words fw
-      JOIN foods f ON f.fdc_id = fw.fdc_id
+        matchinfo(foods_fts, 'pcx') AS mi
+      FROM foods_fts
+      JOIN foods f ON f.fdc_id = foods_fts.rowid
       LEFT JOIN curated c ON c.fdc_id = f.fdc_id
-      WHERE fw.word IN (${placeholders})
-      GROUP BY f.fdc_id
-      ORDER BY match_count DESC, length(f.description) ASC
-      LIMIT :limit
+      WHERE foods_fts MATCH :query
     `);
 
+    stmt.bind({ ":query": ftsQuery });
+
     const results: FoodMatch[] = [];
-    stmt.bind(params);
     while (stmt.step()) {
       const row = stmt.getAsObject();
-      results.push(this.rowToMatch(row));
+      const mi = row.mi as Uint8Array;
+      results.push({
+        ...this.rowToMatch(row),
+        match_count: countMatchingPhrases(mi),
+      });
     }
     stmt.free();
-    return results;
+
+    results.sort(
+      (a, b) =>
+        b.match_count - a.match_count ||
+        a.description.length - b.description.length,
+    );
+
+    return results.slice(0, limit);
   }
 
   getByFdcId(fdcId: number): FoodMatch | null {

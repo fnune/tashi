@@ -27,6 +27,18 @@ export interface ParsedFoodItem {
   warning: string | null;
 }
 
+export interface SearchTraceEntry {
+  query: string;
+  results: { fdc_id: number; description: string; net_carbs_per_100g: number }[];
+}
+
+export interface ParseTrace {
+  searches: SearchTraceEntry[];
+  raw_response: string;
+  model: string;
+  duration_ms: number;
+}
+
 export interface CalculatedItem {
   description: string;
   weight_g: number;
@@ -76,6 +88,7 @@ export interface CalculationResult {
     correction_dose: number;
     total_dose: number;
   };
+  trace?: ParseTrace;
 }
 
 // --- Timeline entries ---
@@ -94,6 +107,7 @@ export interface MealEntry extends BaseEntry {
   total_net_carbs_g: number;
   recommended_dose?: number;
   correction?: CalculationResult["correction"];
+  trace?: ParseTrace;
 }
 
 export interface FastInsulinEntry extends BaseEntry {

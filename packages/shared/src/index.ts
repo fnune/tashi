@@ -17,6 +17,8 @@ export type {
   MealEntry,
   MealWindow,
   ParsedFoodItem,
+  ParseTrace,
+  SearchTraceEntry,
   Settings,
   SlowInsulinEntry,
   TimelineEntry,

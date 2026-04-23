@@ -85,6 +85,11 @@ describe("Calculator", () => {
 
     expect(result.total_net_carbs_g).toBeCloseTo(41.7, 0);
     expect(result.recommended_dose).toBe(4);
+
+    expect(result.trace).toBeDefined();
+    expect(result.trace!.model).toBe("fake");
+    expect(result.trace!.searches).toEqual([]);
+    expect(result.trace!.raw_response).toContain("White rice");
   });
 
   it("uses LLM estimate when fdc_id is null (no DB match)", async () => {
@@ -343,5 +348,11 @@ describe("FoodDatabase search", () => {
   it("returns empty array for no matches", () => {
     const results = foodDb.search("xyznonexistent");
     expect(results).toHaveLength(0);
+  });
+
+  it("stems words with porter tokenizer", () => {
+    const results = foodDb.search("cooking");
+    expect(results.length).toBeGreaterThan(0);
+    expect(results[0]!.fdc_id).toBe(169756);
   });
 });

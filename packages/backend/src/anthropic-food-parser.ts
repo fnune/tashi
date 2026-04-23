@@ -1,7 +1,7 @@
 import Anthropic from "@anthropic-ai/sdk";
-import type { ParsedFoodItem } from "@pincho/shared";
+import type { ParsedFoodItem, SearchTraceEntry } from "@pincho/shared";
 import type { FoodDatabase } from "./db/food-db.js";
-import type { FoodParser } from "./food-parser.js";
+import type { FoodParser, ParseResult } from "./food-parser.js";
 
 const SYSTEM_PROMPT = `You are a food parsing assistant for a diabetes insulin calculator.
 
@@ -78,10 +78,13 @@ export class AnthropicFoodParser implements FoodParser {
     this.foodDb = foodDb;
   }
 
-  async parse(foodDescription: string): Promise<ParsedFoodItem[]> {
+  async parse(foodDescription: string): Promise<ParseResult> {
     const messages: Anthropic.Messages.MessageParam[] = [
       { role: "user", content: foodDescription },
     ];
+
+    const searches: SearchTraceEntry[] = [];
+    const startMs = Date.now();
 
     for (let round = 0; round < MAX_TOOL_ROUNDS; round++) {
       const response = await this.client.messages.create({
@@ -97,19 +100,27 @@ export class AnthropicFoodParser implements FoodParser {
         if (!text || text.type !== "text") {
           throw new Error("No text in final LLM response");
         }
-        const jsonStr = extractJson(text.text);
+        const rawResponse = text.text;
+        const jsonStr = extractJson(rawResponse);
         const parsed: unknown = JSON.parse(jsonStr);
         if (!Array.isArray(parsed)) {
           throw new Error("LLM response is not an array");
         }
-        return parsed as ParsedFoodItem[];
+        return {
+          items: parsed as ParsedFoodItem[],
+          trace: {
+            searches,
+            raw_response: rawResponse,
+            model: this.model,
+            duration_ms: Date.now() - startMs,
+          },
+        };
       }
 
       if (response.stop_reason !== "tool_use") {
         throw new Error(`Unexpected stop_reason: ${response.stop_reason}`);
       }
 
-      // Process tool calls
       const toolResults: Anthropic.Messages.ToolResultBlockParam[] = [];
       for (const block of response.content) {
         if (block.type !== "tool_use") continue;
@@ -124,6 +135,16 @@ export class AnthropicFoodParser implements FoodParser {
             fiber_per_100g: r.fiber_per_100g,
             match_count: r.match_count,
           }));
+
+          searches.push({
+            query: input.query,
+            results: formatted.map((r) => ({
+              fdc_id: r.fdc_id,
+              description: r.description,
+              net_carbs_per_100g: r.net_carbs_per_100g,
+            })),
+          });
+
           toolResults.push({
             type: "tool_result",
             tool_use_id: block.id,

@@ -43,7 +43,7 @@ export class Calculator {
     currentBloodSugar?: number,
     mealWindowOverride?: string,
   ): Promise<CalculationResult> {
-    const parsedItems = await this.parser.parse(foodDescription);
+    const { items: parsedItems, trace } = await this.parser.parse(foodDescription);
     const items = this.resolveItems(parsedItems);
 
     const mealWindow = mealWindowOverride
@@ -73,6 +73,7 @@ export class Calculator {
       total_net_carbs_g: Math.round(dose.totalNetCarbs * 10) / 10,
       recommended_dose: dose.foodDose,
       correction: dose.correction,
+      trace,
     };
   }
 

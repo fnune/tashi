@@ -392,41 +392,22 @@ async function main() {
   insertCurated.free();
   db.run("COMMIT");
 
-  // Build word-based search index
-  console.log("Building word index...");
+  // Build FTS4 search index with porter stemmer
+  console.log("Building FTS index...");
   db.run(`
-    CREATE TABLE food_words (
-      word TEXT NOT NULL,
-      fdc_id INTEGER NOT NULL
-    );
+    CREATE VIRTUAL TABLE foods_fts USING fts4(
+      description,
+      tokenize=porter
+    )
   `);
 
-  const allFoods = db.exec("SELECT fdc_id, description FROM foods");
-  const insertWord = db.prepare(
-    "INSERT INTO food_words (word, fdc_id) VALUES (?, ?)",
-  );
-  db.run("BEGIN TRANSACTION");
-  let wordCount = 0;
-  for (const [fdcId, desc] of allFoods[0]?.values ?? []) {
-    const words = (desc as string)
-      .toLowerCase()
-      .replace(/[^a-z0-9\s]/g, " ")
-      .split(/\s+/)
-      .filter((w) => w.length > 1)
-      .map((w) => (w.length > 3 && w.endsWith("s") ? w.slice(0, -1) : w));
-    const unique = [...new Set(words)];
-    for (const word of unique) {
-      insertWord.bind([word, fdcId]);
-      insertWord.step();
-      insertWord.reset();
-      wordCount++;
-    }
-  }
-  insertWord.free();
-  db.run("COMMIT");
+  db.run(`
+    INSERT INTO foods_fts(rowid, description)
+    SELECT fdc_id, description FROM foods
+  `);
 
-  db.run("CREATE INDEX idx_food_words_word ON food_words(word)");
-  console.log(`  ${wordCount} word entries indexed`);
+  const ftsCount = db.exec("SELECT count(*) FROM foods_fts");
+  console.log(`  ${ftsCount[0]?.values[0]?.[0] ?? 0} foods indexed`);
 
   // Summary
   const countResult = db.exec("SELECT count(*) FROM foods");
