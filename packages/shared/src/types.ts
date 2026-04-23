@@ -15,6 +15,10 @@ export interface FoodItem {
   cooking_multiplier: number | null;
 }
 
+export type UserCarbs =
+  | { basis: "per_100g"; net_carbs: number }
+  | { basis: "total"; net_carbs: number };
+
 export interface ParsedFoodItem {
   description: string;
   weight_g: number;
@@ -23,13 +27,18 @@ export interface ParsedFoodItem {
   confidence: "high" | "medium" | "low";
   notes: string | null;
   estimated_net_carbs_per_100g: number | null;
+  user_carbs: UserCarbs | null;
   estimated_glycemic_index: number | null;
   warning: string | null;
 }
 
 export interface SearchTraceEntry {
   query: string;
-  results: { fdc_id: number; description: string; net_carbs_per_100g: number }[];
+  results: {
+    fdc_id: number;
+    description: string;
+    net_carbs_per_100g: number;
+  }[];
 }
 
 export interface ParseTrace {
@@ -42,6 +51,7 @@ export interface ParseTrace {
 export interface CalculatedItem {
   description: string;
   weight_g: number;
+  net_carbs_per_100g: number;
   net_carbs_g: number;
   assumed_cooked: boolean;
   confidence: "high" | "medium" | "low";

@@ -66,10 +66,7 @@ export function ResultTable({ result, lang, glucoseUnit }: ResultTableProps) {
         </thead>
         <tbody>
           {result.items.map((item, i) => {
-            const per100g =
-              item.weight_g > 0
-                ? Math.round((item.net_carbs_g / item.weight_g) * 1000) / 10
-                : 0;
+            const per100g = item.net_carbs_per_100g;
             const source = sourceLink(item);
             const gi = item.glycemic_index;
             const giIsEstimated = item.gi_estimated;

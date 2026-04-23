@@ -23,5 +23,6 @@ export type {
   SlowInsulinEntry,
   TimelineEntry,
   UpdateTimelineRequest,
+  UserCarbs,
 } from "./types.js";
 export { DEFAULT_SETTINGS } from "./types.js";

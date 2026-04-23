@@ -17,6 +17,11 @@ Rules:
 - ALWAYS provide estimated_net_carbs_per_100g (net carbs EXCLUDING fibre) as a safety fallback.
 - ALWAYS provide estimated_glycemic_index (0-100, glucose reference) unless negligible carbs (meat, oil, greens).
 - Set warning for suspicious input (huge quantities, non-food items) in the user's language.
+- user_carbs: when the user explicitly states carb/nutritional info (e.g. from a food label), capture it:
+  - { "basis": "per_100g", "net_carbs": <number> } if they say "Xg carbs per 100g"
+  - { "basis": "total", "net_carbs": <number> } if they say "this has Xg carbs" (meaning the whole portion)
+  - null if the user did not provide carb info.
+  EU labels list carbs with fibre already excluded, so use the label value directly as net_carbs.
 
 Your final response must be ONLY a JSON array:
 [{
@@ -27,6 +32,7 @@ Your final response must be ONLY a JSON array:
   "confidence": "high" | "medium" | "low",
   "notes": "<assumptions, in user's language, or null>",
   "estimated_net_carbs_per_100g": <number>,
+  "user_carbs": { "basis": "per_100g" | "total", "net_carbs": <number> } | null,
   "estimated_glycemic_index": <number or null>,
   "warning": "<concern, in user's language, or null>"
 }]`;

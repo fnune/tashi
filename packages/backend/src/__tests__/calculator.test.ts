@@ -50,6 +50,7 @@ describe("Calculator", () => {
         notes: null,
         estimated_net_carbs_per_100g: 28,
         estimated_glycemic_index: 73,
+        user_carbs: null,
         warning: null,
       },
       {
@@ -60,6 +61,7 @@ describe("Calculator", () => {
         confidence: "high",
         notes: null,
         estimated_net_carbs_per_100g: 0,
+        user_carbs: null,
         estimated_glycemic_index: null,
         warning: null,
       },
@@ -103,6 +105,7 @@ describe("Calculator", () => {
         notes: "Not in database",
         estimated_net_carbs_per_100g: 15.0,
         estimated_glycemic_index: 35,
+        user_carbs: null,
         warning: null,
       },
     ]);
@@ -132,6 +135,7 @@ describe("Calculator", () => {
         notes: null,
         estimated_net_carbs_per_100g: 20.0,
         estimated_glycemic_index: 50,
+        user_carbs: null,
         warning: null,
       },
     ]);
@@ -160,6 +164,7 @@ describe("Calculator", () => {
         notes: "Assumed medium banana (~120g)",
         estimated_net_carbs_per_100g: 20,
         estimated_glycemic_index: 51,
+        user_carbs: null,
         warning: null,
       },
     ]);
@@ -190,6 +195,7 @@ describe("Calculator", () => {
         notes: null,
         estimated_net_carbs_per_100g: 20,
         estimated_glycemic_index: 51,
+        user_carbs: null,
         warning: null,
       },
     ]);
@@ -218,6 +224,7 @@ describe("Calculator", () => {
         notes: null,
         estimated_net_carbs_per_100g: 28,
         estimated_glycemic_index: 70,
+        user_carbs: null,
         warning: null,
       },
       {
@@ -229,6 +236,7 @@ describe("Calculator", () => {
         notes: null,
         estimated_net_carbs_per_100g: 15.0,
         estimated_glycemic_index: 35,
+        user_carbs: null,
         warning: null,
       },
     ]);
@@ -260,6 +268,7 @@ describe("Calculator", () => {
         notes: null,
         estimated_net_carbs_per_100g: 100,
         estimated_glycemic_index: 65,
+        user_carbs: null,
         warning: "500g of sugar is an unusually large amount for coffee",
       },
     ]);
@@ -287,6 +296,7 @@ describe("Calculator", () => {
         notes: null,
         estimated_net_carbs_per_100g: 28,
         estimated_glycemic_index: 73,
+        user_carbs: null,
         warning: null,
       },
     ]);
@@ -309,6 +319,119 @@ describe("Calculator", () => {
 
     expect(result05.recommended_dose % 0.5).toBe(0);
     expect(result1.recommended_dose % 1).toBe(0);
+  });
+
+  it("prefers user-provided carbs (per_100g) over USDA", async () => {
+    parser.setResponse("150g rice, 14g carbs per 100g", [
+      {
+        description: "White rice (cooked)",
+        fdc_id: 169756,
+        weight_g: 150,
+        assumed_cooked: true,
+        confidence: "high",
+        notes: null,
+        estimated_net_carbs_per_100g: 14,
+        user_carbs: { basis: "per_100g", net_carbs: 14 },
+        estimated_glycemic_index: 73,
+        warning: null,
+      },
+    ]);
+
+    const result = await calculator.calculate(
+      "150g rice, 14g carbs per 100g",
+      TEST_SETTINGS,
+      undefined,
+      "lunch",
+    );
+
+    const rice = result.items[0]!;
+    expect(rice.net_carbs_per_100g).toBe(14);
+    expect(rice.net_carbs_g).toBe(21);
+    expect(rice.food_item).not.toBeNull();
+    expect(rice.food_item!.fdc_id).toBe(169756);
+  });
+
+  it("prefers user-provided carbs (total) over USDA", async () => {
+    parser.setResponse("15g hummus, 2g carbs total", [
+      {
+        description: "Hummus",
+        fdc_id: 169756,
+        weight_g: 15,
+        assumed_cooked: false,
+        confidence: "high",
+        notes: null,
+        estimated_net_carbs_per_100g: 13,
+        user_carbs: { basis: "total", net_carbs: 2 },
+        estimated_glycemic_index: 35,
+        warning: null,
+      },
+    ]);
+
+    const result = await calculator.calculate(
+      "15g hummus, 2g carbs total",
+      TEST_SETTINGS,
+      undefined,
+      "lunch",
+    );
+
+    const item = result.items[0]!;
+    expect(item.net_carbs_per_100g).toBeCloseTo(13.3, 1);
+    expect(item.net_carbs_g).toBe(2);
+  });
+
+  it("warns when user carbs differ significantly from USDA", async () => {
+    parser.setResponse("150g rice, 5g carbs per 100g", [
+      {
+        description: "White rice (cooked)",
+        fdc_id: 169756,
+        weight_g: 150,
+        assumed_cooked: true,
+        confidence: "high",
+        notes: null,
+        estimated_net_carbs_per_100g: 5,
+        user_carbs: { basis: "per_100g", net_carbs: 5 },
+        estimated_glycemic_index: 73,
+        warning: null,
+      },
+    ]);
+
+    const result = await calculator.calculate(
+      "150g rice, 5g carbs per 100g",
+      TEST_SETTINGS,
+      undefined,
+      "lunch",
+    );
+
+    const rice = result.items[0]!;
+    expect(rice.net_carbs_per_100g).toBe(5);
+    expect(rice.warning).toContain("USDA");
+    expect(rice.warning).toContain("27.77");
+  });
+
+  it("populates net_carbs_per_100g from USDA match", async () => {
+    parser.setResponse("120g banana", [
+      {
+        description: "Banana",
+        fdc_id: 173944,
+        weight_g: 120,
+        assumed_cooked: false,
+        confidence: "high",
+        notes: null,
+        estimated_net_carbs_per_100g: 20,
+        user_carbs: null,
+        estimated_glycemic_index: 51,
+        warning: null,
+      },
+    ]);
+
+    const result = await calculator.calculate(
+      "120g banana",
+      TEST_SETTINGS,
+      undefined,
+      "lunch",
+    );
+
+    expect(result.items[0]!.net_carbs_per_100g).toBe(20.2);
   });
 });
 
