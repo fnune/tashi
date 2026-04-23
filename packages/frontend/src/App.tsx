@@ -48,7 +48,9 @@ function AppShell() {
         setSettingsLoaded(true);
       })
       .catch((e) => {
-        setLoadError(e instanceof Error ? e.message : "Failed to load settings");
+        setLoadError(
+          e instanceof Error ? e.message : "Failed to load settings",
+        );
       });
     api.getTimeline().then(setTimeline).catch(console.error);
   }, []);

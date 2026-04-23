@@ -4,18 +4,20 @@ import { join } from "node:path";
 import { serve } from "@hono/node-server";
 import { serveStatic } from "@hono/node-server/serve-static";
 import { Calculator } from "@pincho/backend/calculator";
-import type { FoodParser } from "@pincho/backend/food-parser";
+// E2E tests use the real food database
+import { FoodDatabase } from "@pincho/backend/db/food-db";
+import type { FoodParser, ParseResult } from "@pincho/backend/food-parser";
 import { createRoutes } from "@pincho/backend/routes";
 import { FileStorage } from "@pincho/backend/storage";
-import type { ParsedFoodItem } from "@pincho/shared";
+import type { FoodVocabEntry, ParsedFoodItem } from "@pincho/shared";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 
-// E2E tests use the real food database
-import { FoodDatabase } from "@pincho/backend/db/food-db";
-
 class FakeFoodParser implements FoodParser {
-  async parse(foodDescription: string): Promise<ParsedFoodItem[]> {
+  async parse(
+    foodDescription: string,
+    _vocabulary: FoodVocabEntry[] = [],
+  ): Promise<ParseResult> {
     const lower = foodDescription.toLowerCase();
 
     if (lower.includes("arroz") || lower.includes("rice")) {
@@ -57,11 +59,11 @@ class FakeFoodParser implements FoodParser {
         });
       }
 
-      return items;
+      return this.result(items);
     }
 
     if (lower.includes("banana") || lower.includes("platano")) {
-      return [
+      return this.result([
         {
           description: lower.includes("platano") ? "Platano" : "Banana",
           fdc_id: 173944,
@@ -76,10 +78,10 @@ class FakeFoodParser implements FoodParser {
           estimated_glycemic_index: 51,
           warning: null,
         },
-      ];
+      ]);
     }
 
-    return [
+    return this.result([
       {
         description: foodDescription,
         fdc_id: null,
@@ -92,7 +94,19 @@ class FakeFoodParser implements FoodParser {
         estimated_glycemic_index: 40,
         warning: null,
       },
-    ];
+    ]);
+  }
+
+  private result(items: ParsedFoodItem[]): ParseResult {
+    return {
+      items,
+      trace: {
+        searches: [],
+        raw_response: JSON.stringify(items),
+        model: "fake",
+        duration_ms: 0,
+      },
+    };
   }
 }
 

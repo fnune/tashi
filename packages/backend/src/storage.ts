@@ -154,7 +154,9 @@ export class FileStorage {
 
       const key = item.description.toLowerCase();
       const existing = vocab.find(
-        (v) => v.description.toLowerCase() === key && v.fdc_id === item.food_item!.fdc_id,
+        (v) =>
+          v.description.toLowerCase() === key &&
+          v.fdc_id === item.food_item?.fdc_id,
       );
 
       if (existing) {

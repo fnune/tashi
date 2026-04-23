@@ -44,8 +44,10 @@ export class Calculator {
     mealWindowOverride?: string,
     vocabulary: FoodVocabEntry[] = [],
   ): Promise<CalculationResult> {
-    const { items: parsedItems, trace } =
-      await this.parser.parse(foodDescription, vocabulary);
+    const { items: parsedItems, trace } = await this.parser.parse(
+      foodDescription,
+      vocabulary,
+    );
     const items = this.resolveItems(parsedItems);
 
     const mealWindow = mealWindowOverride

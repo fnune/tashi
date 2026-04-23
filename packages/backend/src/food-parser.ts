@@ -1,4 +1,8 @@
-import type { FoodVocabEntry, ParsedFoodItem, ParseTrace } from "@pincho/shared";
+import type {
+  FoodVocabEntry,
+  ParsedFoodItem,
+  ParseTrace,
+} from "@pincho/shared";
 
 export interface ParseResult {
   items: ParsedFoodItem[];

@@ -2,6 +2,7 @@ node_modules/
 dist/
 .env
 *.local
+packages/backend/data/
 data/settings.json
 data/history.json
 data/timeline.json

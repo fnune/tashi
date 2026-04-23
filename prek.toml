@@ -1,0 +1,13 @@
+[[repos]]
+repo = "builtin"
+hooks = [
+    { id = "check-merge-conflict" },
+    { id = "check-added-large-files", args = ["--maxkb=1024"] },
+]
+
+[[repos]]
+repo = "local"
+hooks = [
+    { id = "biome", name = "biome check", entry = "pnpm biome check --no-errors-on-unmatched", language = "system", types_or = ["ts", "tsx", "json"], pass_filenames = true },
+    { id = "typecheck", name = "typecheck", entry = "pnpm typecheck", language = "system", pass_filenames = false, types_or = ["ts", "tsx"] },
+]

@@ -17,6 +17,7 @@
             nodejs_22
             pnpm
             biome
+            prek
           ];
         };
       });
