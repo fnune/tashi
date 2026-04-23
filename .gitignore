@@ -4,5 +4,6 @@ dist/
 *.local
 data/settings.json
 data/history.json
+data/timeline.json
 test-results/
 packages/backend/public/
