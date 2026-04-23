@@ -42,6 +42,7 @@ function QuickAdd({
     "fast_insulin" | "slow_insulin" | "glucose_reading" | null
   >(null);
   const [value, setValue] = useState("");
+  const [error, setError] = useState<string | null>(null);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -57,10 +58,15 @@ function QuickAdd({
       req = { type: mode, units: num };
     }
 
-    await api.createTimelineEntry(req);
-    setValue("");
-    setMode(null);
-    onAdded();
+    setError(null);
+    try {
+      await api.createTimelineEntry(req);
+      setValue("");
+      setMode(null);
+      onAdded();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Failed to add entry");
+    }
   }
 
   if (!mode) {
@@ -117,11 +123,13 @@ function QuickAdd({
           onClick={() => {
             setMode(null);
             setValue("");
+            setError(null);
           }}
         >
           {t(lang, "back")}
         </button>
       </div>
+      {error && <div className="error-box">{error}</div>}
     </form>
   );
 }
@@ -153,11 +161,13 @@ function EntryCard({
     return "";
   });
   const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
 
   const hasValueField = entry.type !== "meal";
 
   async function handleSave() {
     setSaving(true);
+    setSaveError(null);
     const timestamp = new Date(editTimestamp).toISOString();
     let updates: UpdateTimelineRequest;
     if (entry.type === "fast_insulin") {
@@ -181,9 +191,14 @@ function EntryCard({
     } else {
       updates = { type: "meal", timestamp };
     }
-    await api.updateTimelineEntry(entry.id, updates);
-    setSaving(false);
-    onUpdated();
+    try {
+      await api.updateTimelineEntry(entry.id, updates);
+      onUpdated();
+    } catch (e) {
+      setSaveError(e instanceof Error ? e.message : "Failed to save");
+    } finally {
+      setSaving(false);
+    }
   }
 
   const dirty =
@@ -294,6 +309,11 @@ function EntryCard({
               </div>
             )}
           </div>
+          {saveError && (
+            <div className="error-box" style={{ margin: "0 12px" }}>
+              {saveError}
+            </div>
+          )}
           <div className="history-actions">
             {dirty && (
               <button
@@ -328,16 +348,24 @@ export function TimelineView({
   onExpand,
 }: TimelineViewProps) {
   async function handleDelete(id: string) {
-    await api.deleteTimelineEntry(id);
-    if (expandedId === id) onExpand(undefined);
-    onRefresh();
+    try {
+      await api.deleteTimelineEntry(id);
+      if (expandedId === id) onExpand(undefined);
+      onRefresh();
+    } catch (e) {
+      console.error("Failed to delete entry:", e);
+    }
   }
 
   async function handleClear() {
     if (!window.confirm(t(lang, "confirmClearTimeline"))) return;
-    await api.clearTimeline();
-    onExpand(undefined);
-    onRefresh();
+    try {
+      await api.clearTimeline();
+      onExpand(undefined);
+      onRefresh();
+    } catch (e) {
+      console.error("Failed to clear timeline:", e);
+    }
   }
 
   return (

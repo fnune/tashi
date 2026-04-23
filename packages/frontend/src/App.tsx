@@ -37,17 +37,24 @@ function AppShell() {
 
   const lang = settings.language;
 
+  const [loadError, setLoadError] = useState<string | null>(null);
+
   useEffect(() => {
-    api.getSettings().then((s) => {
-      setSettings(s);
-      localStorage.setItem("pincho-lang", s.language);
-      setSettingsLoaded(true);
-    });
-    api.getTimeline().then(setTimeline);
+    api
+      .getSettings()
+      .then((s) => {
+        setSettings(s);
+        localStorage.setItem("pincho-lang", s.language);
+        setSettingsLoaded(true);
+      })
+      .catch((e) => {
+        setLoadError(e instanceof Error ? e.message : "Failed to load settings");
+      });
+    api.getTimeline().then(setTimeline).catch(console.error);
   }, []);
 
   const refreshTimeline = useCallback(() => {
-    api.getTimeline().then(setTimeline);
+    api.getTimeline().then(setTimeline).catch(console.error);
   }, []);
 
   function handleSaveSettings(s: Settings) {
@@ -66,6 +73,14 @@ function AppShell() {
     if (path === "/" && currentPath === "/") return "nav-btn active";
     if (path !== "/" && currentPath.startsWith(path)) return "nav-btn active";
     return "nav-btn";
+  }
+
+  if (loadError) {
+    return (
+      <div className="app">
+        <div className="error-box">{loadError}</div>
+      </div>
+    );
   }
 
   if (!settingsLoaded) return null;

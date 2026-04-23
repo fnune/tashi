@@ -13,6 +13,7 @@ export function SettingsView({ settings, onSave, lang }: SettingsViewProps) {
   const [local, setLocal] = useState<Settings>({ ...settings });
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   function updateWindow(
     index: number,
@@ -43,11 +44,14 @@ export function SettingsView({ settings, onSave, lang }: SettingsViewProps) {
 
   async function handleSave() {
     setSaving(true);
+    setError(null);
     try {
       const result = await api.saveSettings(local);
       onSave(result);
       setSaved(true);
       setTimeout(() => setSaved(false), 2000);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Failed to save settings");
     } finally {
       setSaving(false);
     }
@@ -202,6 +206,8 @@ export function SettingsView({ settings, onSave, lang }: SettingsViewProps) {
           <option value="es">Espanol</option>
         </select>
       </div>
+
+      {error && <div className="error-box">{error}</div>}
 
       <button
         type="button"

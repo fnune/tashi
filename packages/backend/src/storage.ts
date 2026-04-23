@@ -1,25 +1,14 @@
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import type {
-  CalculationResult,
-  MealEntry,
   Settings,
   TimelineEntry,
   UpdateTimelineRequest,
 } from "@pincho/shared";
 import { DEFAULT_SETTINGS } from "@pincho/shared";
 
-function migrateHistoryEntry(old: CalculationResult): MealEntry {
-  return {
-    id: old.id,
-    timestamp: old.timestamp,
-    type: "meal",
-    input_text: old.input_text,
-    language: old.language,
-    meal_window: old.meal_window,
-    items: old.items,
-    total_net_carbs_g: old.total_net_carbs_g,
-  };
+function isFileNotFound(e: unknown): boolean {
+  return e instanceof Error && "code" in e && e.code === "ENOENT";
 }
 
 export class FileStorage {
@@ -41,8 +30,9 @@ export class FileStorage {
     try {
       const raw = await readFile(this.path("settings.json"), "utf-8");
       return JSON.parse(raw) as Settings;
-    } catch {
-      return { ...DEFAULT_SETTINGS };
+    } catch (e: unknown) {
+      if (isFileNotFound(e)) return { ...DEFAULT_SETTINGS };
+      throw e;
     }
   }
 
@@ -57,17 +47,9 @@ export class FileStorage {
     try {
       const raw = await readFile(this.path("timeline.json"), "utf-8");
       return JSON.parse(raw) as TimelineEntry[];
-    } catch {
-      // Migrate from legacy history.json if it exists
-      try {
-        const raw = await readFile(this.path("history.json"), "utf-8");
-        const history = JSON.parse(raw) as CalculationResult[];
-        const entries = history.map(migrateHistoryEntry);
-        await this.saveTimeline(entries);
-        return entries;
-      } catch {
-        return [];
-      }
+    } catch (e: unknown) {
+      if (isFileNotFound(e)) return [];
+      throw e;
     }
   }
 
