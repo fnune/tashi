@@ -16,6 +16,10 @@ export function roundToIncrement(value: number, increment: 0.5 | 1): number {
   return Math.round(value / increment) * increment;
 }
 
+function roundDisplay(value: number): number {
+  return Math.round(value * 10) / 10;
+}
+
 const FAT_KCAL_PER_G = 9;
 const PROTEIN_KCAL_PER_G = 4;
 const CARB_KCAL_PER_G = 4;
@@ -71,61 +75,6 @@ interface FatProteinAdjustmentResult {
   total_dose: number;
 }
 
-export function calculateCorrectionDose(
-  foodDose: number,
-  currentBloodSugar: number,
-  settings: Settings,
-): CorrectionResult | undefined {
-  if (settings.correction_factor === null) return undefined;
-  const correctionDose =
-    (currentBloodSugar - settings.target_blood_sugar) /
-    settings.correction_factor;
-  const roundedCorrection = roundToIncrement(
-    correctionDose,
-    settings.pen_increment,
-  );
-  return {
-    current_blood_sugar: currentBloodSugar,
-    target_blood_sugar: settings.target_blood_sugar,
-    correction_factor: settings.correction_factor,
-    correction_dose: roundedCorrection,
-    total_dose: Math.max(
-      0,
-      roundToIncrement(foodDose + roundedCorrection, settings.pen_increment),
-    ),
-  };
-}
-
-export function calculateFatProteinAdjustment(
-  items: CalculatedItem[],
-  foodDose: number,
-  correctionDose: number,
-  settings: Settings,
-): FatProteinAdjustmentResult | undefined {
-  if (settings.fat_protein_multiplier <= 0) return undefined;
-  const threshold = evaluateFatProteinThreshold(items);
-  if (!threshold.met) return undefined;
-
-  const adjustmentDose = roundToIncrement(
-    foodDose * settings.fat_protein_multiplier,
-    settings.pen_increment,
-  );
-  return {
-    total_fat_g: threshold.total_fat_g,
-    total_protein_g: threshold.total_protein_g,
-    threshold_met: threshold.reason,
-    multiplier: settings.fat_protein_multiplier,
-    adjustment_dose: adjustmentDose,
-    total_dose: Math.max(
-      0,
-      roundToIncrement(
-        foodDose + correctionDose + adjustmentDose,
-        settings.pen_increment,
-      ),
-    ),
-  };
-}
-
 export function calculateDose(
   items: CalculatedItem[],
   ratio: number,
@@ -138,20 +87,51 @@ export function calculateDose(
   fat_protein_adjustment?: FatProteinAdjustmentResult;
 } {
   const totalNetCarbs = items.reduce((sum, item) => sum + item.net_carbs_g, 0);
-  const rawDose = totalNetCarbs / ratio;
-  const foodDose = roundToIncrement(rawDose, settings.pen_increment);
+  const rawFoodDose = totalNetCarbs / ratio;
+  const foodDose = roundToIncrement(rawFoodDose, settings.pen_increment);
 
-  const correction =
-    currentBloodSugar !== undefined
-      ? calculateCorrectionDose(foodDose, currentBloodSugar, settings)
-      : undefined;
+  let rawCorrectionDose = 0;
+  let correction: CorrectionResult | undefined;
+  if (currentBloodSugar !== undefined && settings.correction_factor !== null) {
+    rawCorrectionDose =
+      (currentBloodSugar - settings.target_blood_sugar) /
+      settings.correction_factor;
+    correction = {
+      current_blood_sugar: currentBloodSugar,
+      target_blood_sugar: settings.target_blood_sugar,
+      correction_factor: settings.correction_factor,
+      correction_dose: roundDisplay(rawCorrectionDose),
+      total_dose: Math.max(
+        0,
+        roundToIncrement(
+          rawFoodDose + rawCorrectionDose,
+          settings.pen_increment,
+        ),
+      ),
+    };
+  }
 
-  const fat_protein_adjustment = calculateFatProteinAdjustment(
-    items,
-    foodDose,
-    correction?.correction_dose ?? 0,
-    settings,
-  );
+  let fat_protein_adjustment: FatProteinAdjustmentResult | undefined;
+  if (settings.fat_protein_multiplier > 0) {
+    const threshold = evaluateFatProteinThreshold(items);
+    if (threshold.met) {
+      const rawAdjustmentDose = rawFoodDose * settings.fat_protein_multiplier;
+      fat_protein_adjustment = {
+        total_fat_g: threshold.total_fat_g,
+        total_protein_g: threshold.total_protein_g,
+        threshold_met: threshold.reason,
+        multiplier: settings.fat_protein_multiplier,
+        adjustment_dose: roundDisplay(rawAdjustmentDose),
+        total_dose: Math.max(
+          0,
+          roundToIncrement(
+            rawFoodDose + rawCorrectionDose + rawAdjustmentDose,
+            settings.pen_increment,
+          ),
+        ),
+      };
+    }
+  }
 
   const result: ReturnType<typeof calculateDose> = {
     totalNetCarbs,

@@ -1,7 +1,5 @@
 export {
-  calculateCorrectionDose,
   calculateDose,
-  calculateFatProteinAdjustment,
   evaluateFatProteinThreshold,
   findMealWindow,
   roundToIncrement,

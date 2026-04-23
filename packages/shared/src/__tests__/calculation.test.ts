@@ -104,6 +104,32 @@ describe("evaluateFatProteinThreshold", () => {
   });
 });
 
+describe("calculateDose rounding", () => {
+  it("rounds only the final total, not individual components", () => {
+    // 14g carbs / ratio 10 = 1.4 raw food dose
+    // blood sugar 170, target 100, factor 50 => raw correction = 1.4
+    // raw total = 2.8, rounded to 0.5 => 3.0
+    const settings: Settings = {
+      ...BASE_SETTINGS,
+      correction_factor: 50,
+    };
+    const items = [makeItem({ net_carbs_g: 14 })];
+    const result = calculateDose(items, 10, settings, 170);
+    expect(result.correction!.correction_dose).toBe(1.4);
+    expect(result.correction!.total_dose).toBe(3);
+  });
+
+  it("avoids compounding rounding errors from individual components", () => {
+    // 3g carbs / ratio 10 = 0.3 raw food dose
+    // blood sugar 112, target 100, factor 40 => raw correction = 0.3
+    // Individually rounded: food 0.5 + correction 0.5 = 1.0
+    // Correctly from raw sum: round(0.3 + 0.3, 0.5) = round(0.6) = 0.5
+    const items = [makeItem({ net_carbs_g: 3 })];
+    const result = calculateDose(items, 10, BASE_SETTINGS, 112);
+    expect(result.correction!.total_dose).toBe(0.5);
+  });
+});
+
 describe("calculateDose fat/protein adjustment", () => {
   it("no adjustment when fat_protein_multiplier is 0", () => {
     const settings = { ...BASE_SETTINGS, fat_protein_multiplier: 0 };
@@ -119,7 +145,7 @@ describe("calculateDose fat/protein adjustment", () => {
   });
 
   it("applies adjustment when threshold met", () => {
-    // 50g carbs / ratio 10 = 5U food dose
+    // 50g carbs / ratio 10 = 5U raw food dose
     // 5U * 0.20 = 1U adjustment
     const items = [makeItem({ fat_g: 35, protein_g: 10, net_carbs_g: 50 })];
     const result = calculateDose(items, 10, BASE_SETTINGS);
@@ -129,37 +155,33 @@ describe("calculateDose fat/protein adjustment", () => {
     expect(result.fat_protein_adjustment!.threshold_met).toBe("high_fat");
   });
 
-  it("total_dose = foodDose + adjustment_dose without correction", () => {
+  it("total_dose = round(rawFood + rawAdjustment) without correction", () => {
+    // 50g carbs / ratio 10 = 5U raw food, 5 * 0.2 = 1U fp
+    // total = round(5 + 1, 0.5) = 6
     const items = [makeItem({ fat_g: 35, net_carbs_g: 50 })];
     const result = calculateDose(items, 10, BASE_SETTINGS);
-    expect(result.fat_protein_adjustment!.total_dose).toBe(
-      result.foodDose + result.fat_protein_adjustment!.adjustment_dose,
-    );
+    expect(result.fat_protein_adjustment!.total_dose).toBe(6);
   });
 
   it("total_dose includes correction when both apply", () => {
     const items = [makeItem({ fat_g: 35, net_carbs_g: 50 })];
-    // blood sugar 180, target 100, factor 40 => correction = 2U
+    // 50g / 10 = 5U food, blood sugar 180 target 100 factor 40 => 2U correction
+    // 5 * 0.2 = 1U fp, total = round(5 + 2 + 1, 0.5) = 8
     const result = calculateDose(items, 10, BASE_SETTINGS, 180);
     expect(result.correction).toBeDefined();
     expect(result.fat_protein_adjustment).toBeDefined();
-    const expected =
-      result.foodDose +
-      result.correction!.correction_dose +
-      result.fat_protein_adjustment!.adjustment_dose;
-    expect(result.fat_protein_adjustment!.total_dose).toBe(expected);
+    expect(result.fat_protein_adjustment!.total_dose).toBe(8);
   });
 
-  it("rounds adjustment_dose to pen_increment", () => {
-    // 30g carbs / ratio 10 = 3U food dose
-    // 3U * 0.20 = 0.6 => rounds to 0.5 with pen_increment 0.5
+  it("rounds adjustment_dose for display only", () => {
+    // 30g carbs / ratio 10 = 3U raw food dose
+    // 3U * 0.20 = 0.6 => display-rounded to 0.6, NOT pen-rounded to 0.5
     const items = [makeItem({ fat_g: 35, net_carbs_g: 30 })];
     const result = calculateDose(items, 10, BASE_SETTINGS);
-    expect(result.fat_protein_adjustment!.adjustment_dose).toBe(0.5);
+    expect(result.fat_protein_adjustment!.adjustment_dose).toBe(0.6);
   });
 
   it("total_dose is never negative", () => {
-    // Very low carbs, hypo correction pulling dose down
     const items = [makeItem({ fat_g: 35, net_carbs_g: 5 })];
     const result = calculateDose(items, 10, BASE_SETTINGS, 40);
     expect(result.fat_protein_adjustment!.total_dose).toBeGreaterThanOrEqual(0);
@@ -167,7 +189,7 @@ describe("calculateDose fat/protein adjustment", () => {
 
   it("uses custom multiplier from settings", () => {
     const settings = { ...BASE_SETTINGS, fat_protein_multiplier: 0.5 };
-    // 50g carbs / ratio 10 = 5U food dose
+    // 50g carbs / ratio 10 = 5U raw food dose
     // 5U * 0.50 = 2.5U adjustment
     const items = [makeItem({ fat_g: 35, net_carbs_g: 50 })];
     const result = calculateDose(items, 10, settings);
