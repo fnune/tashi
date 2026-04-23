@@ -203,7 +203,7 @@ export function SettingsView({ settings, onSave, lang }: SettingsViewProps) {
           }
         >
           <option value="en">English</option>
-          <option value="es">Espanol</option>
+          <option value="es">Español</option>
         </select>
       </div>
 
