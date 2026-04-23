@@ -17,6 +17,7 @@ interface TimelineViewProps {
   onRefresh: () => void;
   expandedId?: string;
   onExpand: (id: string | undefined) => void;
+  onReuse?: (text: string) => void;
 }
 
 function formatTime(iso: string): string {
@@ -142,6 +143,7 @@ function EntryCard({
   onToggle,
   onDelete,
   onUpdated,
+  onReuse,
 }: {
   entry: TimelineEntry;
   lang: Language;
@@ -150,6 +152,7 @@ function EntryCard({
   onToggle: () => void;
   onDelete: () => void;
   onUpdated: () => void;
+  onReuse?: (text: string) => void;
 }) {
   const [editTimestamp, setEditTimestamp] = useState(
     toLocalDatetime(entry.timestamp),
@@ -269,6 +272,7 @@ function EntryCard({
         <div>
           {entry.type === "meal" && (
             <div style={{ padding: "8px 12px" }}>
+              <div className="entry-input-text">{entry.input_text}</div>
               <ResultTable
                 result={{
                   id: entry.id,
@@ -280,6 +284,7 @@ function EntryCard({
                   total_net_carbs_g: entry.total_net_carbs_g,
                   recommended_dose: entry.recommended_dose,
                   correction: entry.correction,
+                  fat_protein_adjustment: entry.fat_protein_adjustment,
                 }}
                 lang={lang}
                 glucoseUnit={glucoseUnit}
@@ -326,6 +331,15 @@ function EntryCard({
                 {t(lang, "save")}
               </button>
             )}
+            {entry.type === "meal" && onReuse && (
+              <button
+                type="button"
+                className="btn btn-small btn-secondary"
+                onClick={() => onReuse(entry.input_text)}
+              >
+                {t(lang, "reuseEntry")}
+              </button>
+            )}
             <button
               type="button"
               className="btn btn-small btn-danger"
@@ -347,6 +361,7 @@ export function TimelineView({
   onRefresh,
   expandedId,
   onExpand,
+  onReuse,
 }: TimelineViewProps) {
   async function handleDelete(id: string) {
     try {
@@ -391,6 +406,7 @@ export function TimelineView({
           }
           onDelete={() => handleDelete(entry.id)}
           onUpdated={onRefresh}
+          onReuse={onReuse}
         />
       ))}
 

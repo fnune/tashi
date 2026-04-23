@@ -12,12 +12,22 @@ import {
   useParams,
 } from "react-router";
 import * as api from "./api.js";
-import { CalculatorView } from "./components/CalculatorView.js";
+import {
+  type CalculatorFormState,
+  CalculatorView,
+} from "./components/CalculatorView.js";
 import { FatProteinInfoView } from "./components/FatProteinInfoView.js";
 import { SettingsView } from "./components/SettingsView.js";
 import { TimelineView } from "./components/TimelineView.js";
 import type { Language } from "./i18n.js";
 import { t } from "./i18n.js";
+
+const INITIAL_FORM: CalculatorFormState = {
+  foodText: "",
+  bloodSugar: "",
+  mealOverride: "",
+  preBolus: "",
+};
 
 function getSavedLanguage(): Language {
   const saved = localStorage.getItem("pincho-lang");
@@ -34,7 +44,7 @@ function AppShell() {
   });
   const [settingsLoaded, setSettingsLoaded] = useState(false);
   const [timeline, setTimeline] = useState<TimelineEntry[]>([]);
-  const [prefill, setPrefill] = useState<string | undefined>();
+  const [calcForm, setCalcForm] = useState<CalculatorFormState>(INITIAL_FORM);
 
   const lang = settings.language;
 
@@ -66,7 +76,7 @@ function AppShell() {
   }
 
   function handleReuse(text: string) {
-    setPrefill(text);
+    setCalcForm({ ...INITIAL_FORM, foodText: text });
     navigate("/");
   }
 
@@ -121,7 +131,8 @@ function AppShell() {
               settings={settings}
               lang={lang}
               onNewResult={refreshTimeline}
-              prefill={prefill}
+              formState={calcForm}
+              onFormChange={setCalcForm}
             />
           }
         />
@@ -166,6 +177,7 @@ function TimelineRoute({
   lang,
   settings,
   onRefresh,
+  onReuse,
 }: {
   timeline: TimelineEntry[];
   lang: Language;
@@ -190,6 +202,7 @@ function TimelineRoute({
       onRefresh={onRefresh}
       expandedId={id}
       onExpand={handleExpand}
+      onReuse={onReuse}
     />
   );
 }

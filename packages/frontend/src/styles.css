@@ -496,6 +496,16 @@ a.source-link:hover {
   border-top: 1px solid var(--border);
 }
 
+.entry-input-text {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  white-space: pre-wrap;
+  word-break: break-word;
+  padding: 4px 0 8px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 8px;
+}
+
 /* Quick-add and timeline entries */
 
 .quick-add-buttons {

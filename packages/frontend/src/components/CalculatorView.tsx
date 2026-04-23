@@ -8,26 +8,36 @@ import * as api from "../api.js";
 import { type Language, t } from "../i18n.js";
 import { ResultTable } from "./ResultTable.js";
 
+export interface CalculatorFormState {
+  foodText: string;
+  bloodSugar: string;
+  mealOverride: string;
+  preBolus: string;
+}
+
 interface CalculatorViewProps {
   settings: Settings;
   lang: Language;
   onNewResult: () => void;
-  prefill?: string;
+  formState: CalculatorFormState;
+  onFormChange: (state: CalculatorFormState) => void;
 }
 
 export function CalculatorView({
   settings,
   lang,
   onNewResult,
-  prefill,
+  formState,
+  onFormChange,
 }: CalculatorViewProps) {
-  const [foodText, setFoodText] = useState(prefill ?? "");
-  const [bloodSugar, setBloodSugar] = useState("");
-  const [mealOverride, setMealOverride] = useState("");
-  const [preBolus, setPreBolus] = useState("");
+  const { foodText, bloodSugar, mealOverride, preBolus } = formState;
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<CalculationResult | null>(null);
+
+  function update(patch: Partial<CalculatorFormState>) {
+    onFormChange({ ...formState, ...patch });
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -67,7 +77,7 @@ export function CalculatorView({
         <textarea
           className="food-input"
           value={foodText}
-          onChange={(e) => setFoodText(e.target.value)}
+          onChange={(e) => update({ foodText: e.target.value })}
           placeholder={t(lang, "foodPlaceholder")}
         />
         <div className="input-row">
@@ -82,7 +92,7 @@ export function CalculatorView({
               step="0.1"
               min="0"
               value={bloodSugar}
-              onChange={(e) => setBloodSugar(e.target.value)}
+              onChange={(e) => update({ bloodSugar: e.target.value })}
             />
           </div>
           <div className="input-group">
@@ -90,7 +100,7 @@ export function CalculatorView({
             <select
               id="meal-window"
               value={mealOverride}
-              onChange={(e) => setMealOverride(e.target.value)}
+              onChange={(e) => update({ mealOverride: e.target.value })}
             >
               <option value="">{t(lang, "auto")}</option>
               {settings.meal_windows.map((w) => (
@@ -109,9 +119,9 @@ export function CalculatorView({
               type="number"
               min="0"
               max="60"
-              step="5"
+              step="1"
               value={preBolus}
-              onChange={(e) => setPreBolus(e.target.value)}
+              onChange={(e) => update({ preBolus: e.target.value })}
               placeholder="0"
             />
           </div>
