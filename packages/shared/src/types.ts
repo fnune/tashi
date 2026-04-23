@@ -92,6 +92,8 @@ export interface MealEntry extends BaseEntry {
   meal_window: MealWindow;
   items: CalculatedItem[];
   total_net_carbs_g: number;
+  recommended_dose?: number;
+  correction?: CalculationResult["correction"];
 }
 
 export interface FastInsulinEntry extends BaseEntry {

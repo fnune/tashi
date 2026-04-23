@@ -278,11 +278,11 @@ function EntryCard({
                   meal_window: entry.meal_window,
                   items: entry.items,
                   total_net_carbs_g: entry.total_net_carbs_g,
-                  recommended_dose: 0,
+                  recommended_dose: entry.recommended_dose,
+                  correction: entry.correction,
                 }}
                 lang={lang}
                 glucoseUnit={glucoseUnit}
-                hideDose
               />
             </div>
           )}

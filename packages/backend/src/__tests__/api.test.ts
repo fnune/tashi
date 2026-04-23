@@ -1,4 +1,4 @@
-import { mkdtemp, rm } from "node:fs/promises";
+import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type { CalculateResponse, TimelineEntry } from "@pincho/shared";
@@ -32,7 +32,7 @@ describe("API routes", () => {
     await rm(tmpDir, { recursive: true });
   });
 
-  it("POST /api/calculate creates paired timeline entries", async () => {
+  it("POST /api/calculate creates paired timeline entries with dose data", async () => {
     parser.setResponse("100g white rice", [
       {
         description: "White rice (cooked)",
@@ -79,6 +79,10 @@ describe("API routes", () => {
     expect(meal).toBeDefined();
     if (insulin?.type === "fast_insulin") {
       expect(insulin.related_meal_id).toBe(meal?.id);
+    }
+    if (meal?.type === "meal") {
+      expect(meal.recommended_dose).toBe(body.result.recommended_dose);
+      expect(meal.correction).toEqual(body.result.correction);
     }
   });
 
@@ -210,5 +214,45 @@ describe("API routes", () => {
       body: JSON.stringify({ food_description: "" }),
     });
     expect(res.status).toBe(400);
+  });
+});
+
+describe("FileStorage error handling", () => {
+  let tmpDir: string;
+
+  beforeEach(async () => {
+    tmpDir = await mkdtemp(join(tmpdir(), "pincho-test-"));
+  });
+
+  afterEach(async () => {
+    await rm(tmpDir, { recursive: true });
+  });
+
+  it("returns defaults when settings.json does not exist", async () => {
+    const storage = new FileStorage(tmpDir);
+    await storage.init();
+    const settings = await storage.getSettings();
+    expect(settings.language).toBe("en");
+  });
+
+  it("throws on corrupt settings.json", async () => {
+    const storage = new FileStorage(tmpDir);
+    await storage.init();
+    await writeFile(join(tmpDir, "settings.json"), "not json{{{");
+    await expect(storage.getSettings()).rejects.toThrow();
+  });
+
+  it("returns empty array when timeline.json does not exist", async () => {
+    const storage = new FileStorage(tmpDir);
+    await storage.init();
+    const timeline = await storage.getTimeline();
+    expect(timeline).toEqual([]);
+  });
+
+  it("throws on corrupt timeline.json", async () => {
+    const storage = new FileStorage(tmpDir);
+    await storage.init();
+    await writeFile(join(tmpDir, "timeline.json"), "broken!");
+    await expect(storage.getTimeline()).rejects.toThrow();
   });
 });

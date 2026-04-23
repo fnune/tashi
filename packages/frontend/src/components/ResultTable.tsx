@@ -6,10 +6,11 @@ import type {
 import { type Language, t } from "../i18n.js";
 
 interface ResultTableProps {
-  result: CalculationResult;
+  result: Omit<CalculationResult, "recommended_dose"> & {
+    recommended_dose?: number;
+  };
   lang: Language;
   glucoseUnit: GlucoseUnit;
-  hideDose?: boolean;
 }
 
 function formatTime(date: Date): string {
@@ -43,7 +44,7 @@ function giColor(gi: number): string {
   return `hsl(${hue}, 70%, 40%)`;
 }
 
-export function ResultTable({ result, lang, glucoseUnit, hideDose }: ResultTableProps) {
+export function ResultTable({ result, lang, glucoseUnit }: ResultTableProps) {
   const time = formatTime(new Date(result.timestamp));
 
   return (
@@ -168,26 +169,26 @@ export function ResultTable({ result, lang, glucoseUnit, hideDose }: ResultTable
         </tbody>
       </table>
 
-      {!hideDose && (
-        <div className="result-dose">
-          {result.correction ? (
-            <>
-              <span className="dose-line">
-                {result.recommended_dose}U + {result.correction.correction_dose}U
-                = {result.correction.total_dose}U
-              </span>
-              <span className="dose-detail">
-                {t(lang, "recommendedDose")}: {result.recommended_dose}U |{" "}
-                {t(lang, "correction")}: {result.correction.current_blood_sugar}{" "}
-                → {result.correction.target_blood_sugar} {glucoseUnit} (+
-                {result.correction.correction_dose}U)
-              </span>
-            </>
-          ) : (
-            <span className="dose-line">{result.recommended_dose}U</span>
-          )}
-        </div>
-      )}
+      <div className="result-dose">
+        {result.recommended_dose == null ? (
+          <span className="dose-line faded">--</span>
+        ) : result.correction ? (
+          <>
+            <span className="dose-line">
+              {result.recommended_dose}U + {result.correction.correction_dose}U
+              = {result.correction.total_dose}U
+            </span>
+            <span className="dose-detail">
+              {t(lang, "recommendedDose")}: {result.recommended_dose}U |{" "}
+              {t(lang, "correction")}: {result.correction.current_blood_sugar} →{" "}
+              {result.correction.target_blood_sugar} {glucoseUnit} (+
+              {result.correction.correction_dose}U)
+            </span>
+          </>
+        ) : (
+          <span className="dose-line">{result.recommended_dose}U</span>
+        )}
+      </div>
     </div>
   );
 }

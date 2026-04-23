@@ -91,6 +91,8 @@ export function createRoutes(
         meal_window: result.meal_window,
         items: result.items,
         total_net_carbs_g: result.total_net_carbs_g,
+        recommended_dose: result.recommended_dose,
+        correction: result.correction,
       };
 
       const insulinEntry: FastInsulinEntry = {
