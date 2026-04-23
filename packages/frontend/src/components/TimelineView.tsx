@@ -282,6 +282,7 @@ function EntryCard({
                 }}
                 lang={lang}
                 glucoseUnit={glucoseUnit}
+                hideDose
               />
             </div>
           )}

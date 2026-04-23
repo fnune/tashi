@@ -9,6 +9,7 @@ interface ResultTableProps {
   result: CalculationResult;
   lang: Language;
   glucoseUnit: GlucoseUnit;
+  hideDose?: boolean;
 }
 
 function formatTime(date: Date): string {
@@ -42,7 +43,7 @@ function giColor(gi: number): string {
   return `hsl(${hue}, 70%, 40%)`;
 }
 
-export function ResultTable({ result, lang, glucoseUnit }: ResultTableProps) {
+export function ResultTable({ result, lang, glucoseUnit, hideDose }: ResultTableProps) {
   const time = formatTime(new Date(result.timestamp));
 
   return (
@@ -167,24 +168,26 @@ export function ResultTable({ result, lang, glucoseUnit }: ResultTableProps) {
         </tbody>
       </table>
 
-      <div className="result-dose">
-        {result.correction ? (
-          <>
-            <span className="dose-line">
-              {result.recommended_dose}U + {result.correction.correction_dose}U
-              = {result.correction.total_dose}U
-            </span>
-            <span className="dose-detail">
-              {t(lang, "recommendedDose")}: {result.recommended_dose}U |{" "}
-              {t(lang, "correction")}: {result.correction.current_blood_sugar} →{" "}
-              {result.correction.target_blood_sugar} {glucoseUnit} (+
-              {result.correction.correction_dose}U)
-            </span>
-          </>
-        ) : (
-          <span className="dose-line">{result.recommended_dose}U</span>
-        )}
-      </div>
+      {!hideDose && (
+        <div className="result-dose">
+          {result.correction ? (
+            <>
+              <span className="dose-line">
+                {result.recommended_dose}U + {result.correction.correction_dose}U
+                = {result.correction.total_dose}U
+              </span>
+              <span className="dose-detail">
+                {t(lang, "recommendedDose")}: {result.recommended_dose}U |{" "}
+                {t(lang, "correction")}: {result.correction.current_blood_sugar}{" "}
+                → {result.correction.target_blood_sugar} {glucoseUnit} (+
+                {result.correction.correction_dose}U)
+              </span>
+            </>
+          ) : (
+            <span className="dose-line">{result.recommended_dose}U</span>
+          )}
+        </div>
+      )}
     </div>
   );
 }
