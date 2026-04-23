@@ -1,4 +1,4 @@
-import type { FoodItem, ParsedFoodItem } from "@pincho/shared";
+import type { FoodItem, FoodVocabEntry, ParsedFoodItem } from "@pincho/shared";
 import {
   type CalculatedItem,
   type CalculationResult,
@@ -42,9 +42,10 @@ export class Calculator {
     settings: Settings,
     currentBloodSugar?: number,
     mealWindowOverride?: string,
+    vocabulary: FoodVocabEntry[] = [],
   ): Promise<CalculationResult> {
     const { items: parsedItems, trace } =
-      await this.parser.parse(foodDescription);
+      await this.parser.parse(foodDescription, vocabulary);
     const items = this.resolveItems(parsedItems);
 
     const mealWindow = mealWindowOverride

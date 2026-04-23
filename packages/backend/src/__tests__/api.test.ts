@@ -209,6 +209,90 @@ describe("API routes", () => {
     expect(saved.language).toBe("es");
   });
 
+  it("learns food vocabulary from calculations", async () => {
+    parser.setResponse("100g white rice", [
+      {
+        description: "White rice (cooked)",
+        fdc_id: 169756,
+        weight_g: 100,
+        assumed_cooked: true,
+        confidence: "high",
+        notes: null,
+        estimated_net_carbs_per_100g: 28,
+        user_carbs: null,
+        estimated_glycemic_index: 73,
+        warning: null,
+      },
+    ]);
+
+    await storage.saveSettings({
+      meal_windows: [{ name: "lunch", start_hour: 0, end_hour: 24, ratio: 10 }],
+      correction_factor: null,
+      target_blood_sugar: 6.0,
+      glucose_unit: "mg/dL",
+      pen_increment: 0.5,
+      language: "en",
+    });
+
+    await app.request("/api/calculate", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ food_description: "100g white rice" }),
+    });
+
+    const vocab = await storage.getVocabulary();
+    expect(vocab).toHaveLength(1);
+    expect(vocab[0]!.fdc_id).toBe(169756);
+    expect(vocab[0]!.description).toBe("White rice (cooked)");
+    expect(vocab[0]!.use_count).toBe(1);
+
+    await app.request("/api/calculate", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ food_description: "100g white rice" }),
+    });
+
+    const vocab2 = await storage.getVocabulary();
+    expect(vocab2).toHaveLength(1);
+    expect(vocab2[0]!.use_count).toBe(2);
+    expect(vocab2[0]!.usda_description).toContain("Rice");
+  });
+
+  it("does not learn estimated items into vocabulary", async () => {
+    parser.setResponse("100g acai bowl", [
+      {
+        description: "Acai bowl",
+        fdc_id: null,
+        weight_g: 100,
+        assumed_cooked: false,
+        confidence: "low",
+        notes: null,
+        estimated_net_carbs_per_100g: 15.0,
+        user_carbs: null,
+        estimated_glycemic_index: 35,
+        warning: null,
+      },
+    ]);
+
+    await storage.saveSettings({
+      meal_windows: [{ name: "lunch", start_hour: 0, end_hour: 24, ratio: 10 }],
+      correction_factor: null,
+      target_blood_sugar: 6.0,
+      glucose_unit: "mg/dL",
+      pen_increment: 0.5,
+      language: "en",
+    });
+
+    await app.request("/api/calculate", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ food_description: "100g acai bowl" }),
+    });
+
+    const vocab = await storage.getVocabulary();
+    expect(vocab).toHaveLength(0);
+  });
+
   it("rejects invalid calculate request", async () => {
     const res = await app.request("/api/calculate", {
       method: "POST",
@@ -242,6 +326,13 @@ describe("FileStorage error handling", () => {
     await storage.init();
     await writeFile(join(tmpDir, "settings.json"), "not json{{{");
     await expect(storage.getSettings()).rejects.toThrow();
+  });
+
+  it("returns empty vocabulary when food-vocab.json does not exist", async () => {
+    const storage = new FileStorage(tmpDir);
+    await storage.init();
+    const vocab = await storage.getVocabulary();
+    expect(vocab).toEqual([]);
   });
 
   it("returns empty array when timeline.json does not exist", async () => {

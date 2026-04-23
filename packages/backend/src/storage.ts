@@ -1,6 +1,8 @@
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import type {
+  CalculatedItem,
+  FoodVocabEntry,
   Settings,
   TimelineEntry,
   UpdateTimelineRequest,
@@ -130,6 +132,50 @@ export class FileStorage {
     await writeFile(
       this.path("timeline.json"),
       JSON.stringify(entries, null, 2),
+    );
+  }
+
+  async getVocabulary(): Promise<FoodVocabEntry[]> {
+    try {
+      const raw = await readFile(this.path("food-vocab.json"), "utf-8");
+      return JSON.parse(raw) as FoodVocabEntry[];
+    } catch (e: unknown) {
+      if (isFileNotFound(e)) return [];
+      throw e;
+    }
+  }
+
+  async learnFromItems(items: CalculatedItem[]): Promise<void> {
+    const vocab = await this.getVocabulary();
+    const now = new Date().toISOString();
+
+    for (const item of items) {
+      if (!item.food_item || item.estimated) continue;
+
+      const key = item.description.toLowerCase();
+      const existing = vocab.find(
+        (v) => v.description.toLowerCase() === key && v.fdc_id === item.food_item!.fdc_id,
+      );
+
+      if (existing) {
+        existing.use_count++;
+        existing.last_used = now;
+        existing.default_weight_g = item.weight_g;
+      } else {
+        vocab.push({
+          description: item.description,
+          fdc_id: item.food_item.fdc_id,
+          usda_description: item.food_item.description,
+          default_weight_g: item.weight_g,
+          use_count: 1,
+          last_used: now,
+        });
+      }
+    }
+
+    await writeFile(
+      this.path("food-vocab.json"),
+      JSON.stringify(vocab, null, 2),
     );
   }
 }

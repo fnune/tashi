@@ -1,4 +1,4 @@
-import type { ParsedFoodItem } from "@pincho/shared";
+import type { FoodVocabEntry, ParsedFoodItem } from "@pincho/shared";
 import type { FoodParser, ParseResult } from "../food-parser.js";
 
 export class FakeFoodParser implements FoodParser {
@@ -8,7 +8,10 @@ export class FakeFoodParser implements FoodParser {
     this.responses.set(description, items);
   }
 
-  async parse(foodDescription: string): Promise<ParseResult> {
+  async parse(
+    foodDescription: string,
+    _vocabulary: FoodVocabEntry[] = [],
+  ): Promise<ParseResult> {
     const response = this.responses.get(foodDescription);
     if (!response) {
       throw new Error(

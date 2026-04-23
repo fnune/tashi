@@ -12,6 +12,7 @@ export type {
   ErrorResponse,
   FastInsulinEntry,
   FoodItem,
+  FoodVocabEntry,
   GlucoseEntry,
   GlucoseUnit,
   MealEntry,

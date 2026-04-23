@@ -173,6 +173,17 @@ export type UpdateTimelineRequest =
   | { type: "slow_insulin"; timestamp?: string; units?: number }
   | { type: "glucose_reading"; timestamp?: string; value?: number };
 
+// --- Food vocabulary (learned from past parses) ---
+
+export interface FoodVocabEntry {
+  description: string;
+  fdc_id: number;
+  usda_description: string;
+  default_weight_g: number;
+  use_count: number;
+  last_used: string;
+}
+
 export const DEFAULT_SETTINGS: Settings = {
   meal_windows: [
     { name: "morning", start_hour: 6, end_hour: 11, ratio: 8 },

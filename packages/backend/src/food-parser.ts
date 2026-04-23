@@ -1,4 +1,4 @@
-import type { ParsedFoodItem, ParseTrace } from "@pincho/shared";
+import type { FoodVocabEntry, ParsedFoodItem, ParseTrace } from "@pincho/shared";
 
 export interface ParseResult {
   items: ParsedFoodItem[];
@@ -6,5 +6,8 @@ export interface ParseResult {
 }
 
 export interface FoodParser {
-  parse(foodDescription: string): Promise<ParseResult>;
+  parse(
+    foodDescription: string,
+    vocabulary: FoodVocabEntry[],
+  ): Promise<ParseResult>;
 }

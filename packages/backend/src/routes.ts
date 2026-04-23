@@ -66,6 +66,7 @@ export function createRoutes(
     }
 
     const settings = await storage.getSettings();
+    const vocabulary = await storage.getVocabulary();
 
     try {
       const result = await calculator.calculate(
@@ -73,6 +74,7 @@ export function createRoutes(
         settings,
         parsed.data.current_blood_sugar,
         parsed.data.meal_window_override,
+        vocabulary,
       );
 
       const preBolusMs = (parsed.data.pre_bolus_minutes ?? 0) * 60_000;
@@ -105,6 +107,7 @@ export function createRoutes(
       };
 
       await storage.addTimelineEntries([insulinEntry, mealEntry]);
+      await storage.learnFromItems(result.items);
 
       return c.json({
         result,

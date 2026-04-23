@@ -1,5 +1,9 @@
 import Anthropic from "@anthropic-ai/sdk";
-import type { ParsedFoodItem, SearchTraceEntry } from "@pincho/shared";
+import type {
+  FoodVocabEntry,
+  ParsedFoodItem,
+  SearchTraceEntry,
+} from "@pincho/shared";
 import type { FoodDatabase } from "./db/food-db.js";
 import type { FoodParser, ParseResult } from "./food-parser.js";
 
@@ -55,6 +59,20 @@ const SEARCH_TOOL: Anthropic.Messages.Tool = {
 };
 
 const MAX_TOOL_ROUNDS = 10;
+const MAX_VOCAB_ENTRIES = 50;
+
+function buildVocabPrompt(vocabulary: FoodVocabEntry[]): string {
+  if (vocabulary.length === 0) return "";
+  const lines = vocabulary.map(
+    (v) =>
+      `- "${v.description}": fdc_id ${v.fdc_id} (${v.usda_description}), ~${v.default_weight_g}g`,
+  );
+  return (
+    "\n\nPreviously resolved foods (use these fdc_ids directly without searching):\n" +
+    lines.join("\n") +
+    "\nOnly search for foods NOT in this list. Search again if the preparation differs (e.g. the user says raw/dry but the cached USDA entry is cooked, or vice versa)."
+  );
+}
 
 function extractJson(raw: string): string {
   const fenced = raw.match(/```(?:json)?\s*\n?([\s\S]*?)```/);
@@ -84,10 +102,19 @@ export class AnthropicFoodParser implements FoodParser {
     this.foodDb = foodDb;
   }
 
-  async parse(foodDescription: string): Promise<ParseResult> {
+  async parse(
+    foodDescription: string,
+    vocabulary: FoodVocabEntry[] = [],
+  ): Promise<ParseResult> {
     const messages: Anthropic.Messages.MessageParam[] = [
       { role: "user", content: foodDescription },
     ];
+
+    const topVocab = vocabulary
+      .slice()
+      .sort((a, b) => b.use_count - a.use_count)
+      .slice(0, MAX_VOCAB_ENTRIES);
+    const system = SYSTEM_PROMPT + buildVocabPrompt(topVocab);
 
     const searches: SearchTraceEntry[] = [];
     const startMs = Date.now();
@@ -96,7 +123,7 @@ export class AnthropicFoodParser implements FoodParser {
       const response = await this.client.messages.create({
         model: this.model,
         max_tokens: 2048,
-        system: SYSTEM_PROMPT,
+        system,
         tools: [SEARCH_TOOL],
         messages,
       });
