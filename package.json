@@ -1,7 +1,7 @@
 {
   "private": true,
   "scripts": {
-    "dev": "pnpm --filter @pincho/backend dev & pnpm --filter @pincho/frontend dev & wait",
+    "dev": "concurrently -k --names be,fe --prefix-colors blue,magenta \"pnpm --filter @pincho/backend dev\" \"pnpm --filter @pincho/frontend dev\"",
     "dev:backend": "pnpm --filter @pincho/backend dev",
     "dev:frontend": "pnpm --filter @pincho/frontend dev",
     "build": "pnpm -r build",
@@ -10,5 +10,8 @@
     "test:unit": "pnpm --filter @pincho/backend test",
     "test:e2e": "pnpm --filter @pincho/frontend build && pnpm --filter @pincho/e2e test",
     "typecheck": "pnpm --filter @pincho/shared --filter @pincho/backend --filter @pincho/frontend exec tsc --noEmit"
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.1"
   }
 }
