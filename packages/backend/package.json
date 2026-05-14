@@ -11,7 +11,7 @@
     "./db/food-db": "./src/db/food-db.ts"
   },
   "scripts": {
-    "dev": "tsx watch --env-file=../../.env src/server.ts",
+    "dev": "tsx watch --env-file-if-exists=../../.env src/server.ts",
     "build": "tsc",
     "start": "node dist/server.js",
     "test": "vitest run",
