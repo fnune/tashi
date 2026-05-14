@@ -1,3 +1,4 @@
+import { existsSync } from "node:fs";
 import { join } from "node:path";
 import { serve } from "@hono/node-server";
 import { serveStatic } from "@hono/node-server/serve-static";
@@ -38,20 +39,22 @@ app.use(`${basePath}/api/*`, cors());
 const routes = createRoutes(calculator, storage);
 app.route(basePath || "/", routes);
 
-app.use(
-  `${basePath}/*`,
-  serveStatic({
-    root: "./public",
-    rewriteRequestPath: (path) =>
-      basePath ? path.replace(basePath, "") : path,
-  }),
-);
+if (existsSync("./public")) {
+  app.use(
+    `${basePath}/*`,
+    serveStatic({
+      root: "./public",
+      rewriteRequestPath: (path) =>
+        basePath ? path.replace(basePath, "") : path,
+    }),
+  );
 
-app.get(`${basePath}/*`, async (c) => {
-  const { readFile } = await import("node:fs/promises");
-  const html = await readFile("./public/index.html", "utf-8");
-  return c.html(html);
-});
+  app.get(`${basePath}/*`, async (c) => {
+    const { readFile } = await import("node:fs/promises");
+    const html = await readFile("./public/index.html", "utf-8");
+    return c.html(html);
+  });
+}
 
 console.log(`Listening on http://localhost:${port}`);
 serve({ fetch: app.fetch, port });
