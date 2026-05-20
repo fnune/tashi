@@ -70,7 +70,7 @@ export function createRoutes(
     const vocabulary = await storage.getVocabulary();
 
     try {
-      const result = await calculator.calculate(
+      const outcome = await calculator.calculate(
         parsed.data.food_description,
         settings,
         parsed.data.current_blood_sugar,
@@ -78,6 +78,14 @@ export function createRoutes(
         vocabulary,
       );
 
+      if (outcome.status !== "ok") {
+        return c.json({
+          status: outcome.status,
+          message: outcome.message,
+        });
+      }
+
+      const result = outcome.result;
       const preBolusMs = (parsed.data.pre_bolus_minutes ?? 0) * 60_000;
       const now = new Date();
 
@@ -113,6 +121,7 @@ export function createRoutes(
       await storage.learnFromItems(result.items);
 
       return c.json({
+        status: "ok" as const,
         result,
         meal_entry_id: mealEntry.id,
         insulin_entry_id: insulinEntry.id,

@@ -1,12 +1,25 @@
 import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import type { Settings } from "@pincho/shared";
+import type { CalculationResult, Settings } from "@pincho/shared";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { Calculator } from "../calculator.js";
 import type { FoodDatabase } from "../db/food-db.js";
 import { FakeFoodParser } from "./fake-food-parser.js";
 import { createTestFoodDb } from "./test-food-db.js";
+
+async function calculateOk(
+  calculator: Calculator,
+  ...args: Parameters<Calculator["calculate"]>
+): Promise<CalculationResult> {
+  const outcome = await calculator.calculate(...args);
+  if (outcome.status !== "ok") {
+    throw new Error(
+      `expected ok outcome, got ${outcome.status}: ${outcome.message}`,
+    );
+  }
+  return outcome.result;
+}
 
 const TEST_SETTINGS: Settings = {
   meal_windows: [
@@ -72,7 +85,8 @@ describe("Calculator", () => {
       },
     ]);
 
-    const result = await calculator.calculate(
+    const result = await calculateOk(
+      calculator,
       "150g white rice, grilled chicken breast",
       TEST_SETTINGS,
       undefined,
@@ -117,7 +131,8 @@ describe("Calculator", () => {
       },
     ]);
 
-    const result = await calculator.calculate(
+    const result = await calculateOk(
+      calculator,
       "100g acai bowl",
       TEST_SETTINGS,
       undefined,
@@ -149,7 +164,8 @@ describe("Calculator", () => {
       },
     ]);
 
-    const result = await calculator.calculate(
+    const result = await calculateOk(
+      calculator,
       "100g mystery food",
       TEST_SETTINGS,
       undefined,
@@ -180,7 +196,8 @@ describe("Calculator", () => {
       },
     ]);
 
-    const result = await calculator.calculate(
+    const result = await calculateOk(
+      calculator,
       "a banana",
       TEST_SETTINGS,
       180,
@@ -213,7 +230,8 @@ describe("Calculator", () => {
       },
     ]);
 
-    const result = await calculator.calculate(
+    const result = await calculateOk(
+      calculator,
       "a banana",
       TEST_SETTINGS,
       45,
@@ -258,7 +276,8 @@ describe("Calculator", () => {
       },
     ]);
 
-    const result = await calculator.calculate(
+    const result = await calculateOk(
+      calculator,
       "150g rice and 100g acai bowl",
       TEST_SETTINGS,
       undefined,
@@ -292,7 +311,8 @@ describe("Calculator", () => {
       },
     ]);
 
-    const result = await calculator.calculate(
+    const result = await calculateOk(
+      calculator,
       "500g of sugar in my coffee",
       TEST_SETTINGS,
       undefined,
@@ -323,7 +343,8 @@ describe("Calculator", () => {
     ]);
 
     const halfUnitSettings = { ...TEST_SETTINGS, pen_increment: 0.5 as const };
-    const result05 = await calculator.calculate(
+    const result05 = await calculateOk(
+      calculator,
       "200g cooked rice",
       halfUnitSettings,
       undefined,
@@ -331,7 +352,8 @@ describe("Calculator", () => {
     );
 
     const wholeUnitSettings = { ...TEST_SETTINGS, pen_increment: 1 as const };
-    const result1 = await calculator.calculate(
+    const result1 = await calculateOk(
+      calculator,
       "200g cooked rice",
       wholeUnitSettings,
       undefined,
@@ -360,7 +382,8 @@ describe("Calculator", () => {
       },
     ]);
 
-    const result = await calculator.calculate(
+    const result = await calculateOk(
+      calculator,
       "150g rice, 14g carbs per 100g",
       TEST_SETTINGS,
       undefined,
@@ -392,7 +415,8 @@ describe("Calculator", () => {
       },
     ]);
 
-    const result = await calculator.calculate(
+    const result = await calculateOk(
+      calculator,
       "15g hummus, 2g carbs total",
       TEST_SETTINGS,
       undefined,
@@ -422,7 +446,8 @@ describe("Calculator", () => {
       },
     ]);
 
-    const result = await calculator.calculate(
+    const result = await calculateOk(
+      calculator,
       "150g rice, 5g carbs per 100g",
       TEST_SETTINGS,
       undefined,
@@ -453,7 +478,8 @@ describe("Calculator", () => {
       },
     ]);
 
-    const result = await calculator.calculate(
+    const result = await calculateOk(
+      calculator,
       "120g banana",
       TEST_SETTINGS,
       undefined,
@@ -481,7 +507,8 @@ describe("Calculator", () => {
       },
     ]);
 
-    const result = await calculator.calculate(
+    const result = await calculateOk(
+      calculator,
       "170g grilled chicken",
       TEST_SETTINGS,
       undefined,
@@ -513,7 +540,8 @@ describe("Calculator", () => {
       },
     ]);
 
-    const result = await calculator.calculate(
+    const result = await calculateOk(
+      calculator,
       "100g mystery high-fat food",
       TEST_SETTINGS,
       undefined,
@@ -545,7 +573,8 @@ describe("Calculator", () => {
       },
     ]);
 
-    const result = await calculator.calculate(
+    const result = await calculateOk(
+      calculator,
       "200g bacon",
       TEST_SETTINGS,
       undefined,
@@ -575,7 +604,8 @@ describe("Calculator", () => {
       },
     ]);
 
-    const result = await calculator.calculate(
+    const result = await calculateOk(
+      calculator,
       "150g rice",
       TEST_SETTINGS,
       undefined,
@@ -603,7 +633,8 @@ describe("Calculator", () => {
       },
     ]);
 
-    const result = await calculator.calculate(
+    const result = await calculateOk(
+      calculator,
       "200g bacon disabled",
       { ...TEST_SETTINGS, fat_protein_multiplier: 0 },
       undefined,

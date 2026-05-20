@@ -170,11 +170,22 @@ export interface CalculateRequest {
   pre_bolus_minutes?: number;
 }
 
-export interface CalculateResponse {
-  result: CalculationResult;
-  meal_entry_id: string;
-  insulin_entry_id: string;
-}
+export type CalculateResponse =
+  | {
+      status: "ok";
+      result: CalculationResult;
+      meal_entry_id: string;
+      insulin_entry_id: string;
+    }
+  | {
+      status: "needs_clarification";
+      message: string;
+      raw_response?: string;
+    }
+  | {
+      status: "rejected";
+      message: string;
+    };
 
 export interface ErrorResponse {
   error: string;

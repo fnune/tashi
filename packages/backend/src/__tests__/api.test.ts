@@ -10,6 +10,17 @@ import { FileStorage } from "../storage.js";
 import { FakeFoodParser } from "./fake-food-parser.js";
 import { createTestFoodDb } from "./test-food-db.js";
 
+type CalculateOk = Extract<CalculateResponse, { status: "ok" }>;
+
+function expectOkResponse(body: CalculateResponse): CalculateOk {
+  if (body.status !== "ok") {
+    throw new Error(
+      `expected ok calculate response, got ${body.status}: ${body.message}`,
+    );
+  }
+  return body;
+}
+
 describe("API routes", () => {
   let app: ReturnType<typeof createRoutes>;
   let storage: FileStorage;
@@ -67,7 +78,7 @@ describe("API routes", () => {
     });
 
     expect(res.status).toBe(200);
-    const body = (await res.json()) as CalculateResponse;
+    const body = expectOkResponse((await res.json()) as CalculateResponse);
     expect(body.result.items).toHaveLength(1);
     expect(body.result.total_net_carbs_g).toBeCloseTo(27.8, 0);
     expect(body.meal_entry_id).toBeDefined();

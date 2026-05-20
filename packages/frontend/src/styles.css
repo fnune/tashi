@@ -565,6 +565,24 @@ a.source-link:hover {
   font-size: 0.875rem;
 }
 
+.clarification-box {
+  padding: 12px;
+  background: var(--warning-bg);
+  border: 1px solid var(--warning);
+  border-radius: var(--radius);
+  color: var(--warning);
+  font-size: 0.875rem;
+}
+
+.rejection-box {
+  padding: 12px;
+  background: var(--error-bg);
+  border: 1px solid var(--error);
+  border-radius: var(--radius);
+  color: var(--error);
+  font-size: 0.875rem;
+}
+
 .loading-box {
   display: flex;
   align-items: center;

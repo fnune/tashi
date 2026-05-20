@@ -33,6 +33,10 @@ export function CalculatorView({
   const { foodText, bloodSugar, mealOverride, preBolus } = formState;
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [clarification, setClarification] = useState<{
+    kind: "needs_clarification" | "rejected";
+    message: string;
+  } | null>(null);
   const [result, setResult] = useState<CalculationResult | null>(null);
 
   function update(patch: Partial<CalculatorFormState>) {
@@ -45,6 +49,7 @@ export function CalculatorView({
 
     setLoading(true);
     setError(null);
+    setClarification(null);
     setResult(null);
 
     const req: CalculateRequest = {
@@ -62,8 +67,12 @@ export function CalculatorView({
 
     try {
       const res = await api.calculate(req);
-      setResult(res.result);
-      onNewResult();
+      if (res.status === "ok") {
+        setResult(res.result);
+        onNewResult();
+      } else {
+        setClarification({ kind: res.status, message: res.message });
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unknown error");
     } finally {
@@ -80,6 +89,17 @@ export function CalculatorView({
           onChange={(e) => update({ foodText: e.target.value })}
           placeholder={t(lang, "foodPlaceholder")}
         />
+        {clarification && (
+          <div
+            className={
+              clarification.kind === "rejected"
+                ? "rejection-box"
+                : "clarification-box"
+            }
+          >
+            {clarification.message}
+          </div>
+        )}
         <div className="input-row">
           <div className="input-group">
             <label htmlFor="blood-sugar">

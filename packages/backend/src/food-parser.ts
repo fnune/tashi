@@ -4,14 +4,19 @@ import type {
   ParseTrace,
 } from "@pincho/shared";
 
-export interface ParseResult {
-  items: ParsedFoodItem[];
-  trace: ParseTrace;
-}
+export type ParseOutcome =
+  | { status: "ok"; items: ParsedFoodItem[]; trace: ParseTrace }
+  | {
+      status: "needs_clarification";
+      message: string;
+      trace: ParseTrace;
+    }
+  | { status: "rejected"; message: string; trace: ParseTrace };
 
 export interface FoodParser {
   parse(
     foodDescription: string,
     vocabulary: FoodVocabEntry[],
-  ): Promise<ParseResult>;
+    language: "en" | "es",
+  ): Promise<ParseOutcome>;
 }

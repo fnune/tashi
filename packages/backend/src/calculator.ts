@@ -9,6 +9,11 @@ import {
 import type { FoodDatabase, FoodMatch } from "./db/food-db.js";
 import type { FoodParser } from "./food-parser.js";
 
+export type CalculateOutcome =
+  | { status: "ok"; result: CalculationResult }
+  | { status: "needs_clarification"; message: string }
+  | { status: "rejected"; message: string };
+
 function matchToFoodItem(match: FoodMatch): FoodItem {
   return {
     fdc_id: match.fdc_id,
@@ -45,11 +50,16 @@ export class Calculator {
     currentBloodSugar?: number,
     mealWindowOverride?: string,
     vocabulary: FoodVocabEntry[] = [],
-  ): Promise<CalculationResult> {
-    const { items: parsedItems, trace } = await this.parser.parse(
+  ): Promise<CalculateOutcome> {
+    const outcome = await this.parser.parse(
       foodDescription,
       vocabulary,
+      settings.language,
     );
+    if (outcome.status !== "ok") {
+      return { status: outcome.status, message: outcome.message };
+    }
+    const { items: parsedItems, trace } = outcome;
     const items = this.resolveItems(parsedItems);
 
     const mealWindow = mealWindowOverride
@@ -70,17 +80,20 @@ export class Calculator {
     const inputLang = this.detectLanguage(foodDescription);
 
     return {
-      id: crypto.randomUUID(),
-      timestamp: new Date().toISOString(),
-      input_text: foodDescription,
-      language: inputLang,
-      meal_window: mealWindow,
-      items,
-      total_net_carbs_g: Math.round(dose.totalNetCarbs * 10) / 10,
-      recommended_dose: dose.foodDose,
-      correction: dose.correction,
-      fat_protein_adjustment: dose.fat_protein_adjustment,
-      trace,
+      status: "ok",
+      result: {
+        id: crypto.randomUUID(),
+        timestamp: new Date().toISOString(),
+        input_text: foodDescription,
+        language: inputLang,
+        meal_window: mealWindow,
+        items,
+        total_net_carbs_g: Math.round(dose.totalNetCarbs * 10) / 10,
+        recommended_dose: dose.foodDose,
+        correction: dose.correction,
+        fat_protein_adjustment: dose.fat_protein_adjustment,
+        trace,
+      },
     };
   }
 
