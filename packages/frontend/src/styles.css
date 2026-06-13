@@ -584,6 +584,11 @@ a.source-link:hover {
   font-size: 0.875rem;
 }
 
+.iob-setup-link {
+  color: #166534;
+  text-decoration: underline;
+}
+
 .info-box {
   display: flex;
   flex-wrap: wrap;

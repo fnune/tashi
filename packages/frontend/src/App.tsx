@@ -1,4 +1,4 @@
-import type { Settings, TimelineEntry } from "@pincho/shared";
+import type { InsulinOnBoard, Settings, TimelineEntry } from "@pincho/shared";
 import { DEFAULT_SETTINGS } from "@pincho/shared";
 import { useCallback, useEffect, useState } from "react";
 import {
@@ -29,6 +29,8 @@ const INITIAL_FORM: CalculatorFormState = {
   preBolus: "",
 };
 
+const IOB_REFRESH_INTERVAL_MS = 30_000;
+
 function getSavedLanguage(): Language {
   const saved = localStorage.getItem("pincho-lang");
   if (saved === "es" || saved === "en") return saved;
@@ -44,6 +46,7 @@ function AppShell() {
   });
   const [settingsLoaded, setSettingsLoaded] = useState(false);
   const [timeline, setTimeline] = useState<TimelineEntry[]>([]);
+  const [iob, setIob] = useState<InsulinOnBoard | null>(null);
   const [calcForm, setCalcForm] = useState<CalculatorFormState>(INITIAL_FORM);
 
   const lang = settings.language;
@@ -64,11 +67,32 @@ function AppShell() {
         );
       });
     api.getTimeline().then(setTimeline).catch(console.error);
+    api
+      .getIob()
+      .then(setIob)
+      .catch(() => setIob(null));
   }, []);
 
   const refreshTimeline = useCallback(() => {
     api.getTimeline().then(setTimeline).catch(console.error);
   }, []);
+
+  const refreshIob = useCallback(() => {
+    api
+      .getIob()
+      .then(setIob)
+      .catch(() => setIob(null));
+  }, []);
+
+  const handleDataChanged = useCallback(() => {
+    refreshTimeline();
+    refreshIob();
+  }, [refreshTimeline, refreshIob]);
+
+  useEffect(() => {
+    const id = setInterval(refreshIob, IOB_REFRESH_INTERVAL_MS);
+    return () => clearInterval(id);
+  }, [refreshIob]);
 
   function handleSaveSettings(s: Settings) {
     setSettings(s);
@@ -130,7 +154,8 @@ function AppShell() {
             <CalculatorView
               settings={settings}
               lang={lang}
-              onNewResult={refreshTimeline}
+              iob={iob}
+              onNewResult={handleDataChanged}
               formState={calcForm}
               onFormChange={setCalcForm}
             />
@@ -153,7 +178,7 @@ function AppShell() {
               timeline={timeline}
               settings={settings}
               lang={lang}
-              onRefresh={refreshTimeline}
+              onRefresh={handleDataChanged}
               onReuse={handleReuse}
             />
           }

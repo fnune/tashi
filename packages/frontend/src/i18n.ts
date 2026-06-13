@@ -87,7 +87,7 @@ const translations = {
       "Activity (orange) is how strongly the dose is working, peaking at the marked time. Insulin on board (blue) is how much of the dose is still left, falling from the full dose to zero. The two use different vertical scales.",
     insulinOnBoard: "Insulin on board",
     iobZero: "No insulin on board.",
-    lastInjection: "last injection",
+    iobSetupPrompt: "Set up your insulin to track insulin on board.",
     goToSettings: "Set it up",
     bolus_insulin_not_configured:
       "Choose which insulin you're using in settings before dosing.",
@@ -186,7 +186,7 @@ const translations = {
       "La actividad (naranja) es con qué fuerza actúa la dosis, con su máximo en el tiempo marcado. La insulina activa (azul) es cuánto queda de la dosis, que baja desde la dosis completa hasta cero. Las dos usan escalas verticales distintas.",
     insulinOnBoard: "Insulina activa",
     iobZero: "Sin insulina activa.",
-    lastInjection: "última inyección",
+    iobSetupPrompt: "Configura tu insulina para ver la insulina activa.",
     goToSettings: "Configúralo",
     bolus_insulin_not_configured:
       "Elige qué insulina usas en ajustes antes de dosificar.",
