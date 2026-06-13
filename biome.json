@@ -29,10 +29,10 @@
   "files": {
     "includes": [
       "**",
-      "!**/dist",
-      "!**/node_modules",
-      "!**/.direnv",
-      "!**/data"
+      "!!**/dist",
+      "!!**/node_modules",
+      "!!**/.direnv",
+      "!!**/data"
     ]
   },
   "overrides": [
