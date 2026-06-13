@@ -6,6 +6,7 @@ import {
   findMealWindow,
   type Settings,
 } from "@pincho/shared";
+import { type Clock, systemClock } from "./clock.js";
 import type { FoodDatabase, FoodMatch } from "./db/food-db.js";
 import type { FoodParser } from "./food-parser.js";
 
@@ -38,10 +39,16 @@ function matchToFoodItem(match: FoodMatch): FoodItem {
 export class Calculator {
   private parser: FoodParser;
   private foodDb: FoodDatabase;
+  private clock: Clock;
 
-  constructor(parser: FoodParser, foodDb: FoodDatabase) {
+  constructor(
+    parser: FoodParser,
+    foodDb: FoodDatabase,
+    clock: Clock = systemClock,
+  ) {
     this.parser = parser;
     this.foodDb = foodDb;
+    this.clock = clock;
   }
 
   async calculate(
@@ -50,6 +57,7 @@ export class Calculator {
     currentBloodSugar?: number,
     mealWindowOverride?: string,
     vocabulary: FoodVocabEntry[] = [],
+    iob = 0,
   ): Promise<CalculateOutcome> {
     const outcome = await this.parser.parse(
       foodDescription,
@@ -64,7 +72,7 @@ export class Calculator {
 
     const mealWindow = mealWindowOverride
       ? settings.meal_windows.find((w) => w.name === mealWindowOverride)
-      : findMealWindow(settings);
+      : findMealWindow(settings, this.clock());
 
     if (!mealWindow) {
       throw new Error("No meal window matches the current time");
@@ -75,6 +83,7 @@ export class Calculator {
       mealWindow.ratio,
       settings,
       currentBloodSugar,
+      iob,
     );
 
     const inputLang = this.detectLanguage(foodDescription);
@@ -83,7 +92,7 @@ export class Calculator {
       status: "ok",
       result: {
         id: crypto.randomUUID(),
-        timestamp: new Date().toISOString(),
+        timestamp: this.clock().toISOString(),
         input_text: foodDescription,
         language: inputLang,
         meal_window: mealWindow,

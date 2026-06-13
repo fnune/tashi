@@ -1,14 +1,52 @@
 import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import type { CalculateResponse, TimelineEntry } from "@pincho/shared";
+import {
+  type CalculateResponse,
+  DEFAULT_SETTINGS,
+  type InsulinOnBoard,
+  insulinRemainingFraction,
+  type ParsedFoodItem,
+  type Settings,
+  type TimelineEntry,
+} from "@pincho/shared";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { Calculator } from "../calculator.js";
+import type { Clock } from "../clock.js";
 import type { FoodDatabase } from "../db/food-db.js";
 import { createRoutes } from "../routes.js";
 import { FileStorage } from "../storage.js";
 import { FakeFoodParser } from "./fake-food-parser.js";
 import { createTestFoodDb } from "./test-food-db.js";
+
+function configured(overrides: Partial<Settings> = {}): Settings {
+  return {
+    ...DEFAULT_SETTINGS,
+    meal_windows: [{ name: "all-day", start_hour: 0, end_hour: 24, ratio: 10 }],
+    fat_protein_multiplier: 0,
+    bolus_insulin_id: "novorapid",
+    basal_insulin_id: "tresiba",
+    insulin_action_minutes: 300,
+    ...overrides,
+  };
+}
+
+function carbItem(netCarbsPer100g: number, weightG = 100): ParsedFoodItem {
+  return {
+    description: "Test carb",
+    fdc_id: null,
+    weight_g: weightG,
+    assumed_cooked: false,
+    confidence: "high",
+    notes: null,
+    estimated_net_carbs_per_100g: netCarbsPer100g,
+    user_carbs: null,
+    estimated_glycemic_index: null,
+    estimated_fat_per_100g: null,
+    estimated_protein_per_100g: null,
+    warning: null,
+  };
+}
 
 type CalculateOk = Extract<CalculateResponse, { status: "ok" }>;
 
@@ -27,6 +65,7 @@ describe("API routes", () => {
   let parser: FakeFoodParser;
   let foodDb: FoodDatabase;
   let tmpDir: string;
+  let now: Date;
 
   beforeEach(async () => {
     tmpDir = await mkdtemp(join(tmpdir(), "pincho-test-"));
@@ -34,8 +73,10 @@ describe("API routes", () => {
     await storage.init();
     parser = new FakeFoodParser();
     foodDb = await createTestFoodDb(tmpDir);
-    const calculator = new Calculator(parser, foodDb);
-    app = createRoutes(calculator, storage);
+    now = new Date("2026-06-13T12:00:00.000Z");
+    const clock: Clock = () => now;
+    const calculator = new Calculator(parser, foodDb, clock);
+    app = createRoutes(calculator, storage, clock);
   });
 
   afterEach(async () => {
@@ -68,6 +109,9 @@ describe("API routes", () => {
       glucose_unit: "mg/dL",
       pen_increment: 0.5,
       fat_protein_multiplier: 0.2,
+      bolus_insulin_id: "novorapid",
+      basal_insulin_id: "tresiba",
+      insulin_action_minutes: 300,
       language: "en",
     });
 
@@ -101,6 +145,100 @@ describe("API routes", () => {
     }
   });
 
+  it("POST /api/calculate errors with a code when no insulin is configured", async () => {
+    parser.setResponse("carbs", [carbItem(50)]);
+
+    const res = await app.request("/api/calculate", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ food_description: "carbs" }),
+    });
+
+    expect(res.status).toBe(400);
+    const body = (await res.json()) as { code?: string };
+    expect(body.code).toBe("bolus_insulin_not_configured");
+  });
+
+  it("POST /api/calculate does not log an injection for a zero-unit dose", async () => {
+    parser.setResponse("lettuce", [carbItem(0)]);
+    await storage.saveSettings(configured());
+
+    const res = await app.request("/api/calculate", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ food_description: "lettuce" }),
+    });
+
+    const body = expectOkResponse((await res.json()) as CalculateResponse);
+    expect(body.result.recommended_dose).toBe(0);
+    expect(body.insulin_entry_id).toBeNull();
+
+    const timeline = (await (
+      await app.request("/api/timeline")
+    ).json()) as TimelineEntry[];
+    expect(timeline.filter((e) => e.type === "fast_insulin")).toHaveLength(0);
+    expect(timeline.filter((e) => e.type === "meal")).toHaveLength(1);
+  });
+
+  it("POST /api/calculate reduces the correction by insulin on board", async () => {
+    parser.setResponse("carbs", [carbItem(50)]);
+    await storage.saveSettings(configured({ correction_factor: 40 }));
+    await storage.addTimelineEntry({
+      id: crypto.randomUUID(),
+      timestamp: new Date(now.getTime() - 30 * 60_000).toISOString(),
+      type: "fast_insulin",
+      units: 10,
+      insulin_id: "novorapid",
+      related_meal_id: null,
+    });
+
+    const res = await app.request("/api/calculate", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        food_description: "carbs",
+        current_blood_sugar: 140,
+      }),
+    });
+
+    const body = expectOkResponse((await res.json()) as CalculateResponse);
+    // 50g / 10 = 5U food; BG 140, target 100, factor 40 => 1U correction,
+    // fully cancelled by the >1U of insulin on board.
+    const correction = body.result.correction;
+    expect(correction).toBeDefined();
+    expect(correction!.iob).toBeGreaterThan(1);
+    expect(correction!.iob_reduction).toBe(1);
+    expect(correction!.correction_dose).toBe(0);
+    expect(correction!.total_dose).toBe(5);
+  });
+
+  it("GET /api/iob errors with a code when no insulin is configured", async () => {
+    const res = await app.request("/api/iob");
+    expect(res.status).toBe(400);
+    const body = (await res.json()) as { code?: string };
+    expect(body.code).toBe("insulin_action_not_configured");
+  });
+
+  it("GET /api/iob sums active insulin from the timeline", async () => {
+    await storage.saveSettings(configured());
+    await storage.addTimelineEntry({
+      id: crypto.randomUUID(),
+      timestamp: new Date(now.getTime() - 60 * 60_000).toISOString(),
+      type: "fast_insulin",
+      units: 8,
+      insulin_id: "novorapid",
+      related_meal_id: null,
+    });
+
+    const res = await app.request("/api/iob");
+    expect(res.status).toBe(200);
+    const iob = (await res.json()) as InsulinOnBoard;
+    const expected = 8 * insulinRemainingFraction(60, 75, 300);
+    expect(iob.total_units).toBeCloseTo(expected, 5);
+    expect(iob.contributions).toHaveLength(1);
+    expect(iob.contributions[0]!.units).toBe(8);
+  });
+
   it("POST /api/calculate offsets meal timestamp by pre_bolus_minutes", async () => {
     parser.setResponse("a banana", [
       {
@@ -128,6 +266,9 @@ describe("API routes", () => {
       glucose_unit: "mg/dL",
       pen_increment: 0.5,
       fat_protein_multiplier: 0.2,
+      bolus_insulin_id: "novorapid",
+      basal_insulin_id: "tresiba",
+      insulin_action_minutes: 300,
       language: "en",
     });
 
@@ -152,6 +293,13 @@ describe("API routes", () => {
   });
 
   it("POST /api/timeline creates manual entries", async () => {
+    await storage.saveSettings({
+      ...DEFAULT_SETTINGS,
+      bolus_insulin_id: "novorapid",
+      basal_insulin_id: "tresiba",
+      insulin_action_minutes: 300,
+    });
+
     const fastRes = await app.request("/api/timeline", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -186,6 +334,11 @@ describe("API routes", () => {
   });
 
   it("DELETE /api/timeline/:id removes a single entry", async () => {
+    await storage.saveSettings({
+      ...DEFAULT_SETTINGS,
+      basal_insulin_id: "tresiba",
+    });
+
     await app.request("/api/timeline", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -251,6 +404,9 @@ describe("API routes", () => {
       glucose_unit: "mg/dL",
       pen_increment: 0.5,
       fat_protein_multiplier: 0.2,
+      bolus_insulin_id: "novorapid",
+      basal_insulin_id: "tresiba",
+      insulin_action_minutes: 300,
       language: "en",
     });
 
@@ -303,6 +459,9 @@ describe("API routes", () => {
       glucose_unit: "mg/dL",
       pen_increment: 0.5,
       fat_protein_multiplier: 0.2,
+      bolus_insulin_id: "novorapid",
+      basal_insulin_id: "tresiba",
+      insulin_action_minutes: 300,
       language: "en",
     });
 

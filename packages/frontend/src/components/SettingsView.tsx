@@ -1,7 +1,19 @@
-import type { GlucoseUnit, MealWindow, Settings } from "@pincho/shared";
+import type {
+  BasalInsulinId,
+  GlucoseUnit,
+  MealWindow,
+  Settings,
+} from "@pincho/shared";
+import {
+  basalInsulinProfiles,
+  bolusInsulinProfiles,
+  getBolusInsulinProfile,
+  MAX_DIA_MINUTES,
+  MIN_DIA_MINUTES,
+} from "@pincho/shared";
 import { useState } from "react";
 import * as api from "../api.js";
-import { type Language, t } from "../i18n.js";
+import { apiErrorText, type Language, t } from "../i18n.js";
 
 interface SettingsViewProps {
   settings: Settings;
@@ -42,6 +54,27 @@ export function SettingsView({ settings, onSave, lang }: SettingsViewProps) {
     setLocal({ ...local, meal_windows: windows });
   }
 
+  function setBolusInsulin(id: string) {
+    if (id === "") {
+      setLocal({ ...local, bolus_insulin_id: null });
+      return;
+    }
+    const profile = getBolusInsulinProfile(id);
+    setLocal({
+      ...local,
+      bolus_insulin_id: profile.id,
+      insulin_action_minutes:
+        local.insulin_action_minutes ?? profile.action.duration_minutes,
+    });
+  }
+
+  function setBasalInsulin(id: string) {
+    setLocal({
+      ...local,
+      basal_insulin_id: id === "" ? null : (id as BasalInsulinId),
+    });
+  }
+
   async function handleSave() {
     setSaving(true);
     setError(null);
@@ -51,7 +84,7 @@ export function SettingsView({ settings, onSave, lang }: SettingsViewProps) {
       setSaved(true);
       setTimeout(() => setSaved(false), 2000);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Failed to save settings");
+      setError(apiErrorText(lang, e));
     } finally {
       setSaving(false);
     }
@@ -192,6 +225,68 @@ export function SettingsView({ settings, onSave, lang }: SettingsViewProps) {
         >
           <option value="0.5">0.5U</option>
           <option value="1">1U</option>
+        </select>
+      </div>
+
+      <div className="settings-section">
+        <h3>{t(lang, "insulin")}</h3>
+        <label className="settings-hint" htmlFor="bolus-insulin">
+          {t(lang, "bolusInsulin")}
+        </label>
+        <select
+          id="bolus-insulin"
+          value={local.bolus_insulin_id ?? ""}
+          onChange={(e) => setBolusInsulin(e.target.value)}
+        >
+          <option value="">{t(lang, "selectInsulin")}</option>
+          {bolusInsulinProfiles().map((p) => (
+            <option key={p.id} value={p.id}>
+              {p.brand_name} ({p.generic_name})
+            </option>
+          ))}
+        </select>
+
+        {local.bolus_insulin_id && (
+          <>
+            <label className="settings-hint" htmlFor="insulin-action-minutes">
+              {t(lang, "insulinActionDuration")}
+            </label>
+            <span className="settings-hint">
+              {t(lang, "insulinActionDurationHint")}
+            </span>
+            <input
+              id="insulin-action-minutes"
+              type="number"
+              min={MIN_DIA_MINUTES}
+              max={MAX_DIA_MINUTES}
+              step="15"
+              value={local.insulin_action_minutes ?? ""}
+              onChange={(e) =>
+                setLocal({
+                  ...local,
+                  insulin_action_minutes: e.target.value
+                    ? Number.parseInt(e.target.value, 10)
+                    : null,
+                })
+              }
+            />
+          </>
+        )}
+
+        <label className="settings-hint" htmlFor="basal-insulin">
+          {t(lang, "basalInsulin")}
+        </label>
+        <select
+          id="basal-insulin"
+          value={local.basal_insulin_id ?? ""}
+          onChange={(e) => setBasalInsulin(e.target.value)}
+        >
+          <option value="">{t(lang, "selectInsulin")}</option>
+          {basalInsulinProfiles().map((p) => (
+            <option key={p.id} value={p.id}>
+              {p.brand_name} ({p.generic_name})
+            </option>
+          ))}
         </select>
       </div>
 

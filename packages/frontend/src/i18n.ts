@@ -1,3 +1,5 @@
+import { ApiError } from "./api.js";
+
 const translations = {
   en: {
     appTitle: "Pincho",
@@ -69,6 +71,25 @@ const translations = {
     energyRatio: "Fat+protein > 80% energy",
     fatProteinLearnMore: "Why?",
     fatProteinInfoTitle: "Fat and protein adjustment",
+    insulin: "Insulin",
+    bolusInsulin: "Bolus (fast-acting) insulin",
+    basalInsulin: "Basal (long-acting) insulin",
+    selectInsulin: "Select…",
+    insulinActionDuration: "Duration of insulin action (DIA)",
+    insulinActionDurationHint: "Minutes.",
+    insulinOnBoard: "Insulin on board",
+    iobZero: "No insulin on board.",
+    lastInjection: "last injection",
+    goToSettings: "Set it up",
+    bolus_insulin_not_configured:
+      "Choose which insulin you're using in settings before dosing.",
+    basal_insulin_not_configured:
+      "Choose which long-acting insulin you're using in settings first.",
+    insulin_action_not_configured:
+      "Choose which insulin you're using in settings to see insulin on board.",
+    validation_failed: "Please check the values you entered.",
+    not_found: "Not found.",
+    internal_error: "Something went wrong. Please try again.",
   },
   es: {
     appTitle: "Pincho",
@@ -141,6 +162,25 @@ const translations = {
     energyRatio: "Grasa+proteína > 80% energía",
     fatProteinLearnMore: "¿Por qué?",
     fatProteinInfoTitle: "Ajuste por grasa y proteína",
+    insulin: "Insulina",
+    bolusInsulin: "Insulina bolo (rápida)",
+    basalInsulin: "Insulina basal (lenta)",
+    selectInsulin: "Seleccionar…",
+    insulinActionDuration: "Duración de acción de la insulina (DIA)",
+    insulinActionDurationHint: "Minutos.",
+    insulinOnBoard: "Insulina activa",
+    iobZero: "Sin insulina activa.",
+    lastInjection: "última inyección",
+    goToSettings: "Configúralo",
+    bolus_insulin_not_configured:
+      "Elige qué insulina usas en ajustes antes de dosificar.",
+    basal_insulin_not_configured:
+      "Elige qué insulina lenta usas en ajustes primero.",
+    insulin_action_not_configured:
+      "Elige qué insulina usas en ajustes para ver la insulina activa.",
+    validation_failed: "Revisa los valores introducidos.",
+    not_found: "No encontrado.",
+    internal_error: "Algo salió mal. Inténtalo de nuevo.",
   },
 } as const;
 
@@ -149,4 +189,11 @@ export type TranslationKey = keyof (typeof translations)["en"];
 
 export function t(lang: Language, key: TranslationKey): string {
   return translations[lang][key];
+}
+
+export function apiErrorText(lang: Language, err: unknown): string {
+  if (err instanceof ApiError && err.code) {
+    return t(lang, err.code);
+  }
+  return err instanceof Error ? err.message : "Unknown error";
 }

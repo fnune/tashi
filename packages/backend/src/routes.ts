@@ -1,4 +1,6 @@
 import type {
+  BasalInsulinId,
+  BolusInsulinId,
   CalculateRequest,
   CreateTimelineRequest,
   FastInsulinEntry,
@@ -6,11 +8,21 @@ import type {
   MealEntry,
   Settings,
   SlowInsulinEntry,
+  TimelineEntry,
   UpdateTimelineRequest,
+} from "@pincho/shared";
+import {
+  basalInsulinProfiles,
+  bolusInsulinProfiles,
+  insulinOnBoard,
+  MAX_DIA_MINUTES,
+  MIN_DIA_MINUTES,
 } from "@pincho/shared";
 import { Hono } from "hono";
 import { z } from "zod";
 import type { Calculator } from "./calculator.js";
+import { type Clock, systemClock } from "./clock.js";
+import { apiError } from "./errors.js";
 import type { FileStorage } from "./storage.js";
 
 const calculateSchema = z.object({
@@ -19,6 +31,20 @@ const calculateSchema = z.object({
   meal_window_override: z.string().optional(),
   pre_bolus_minutes: z.number().min(0).max(60).optional(),
 });
+
+const bolusInsulinIdSchema = z.enum(
+  bolusInsulinProfiles().map((p) => p.id) as [
+    BolusInsulinId,
+    ...BolusInsulinId[],
+  ],
+);
+
+const basalInsulinIdSchema = z.enum(
+  basalInsulinProfiles().map((p) => p.id) as [
+    BasalInsulinId,
+    ...BasalInsulinId[],
+  ],
+);
 
 const settingsSchema = z.object({
   meal_windows: z.array(
@@ -34,6 +60,13 @@ const settingsSchema = z.object({
   glucose_unit: z.union([z.literal("mg/dL"), z.literal("mmol/L")]),
   pen_increment: z.union([z.literal(0.5), z.literal(1)]),
   fat_protein_multiplier: z.number().min(0).max(1),
+  bolus_insulin_id: bolusInsulinIdSchema.nullable(),
+  basal_insulin_id: basalInsulinIdSchema.nullable(),
+  insulin_action_minutes: z
+    .number()
+    .min(MIN_DIA_MINUTES)
+    .max(MAX_DIA_MINUTES)
+    .nullable(),
   language: z.union([z.literal("en"), z.literal("es")]),
 });
 
@@ -56,6 +89,7 @@ const timelineEntrySchema = z.discriminatedUnion("type", [
 export function createRoutes(
   calculator: Calculator,
   storage: FileStorage,
+  clock: Clock = systemClock,
 ): Hono {
   const api = new Hono();
 
@@ -63,19 +97,33 @@ export function createRoutes(
     const body = await c.req.json<CalculateRequest>();
     const parsed = calculateSchema.safeParse(body);
     if (!parsed.success) {
-      return c.json({ error: parsed.error.message }, 400);
+      return apiError(c, "validation_failed", 400, parsed.error.message);
     }
 
     const settings = await storage.getSettings();
+    const bolusInsulinId = settings.bolus_insulin_id;
+    if (bolusInsulinId === null) {
+      return apiError(c, "bolus_insulin_not_configured", 400);
+    }
     const vocabulary = await storage.getVocabulary();
 
     try {
+      const timeline = await storage.getTimeline();
+      const fastEntries = timeline.filter(
+        (e): e is FastInsulinEntry => e.type === "fast_insulin",
+      );
+      const iobUnits =
+        settings.insulin_action_minutes === null
+          ? 0
+          : insulinOnBoard(fastEntries, settings, clock()).total_units;
+
       const outcome = await calculator.calculate(
         parsed.data.food_description,
         settings,
         parsed.data.current_blood_sugar,
         parsed.data.meal_window_override,
         vocabulary,
+        iobUnits,
       );
 
       if (outcome.status !== "ok") {
@@ -87,7 +135,7 @@ export function createRoutes(
 
       const result = outcome.result;
       const preBolusMs = (parsed.data.pre_bolus_minutes ?? 0) * 60_000;
-      const now = new Date();
+      const now = clock();
 
       const doseUnits =
         result.fat_protein_adjustment?.total_dose ??
@@ -109,26 +157,33 @@ export function createRoutes(
         trace: result.trace,
       };
 
-      const insulinEntry: FastInsulinEntry = {
-        id: crypto.randomUUID(),
-        timestamp: now.toISOString(),
-        type: "fast_insulin",
-        units: doseUnits,
-        related_meal_id: mealEntry.id,
-      };
+      const entries: TimelineEntry[] = [mealEntry];
+      let insulinEntryId: string | null = null;
+      if (doseUnits > 0) {
+        const insulinEntry: FastInsulinEntry = {
+          id: crypto.randomUUID(),
+          timestamp: now.toISOString(),
+          type: "fast_insulin",
+          units: doseUnits,
+          insulin_id: bolusInsulinId,
+          related_meal_id: mealEntry.id,
+        };
+        entries.push(insulinEntry);
+        insulinEntryId = insulinEntry.id;
+      }
 
-      await storage.addTimelineEntries([insulinEntry, mealEntry]);
+      await storage.addTimelineEntries(entries);
       await storage.learnFromItems(result.items);
 
       return c.json({
         status: "ok" as const,
         result,
         meal_entry_id: mealEntry.id,
-        insulin_entry_id: insulinEntry.id,
+        insulin_entry_id: insulinEntryId,
       });
     } catch (e) {
       const message = e instanceof Error ? e.message : "Unknown error";
-      return c.json({ error: message }, 500);
+      return apiError(c, "internal_error", 500, message);
     }
   });
 
@@ -141,7 +196,7 @@ export function createRoutes(
     const body = await c.req.json<Settings>();
     const parsed = settingsSchema.safeParse(body);
     if (!parsed.success) {
-      return c.json({ error: parsed.error.message }, 400);
+      return apiError(c, "validation_failed", 400, parsed.error.message);
     }
     await storage.saveSettings(parsed.data);
     return c.json(parsed.data);
@@ -152,23 +207,46 @@ export function createRoutes(
     return c.json(timeline);
   });
 
+  api.get("/api/iob", async (c) => {
+    const settings = await storage.getSettings();
+    if (settings.insulin_action_minutes === null) {
+      return apiError(c, "insulin_action_not_configured", 400);
+    }
+    const timeline = await storage.getTimeline();
+    const fastEntries = timeline.filter(
+      (e): e is FastInsulinEntry => e.type === "fast_insulin",
+    );
+    try {
+      return c.json(insulinOnBoard(fastEntries, settings, clock()));
+    } catch (e) {
+      const message = e instanceof Error ? e.message : "Unknown error";
+      return apiError(c, "internal_error", 500, message);
+    }
+  });
+
   api.post("/api/timeline", async (c) => {
     const body = await c.req.json<CreateTimelineRequest>();
     const parsed = timelineEntrySchema.safeParse(body);
     if (!parsed.success) {
-      return c.json({ error: parsed.error.message }, 400);
+      return apiError(c, "validation_failed", 400, parsed.error.message);
     }
 
     const data = parsed.data;
     const id = crypto.randomUUID();
-    const timestamp = new Date().toISOString();
+    const timestamp = clock().toISOString();
 
     if (data.type === "fast_insulin") {
+      const settings = await storage.getSettings();
+      const bolusInsulinId = settings.bolus_insulin_id;
+      if (bolusInsulinId === null) {
+        return apiError(c, "bolus_insulin_not_configured", 400);
+      }
       const entry: FastInsulinEntry = {
         id,
         timestamp,
         type: "fast_insulin",
         units: data.units,
+        insulin_id: bolusInsulinId,
         related_meal_id: null,
       };
       await storage.addTimelineEntry(entry);
@@ -176,11 +254,17 @@ export function createRoutes(
     }
 
     if (data.type === "slow_insulin") {
+      const settings = await storage.getSettings();
+      const basalInsulinId = settings.basal_insulin_id;
+      if (basalInsulinId === null) {
+        return apiError(c, "basal_insulin_not_configured", 400);
+      }
       const entry: SlowInsulinEntry = {
         id,
         timestamp,
         type: "slow_insulin",
         units: data.units,
+        insulin_id: basalInsulinId,
       };
       await storage.addTimelineEntry(entry);
       return c.json(entry, 201);
@@ -202,7 +286,7 @@ export function createRoutes(
     const body = await c.req.json<UpdateTimelineRequest>();
     const updated = await storage.updateTimelineEntry(id, body);
     if (!updated) {
-      return c.json({ error: "Not found" }, 404);
+      return apiError(c, "not_found", 404);
     }
     return c.json(updated);
   });
@@ -211,7 +295,7 @@ export function createRoutes(
     const id = c.req.param("id");
     const deleted = await storage.deleteTimelineEntry(id);
     if (!deleted) {
-      return c.json({ error: "Not found" }, 404);
+      return apiError(c, "not_found", 404);
     }
     return c.json({ ok: true });
   });

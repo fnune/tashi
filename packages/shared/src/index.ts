@@ -5,6 +5,37 @@ export {
   roundToIncrement,
 } from "./calculation.js";
 export type {
+  BasalInsulinId,
+  BasalInsulinProfile,
+  BolusInsulinId,
+  BolusInsulinProfile,
+  InsulinActionModel,
+  InsulinId,
+  InsulinOnBoard,
+  InsulinProfile,
+  InsulinRole,
+  IobContribution,
+  SourceRef,
+} from "./insulin.js";
+export {
+  basalInsulinProfiles,
+  bolusInsulinProfiles,
+  effectiveBolusModel,
+  getBasalInsulinProfile,
+  getBolusInsulinProfile,
+  getInsulinProfile,
+  INSULIN_CATALOG,
+  insulinOnBoard,
+  insulinRemainingFraction,
+  LANTUS,
+  LEVEMIR,
+  MAX_DIA_MINUTES,
+  MIN_DIA_MINUTES,
+  NOVORAPID,
+  TRESIBA,
+} from "./insulin.js";
+export type {
+  ApiErrorCode,
   CalculatedItem,
   CalculateRequest,
   CalculateResponse,

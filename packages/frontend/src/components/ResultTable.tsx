@@ -84,9 +84,11 @@ function DoseDisplay({
   const details: string[] = [];
   details.push(`${t(lang, "recommendedDose")}: ${dose}U`);
   if (hasCorr) {
-    details.push(
-      `${t(lang, "correction")}: ${corr.current_blood_sugar} → ${corr.target_blood_sugar} ${glucoseUnit} (${corr.correction_dose >= 0 ? "+" : ""}${corr.correction_dose}U)`,
-    );
+    let corrText = `${t(lang, "correction")}: ${corr.current_blood_sugar} → ${corr.target_blood_sugar} ${glucoseUnit} (${corr.correction_dose >= 0 ? "+" : ""}${corr.correction_dose}U)`;
+    if (corr.iob_reduction > 0) {
+      corrText += ` - ${t(lang, "insulinOnBoard")} ${corr.iob}U (-${corr.iob_reduction}U)`;
+    }
+    details.push(corrText);
   }
 
   const thresholdKey = fp ? THRESHOLD_I18N[fp.threshold_met] : undefined;

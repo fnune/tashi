@@ -9,6 +9,9 @@ const BASE_SETTINGS: Settings = {
   glucose_unit: "mg/dL",
   pen_increment: 0.5,
   fat_protein_multiplier: 0.2,
+  bolus_insulin_id: "novorapid",
+  basal_insulin_id: "tresiba",
+  insulin_action_minutes: 300,
   language: "en",
 };
 
@@ -127,6 +130,44 @@ describe("calculateDose rounding", () => {
     const items = [makeItem({ net_carbs_g: 3 })];
     const result = calculateDose(items, 10, BASE_SETTINGS, 112);
     expect(result.correction!.total_dose).toBe(0.5);
+  });
+});
+
+describe("calculateDose insulin on board", () => {
+  it("subtracts IOB from a positive correction, never the meal dose", () => {
+    // 50g / 10 = 5U food; BG 200 target 100 factor 40 => raw correction 2.5U
+    // IOB 1.0 => correction 1.5U; total = round(5 + 1.5) = 6.5
+    const items = [makeItem({ net_carbs_g: 50 })];
+    const result = calculateDose(items, 10, BASE_SETTINGS, 200, 1.0);
+    expect(result.correction!.iob).toBe(1);
+    expect(result.correction!.iob_reduction).toBe(1);
+    expect(result.correction!.correction_dose).toBe(1.5);
+    expect(result.correction!.total_dose).toBe(6.5);
+  });
+
+  it("does not reduce the meal dose when blood sugar is at target", () => {
+    // BG at target => no correction to cancel; IOB must not touch meal coverage
+    const items = [makeItem({ net_carbs_g: 50 })];
+    const result = calculateDose(items, 10, BASE_SETTINGS, 100, 40);
+    expect(result.correction!.iob_reduction).toBe(0);
+    expect(result.correction!.correction_dose).toBe(0);
+    expect(result.correction!.total_dose).toBe(5);
+  });
+
+  it("caps the IOB reduction at the size of the correction", () => {
+    // BG 140 target 100 factor 40 => raw correction 1.0U; IOB 5 caps at 1.0
+    const items = [makeItem({ net_carbs_g: 50 })];
+    const result = calculateDose(items, 10, BASE_SETTINGS, 140, 5);
+    expect(result.correction!.iob_reduction).toBe(1);
+    expect(result.correction!.correction_dose).toBe(0);
+    expect(result.correction!.total_dose).toBe(5);
+  });
+
+  it("ignores IOB with no correction (no blood sugar entered)", () => {
+    const items = [makeItem({ net_carbs_g: 50 })];
+    const result = calculateDose(items, 10, BASE_SETTINGS, undefined, 40);
+    expect(result.correction).toBeUndefined();
+    expect(result.foodDose).toBe(5);
   });
 });
 

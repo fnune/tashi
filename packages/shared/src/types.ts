@@ -1,3 +1,5 @@
+import type { BasalInsulinId, BolusInsulinId } from "./insulin.js";
+
 export interface FoodItem {
   fdc_id: number;
   description: string;
@@ -88,6 +90,9 @@ export interface Settings {
   glucose_unit: GlucoseUnit;
   pen_increment: 0.5 | 1;
   fat_protein_multiplier: number;
+  bolus_insulin_id: BolusInsulinId | null;
+  basal_insulin_id: BasalInsulinId | null;
+  insulin_action_minutes: number | null;
   language: "en" | "es";
 }
 
@@ -105,6 +110,8 @@ export interface CalculationResult {
     target_blood_sugar: number;
     correction_factor: number;
     correction_dose: number;
+    iob: number;
+    iob_reduction: number;
     total_dose: number;
   };
   fat_protein_adjustment?: {
@@ -141,12 +148,14 @@ export interface MealEntry extends BaseEntry {
 export interface FastInsulinEntry extends BaseEntry {
   type: "fast_insulin";
   units: number;
+  insulin_id: BolusInsulinId;
   related_meal_id: string | null;
 }
 
 export interface SlowInsulinEntry extends BaseEntry {
   type: "slow_insulin";
   units: number;
+  insulin_id: BasalInsulinId;
 }
 
 export interface GlucoseEntry extends BaseEntry {
@@ -175,7 +184,7 @@ export type CalculateResponse =
       status: "ok";
       result: CalculationResult;
       meal_entry_id: string;
-      insulin_entry_id: string;
+      insulin_entry_id: string | null;
     }
   | {
       status: "needs_clarification";
@@ -187,8 +196,17 @@ export type CalculateResponse =
       message: string;
     };
 
+export type ApiErrorCode =
+  | "bolus_insulin_not_configured"
+  | "basal_insulin_not_configured"
+  | "insulin_action_not_configured"
+  | "validation_failed"
+  | "not_found"
+  | "internal_error";
+
 export interface ErrorResponse {
   error: string;
+  code?: ApiErrorCode;
 }
 
 export type CreateTimelineRequest =
@@ -224,5 +242,8 @@ export const DEFAULT_SETTINGS: Settings = {
   glucose_unit: "mg/dL",
   pen_increment: 0.5,
   fat_protein_multiplier: 0.2,
+  bolus_insulin_id: null,
+  basal_insulin_id: null,
+  insulin_action_minutes: null,
   language: "en",
 };

@@ -1,7 +1,10 @@
 import type {
+  ApiErrorCode,
   CalculateRequest,
   CalculateResponse,
   CreateTimelineRequest,
+  ErrorResponse,
+  InsulinOnBoard,
   Settings,
   TimelineEntry,
   UpdateTimelineRequest,
@@ -9,6 +12,15 @@ import type {
 
 declare const __BASE_PATH__: string;
 const BASE = __BASE_PATH__;
+
+export class ApiError extends Error {
+  code?: ApiErrorCode;
+  constructor(message: string, code?: ApiErrorCode) {
+    super(message);
+    this.name = "ApiError";
+    this.code = code;
+  }
+}
 
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
   const res = await fetch(`${BASE}${path}`, {
@@ -32,8 +44,8 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
   }
 
   if (!res.ok) {
-    const err = body as { error?: string };
-    throw new Error(err.error ?? `Request failed: ${res.status}`);
+    const err = body as ErrorResponse;
+    throw new ApiError(err.error ?? `Request failed: ${res.status}`, err.code);
   }
 
   return body as T;
@@ -59,6 +71,10 @@ export function calculate(req: CalculateRequest): Promise<CalculateResponse> {
 
 export function getTimeline(): Promise<TimelineEntry[]> {
   return request<TimelineEntry[]>("/api/timeline");
+}
+
+export function getIob(): Promise<InsulinOnBoard> {
+  return request<InsulinOnBoard>("/api/iob");
 }
 
 export function createTimelineEntry(

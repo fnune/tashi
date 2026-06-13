@@ -574,6 +574,29 @@ a.source-link:hover {
   font-size: 0.875rem;
 }
 
+.iob-banner {
+  padding: 8px 12px;
+  margin-bottom: 16px;
+  background: #f0fdf4;
+  border: 1px solid #86efac;
+  border-radius: var(--radius);
+  color: #166534;
+  font-size: 0.875rem;
+}
+
+.info-box {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  padding: 12px;
+  background: #eff6ff;
+  border: 1px solid var(--accent);
+  border-radius: var(--radius);
+  color: var(--text);
+  font-size: 0.875rem;
+}
+
 .rejection-box {
   padding: 12px;
   background: var(--error-bg);

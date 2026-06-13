@@ -7,7 +7,7 @@ import type {
 } from "@pincho/shared";
 import { useState } from "react";
 import * as api from "../api.js";
-import { type Language, t } from "../i18n.js";
+import { apiErrorText, type Language, t } from "../i18n.js";
 import { ResultTable } from "./ResultTable.js";
 
 interface TimelineViewProps {
@@ -66,7 +66,7 @@ function QuickAdd({
       setMode(null);
       onAdded();
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Failed to add entry");
+      setError(apiErrorText(lang, e));
     }
   }
 
@@ -198,7 +198,7 @@ function EntryCard({
       await api.updateTimelineEntry(entry.id, updates);
       onUpdated();
     } catch (e) {
-      setSaveError(e instanceof Error ? e.message : "Failed to save");
+      setSaveError(apiErrorText(lang, e));
     } finally {
       setSaving(false);
     }

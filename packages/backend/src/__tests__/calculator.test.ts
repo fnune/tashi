@@ -32,6 +32,9 @@ const TEST_SETTINGS: Settings = {
   glucose_unit: "mg/dL",
   pen_increment: 0.5,
   fat_protein_multiplier: 0.2,
+  bolus_insulin_id: "novorapid",
+  basal_insulin_id: "tresiba",
+  insulin_action_minutes: 300,
   language: "en",
 };
 

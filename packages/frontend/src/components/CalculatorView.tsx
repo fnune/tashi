@@ -1,12 +1,26 @@
 import type {
   CalculateRequest,
   CalculationResult,
+  InsulinOnBoard,
   Settings,
 } from "@pincho/shared";
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
+import { Link } from "react-router";
 import * as api from "../api.js";
-import { type Language, t } from "../i18n.js";
+import { apiErrorText, type Language, t } from "../i18n.js";
 import { ResultTable } from "./ResultTable.js";
+
+function relativeTime(lang: Language, minutesElapsed: number): string {
+  const rtf = new Intl.RelativeTimeFormat(lang, { numeric: "auto" });
+  if (minutesElapsed < 60) {
+    return rtf.format(-Math.round(minutesElapsed), "minute");
+  }
+  return rtf.format(-Math.round(minutesElapsed / 60), "hour");
+}
+
+function formatUnits(units: number): string {
+  return Number.isInteger(units) ? `${units}` : units.toFixed(1);
+}
 
 export interface CalculatorFormState {
   foodText: string;
@@ -38,6 +52,19 @@ export function CalculatorView({
     message: string;
   } | null>(null);
   const [result, setResult] = useState<CalculationResult | null>(null);
+  const [iob, setIob] = useState<InsulinOnBoard | null>(null);
+  const [configPrompt, setConfigPrompt] = useState<string | null>(null);
+
+  const fetchIob = useCallback(() => {
+    api
+      .getIob()
+      .then(setIob)
+      .catch(() => setIob(null));
+  }, []);
+
+  useEffect(() => {
+    fetchIob();
+  }, [fetchIob]);
 
   function update(patch: Partial<CalculatorFormState>) {
     onFormChange({ ...formState, ...patch });
@@ -50,6 +77,7 @@ export function CalculatorView({
     setLoading(true);
     setError(null);
     setClarification(null);
+    setConfigPrompt(null);
     setResult(null);
 
     const req: CalculateRequest = {
@@ -70,18 +98,49 @@ export function CalculatorView({
       if (res.status === "ok") {
         setResult(res.result);
         onNewResult();
+        fetchIob();
       } else {
         setClarification({ kind: res.status, message: res.message });
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Unknown error");
+      if (
+        err instanceof api.ApiError &&
+        (err.code === "bolus_insulin_not_configured" ||
+          err.code === "insulin_action_not_configured")
+      ) {
+        setConfigPrompt(t(lang, err.code));
+      } else {
+        setError(apiErrorText(lang, err));
+      }
     } finally {
       setLoading(false);
     }
   }
 
+  const hasIob = iob !== null && iob.total_units > 0.05;
+  const latest = iob?.contributions.find((c) => c.units > 0) ?? null;
+
   return (
     <div>
+      {iob !== null && (
+        <div className="iob-banner">
+          {hasIob ? (
+            <span>
+              {t(lang, "insulinOnBoard")}: {iob.total_units.toFixed(1)} U
+              {latest && (
+                <>
+                  {", "}
+                  {t(lang, "lastInjection")}: {formatUnits(latest.units)} U{" "}
+                  {relativeTime(lang, latest.minutes_elapsed)}
+                </>
+              )}
+              {"."}
+            </span>
+          ) : (
+            <span>{t(lang, "iobZero")}</span>
+          )}
+        </div>
+      )}
       <form className="calculator-form" onSubmit={handleSubmit}>
         <textarea
           className="food-input"
@@ -156,6 +215,15 @@ export function CalculatorView({
       </form>
 
       {error && <div className="error-box">{error}</div>}
+
+      {configPrompt && (
+        <div className="info-box">
+          <span>{configPrompt}</span>
+          <Link to="/settings" className="btn btn-small btn-secondary">
+            {t(lang, "goToSettings")}
+          </Link>
+        </div>
+      )}
 
       {loading && (
         <div className="loading-box">

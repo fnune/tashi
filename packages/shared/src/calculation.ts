@@ -63,6 +63,8 @@ interface CorrectionResult {
   target_blood_sugar: number;
   correction_factor: number;
   correction_dose: number;
+  iob: number;
+  iob_reduction: number;
   total_dose: number;
 }
 
@@ -80,6 +82,7 @@ export function calculateDose(
   ratio: number,
   settings: Settings,
   currentBloodSugar?: number,
+  iob = 0,
 ): {
   totalNetCarbs: number;
   foodDose: number;
@@ -93,14 +96,20 @@ export function calculateDose(
   let rawCorrectionDose = 0;
   let correction: CorrectionResult | undefined;
   if (currentBloodSugar !== undefined && settings.correction_factor !== null) {
-    rawCorrectionDose =
+    const bgCorrection =
       (currentBloodSugar - settings.target_blood_sugar) /
       settings.correction_factor;
+    // IOB only cancels a positive (high-BG) correction; it never reduces the
+    // meal dose. A low-BG (negative) correction is left untouched.
+    const iobReduction = bgCorrection > 0 ? Math.min(iob, bgCorrection) : 0;
+    rawCorrectionDose = bgCorrection - iobReduction;
     correction = {
       current_blood_sugar: currentBloodSugar,
       target_blood_sugar: settings.target_blood_sugar,
       correction_factor: settings.correction_factor,
       correction_dose: roundDisplay(rawCorrectionDose),
+      iob: roundDisplay(iob),
+      iob_reduction: roundDisplay(iobReduction),
       total_dose: Math.max(
         0,
         roundToIncrement(
