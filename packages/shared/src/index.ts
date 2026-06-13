@@ -25,6 +25,7 @@ export {
   getBolusInsulinProfile,
   getInsulinProfile,
   INSULIN_CATALOG,
+  insulinActivityFraction,
   insulinOnBoard,
   insulinRemainingFraction,
   LANTUS,

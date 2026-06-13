@@ -4,6 +4,7 @@ import {
   getBasalInsulinProfile,
   getBolusInsulinProfile,
   getInsulinProfile,
+  insulinActivityFraction,
   insulinOnBoard,
   insulinRemainingFraction,
 } from "../insulin.js";
@@ -65,6 +66,78 @@ describe("insulinRemainingFraction (NovoRapid: peak 75, duration 300)", () => {
       expect(current).toBeLessThan(prev);
       prev = current;
     }
+  });
+
+  it("delivers the whole dose over the action window (area under activity ~= 1)", () => {
+    const peak = 75;
+    const duration = 300;
+    const steps = 10_000;
+    const dt = duration / steps;
+    let delivered = 0;
+    for (let i = 0; i < steps; i++) {
+      const t = i * dt;
+      delivered +=
+        insulinRemainingFraction(t, peak, duration) -
+        insulinRemainingFraction(t + dt, peak, duration);
+    }
+    expect(delivered).toBeCloseTo(1, 3);
+  });
+
+  it("rejects a peak at or beyond half the duration instead of returning NaN", () => {
+    expect(() => insulinRemainingFraction(60, 150, 300)).toThrow(
+      /less than half the duration/i,
+    );
+    expect(() => insulinRemainingFraction(60, 200, 300)).toThrow(
+      /less than half the duration/i,
+    );
+  });
+});
+
+describe("insulinActivityFraction (NovoRapid: peak 75, duration 300)", () => {
+  it("is zero at and beyond the action window boundaries", () => {
+    expect(insulinActivityFraction(0, 75, 300)).toBe(0);
+    expect(insulinActivityFraction(300, 75, 300)).toBe(0);
+    expect(insulinActivityFraction(400, 75, 300)).toBe(0);
+  });
+
+  it("peaks at the configured peak time", () => {
+    let argmax = 0;
+    let max = -1;
+    for (let t = 1; t < 300; t += 1) {
+      const activity = insulinActivityFraction(t, 75, 300);
+      if (activity > max) {
+        max = activity;
+        argmax = t;
+      }
+    }
+    expect(argmax).toBeCloseTo(75, -1);
+  });
+
+  it("integrates to the whole dose over the action window", () => {
+    const steps = 10_000;
+    const dt = 300 / steps;
+    let area = 0;
+    for (let i = 0; i < steps; i++) {
+      area += insulinActivityFraction((i + 0.5) * dt, 75, 300) * dt;
+    }
+    expect(area).toBeCloseTo(1, 3);
+  });
+
+  it("equals the negative slope of the remaining-fraction curve", () => {
+    const h = 0.01;
+    for (const t of [30, 75, 120, 200, 270]) {
+      const slope =
+        (insulinRemainingFraction(t + h, 75, 300) -
+          insulinRemainingFraction(t - h, 75, 300)) /
+        (2 * h);
+      expect(insulinActivityFraction(t, 75, 300)).toBeCloseTo(-slope, 6);
+    }
+  });
+
+  it("rejects a peak at or beyond half the duration instead of returning NaN", () => {
+    expect(() => insulinActivityFraction(60, 150, 300)).toThrow(
+      /less than half the duration/i,
+    );
   });
 });
 

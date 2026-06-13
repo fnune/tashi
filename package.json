@@ -1,7 +1,7 @@
 {
   "private": true,
   "scripts": {
-    "dev": "concurrently -k --names be,fe --prefix-colors blue,magenta \"pnpm --filter @pincho/backend dev\" \"pnpm --filter @pincho/frontend dev\"",
+    "dev": "concurrently -k --names sh,be,fe --prefix-colors gray,blue,magenta \"pnpm --filter @pincho/shared dev\" \"pnpm --filter @pincho/backend dev\" \"pnpm --filter @pincho/frontend dev\"",
     "dev:backend": "pnpm --filter @pincho/backend dev",
     "dev:frontend": "pnpm --filter @pincho/frontend dev",
     "build": "pnpm -r build",

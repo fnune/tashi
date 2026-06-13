@@ -660,6 +660,138 @@ a.source-link:hover {
   margin-bottom: 6px;
 }
 
+.insulin-bolus-group {
+  margin-bottom: 18px;
+  padding-bottom: 18px;
+  border-bottom: 1px solid var(--border);
+}
+
+.iob-curve-figure {
+  margin: 0;
+}
+
+.iob-curve-frame {
+  width: 100%;
+  aspect-ratio: 480 / 150;
+  margin-top: 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  overflow: hidden;
+}
+
+.iob-curve {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.iob-curve-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  padding: 0 24px;
+  text-align: center;
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+}
+
+.iob-curve-line {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 2;
+}
+
+.iob-curve-activity-area {
+  fill: var(--warning);
+  opacity: 0.12;
+}
+
+.iob-curve-activity-line {
+  fill: none;
+  stroke: var(--warning);
+  stroke-width: 2;
+}
+
+.iob-curve-legend {
+  display: flex;
+  gap: 16px;
+  margin-top: 8px;
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+}
+
+.iob-legend {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.iob-legend::before {
+  content: "";
+  width: 14px;
+  height: 3px;
+  border-radius: 2px;
+}
+
+.iob-legend-iob::before {
+  background: var(--accent);
+}
+
+.iob-legend-activity::before {
+  background: var(--warning);
+}
+
+.iob-curve-caption {
+  margin-top: 6px;
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+}
+
+.iob-curve-sources {
+  margin-top: 8px;
+  font-size: 0.72rem;
+  color: var(--text-secondary);
+}
+
+.iob-curve-sources-label {
+  font-weight: 600;
+}
+
+.iob-curve-sources ul {
+  margin: 4px 0 0;
+  padding-left: 16px;
+}
+
+.iob-curve-sources a {
+  color: var(--accent);
+}
+
+.iob-curve-peak-label {
+  fill: var(--text-secondary);
+  font-size: 11px;
+  font-family: var(--font);
+}
+
+.settings-warning {
+  font-size: 0.8rem;
+  color: var(--warning);
+}
+
+.iob-curve-peak {
+  stroke: var(--text-secondary);
+  stroke-width: 1;
+  stroke-dasharray: 3 3;
+  opacity: 0.6;
+}
+
+.iob-curve-label {
+  fill: var(--text-secondary);
+  font-size: 10px;
+  font-family: var(--mono);
+}
+
 .info-page {
   max-width: 600px;
   line-height: 1.6;

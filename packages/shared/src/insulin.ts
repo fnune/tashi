@@ -183,6 +183,33 @@ export function effectiveBolusModel(settings: Settings): InsulinActionModel {
   };
 }
 
+interface ExponentialParams {
+  tau: number;
+  a: number;
+  s: number;
+}
+
+function exponentialParams(
+  peakMinutes: number,
+  durationMinutes: number,
+): ExponentialParams {
+  // The effect-compartment parameterisation diverges as the peak approaches
+  // half the duration (the tau denominator hits zero at tp == td/2) and is
+  // physically meaningless beyond it. Reject rather than return NaN, which
+  // would silently poison the summed IOB.
+  if (peakMinutes * 2 >= durationMinutes) {
+    throw new Error(
+      `Insulin peak (${peakMinutes} min) must be less than half the duration (${durationMinutes} min)`,
+    );
+  }
+  const td = durationMinutes;
+  const tp = peakMinutes;
+  const tau = (tp * (1 - tp / td)) / (1 - (2 * tp) / td);
+  const a = (2 * tau) / td;
+  const s = 1 / (1 - a + (1 + a) * Math.exp(-td / tau));
+  return { tau, a, s };
+}
+
 export function insulinRemainingFraction(
   elapsedMinutes: number,
   peakMinutes: number,
@@ -191,16 +218,28 @@ export function insulinRemainingFraction(
   if (elapsedMinutes <= 0) return 1;
   if (elapsedMinutes >= durationMinutes) return 0;
 
+  const { tau, a, s } = exponentialParams(peakMinutes, durationMinutes);
   const td = durationMinutes;
-  const tp = peakMinutes;
-  const tau = (tp * (1 - tp / td)) / (1 - (2 * tp) / td);
-  const a = (2 * tau) / td;
-  const s = 1 / (1 - a + (1 + a) * Math.exp(-td / tau));
-
   const t = elapsedMinutes;
   const inner =
     ((t * t) / (tau * td * (1 - a)) - t / tau - 1) * Math.exp(-t / tau) + 1;
   return 1 - s * (1 - a) * inner;
+}
+
+// Insulin activity: the fraction of the dose acting per minute, i.e. the rate
+// at which insulin on board is consumed (-d/dt of insulinRemainingFraction).
+// Starts at zero, peaks at peakMinutes, and returns to zero by the duration;
+// its integral over the action window is 1.
+export function insulinActivityFraction(
+  elapsedMinutes: number,
+  peakMinutes: number,
+  durationMinutes: number,
+): number {
+  if (elapsedMinutes <= 0 || elapsedMinutes >= durationMinutes) return 0;
+
+  const { tau, s } = exponentialParams(peakMinutes, durationMinutes);
+  const t = elapsedMinutes;
+  return (s / (tau * tau)) * t * (1 - t / durationMinutes) * Math.exp(-t / tau);
 }
 
 export interface IobContribution {

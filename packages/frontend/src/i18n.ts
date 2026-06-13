@@ -77,6 +77,14 @@ const translations = {
     selectInsulin: "Select…",
     insulinActionDuration: "Duration of insulin action (DIA)",
     insulinActionDurationHint: "Minutes.",
+    insulinActionOutOfRange:
+      "Choose a duration between {min} and {max} minutes to see the curves.",
+    insulinPeak: "Peak",
+    iobLegend: "Insulin on board",
+    activityLegend: "Activity",
+    iobCurveSources: "Sources",
+    iobCurveCaption:
+      "Activity (orange) is how strongly the dose is working, peaking at the marked time. Insulin on board (blue) is how much of the dose is still left, falling from the full dose to zero. The two use different vertical scales.",
     insulinOnBoard: "Insulin on board",
     iobZero: "No insulin on board.",
     lastInjection: "last injection",
@@ -168,6 +176,14 @@ const translations = {
     selectInsulin: "Seleccionar…",
     insulinActionDuration: "Duración de acción de la insulina (DIA)",
     insulinActionDurationHint: "Minutos.",
+    insulinActionOutOfRange:
+      "Elige una duración entre {min} y {max} minutos para ver las curvas.",
+    insulinPeak: "Pico",
+    iobLegend: "Insulina activa",
+    activityLegend: "Actividad",
+    iobCurveSources: "Fuentes",
+    iobCurveCaption:
+      "La actividad (naranja) es con qué fuerza actúa la dosis, con su máximo en el tiempo marcado. La insulina activa (azul) es cuánto queda de la dosis, que baja desde la dosis completa hasta cero. Las dos usan escalas verticales distintas.",
     insulinOnBoard: "Insulina activa",
     iobZero: "Sin insulina activa.",
     lastInjection: "última inyección",

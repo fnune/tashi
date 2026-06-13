@@ -3,6 +3,7 @@ import type {
   GlucoseUnit,
   MealWindow,
   Settings,
+  SourceRef,
 } from "@pincho/shared";
 import {
   basalInsulinProfiles,
@@ -14,6 +15,7 @@ import {
 import { useState } from "react";
 import * as api from "../api.js";
 import { apiErrorText, type Language, t } from "../i18n.js";
+import { IobCurve } from "./IobCurve.js";
 
 interface SettingsViewProps {
   settings: Settings;
@@ -21,11 +23,46 @@ interface SettingsViewProps {
   lang: Language;
 }
 
+function formatMinutes(minutes: number): string {
+  const hours = Math.floor(minutes / 60);
+  const rest = minutes % 60;
+  if (hours && rest) return `${hours}h ${rest}m`;
+  if (hours) return `${hours}h`;
+  return `${rest}m`;
+}
+
+function dedupeSources(sources: SourceRef[]): SourceRef[] {
+  const seen = new Set<string>();
+  return sources.filter((source) => {
+    if (seen.has(source.url)) return false;
+    seen.add(source.url);
+    return true;
+  });
+}
+
 export function SettingsView({ settings, onSave, lang }: SettingsViewProps) {
   const [local, setLocal] = useState<Settings>({ ...settings });
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const bolusProfile = local.bolus_insulin_id
+    ? getBolusInsulinProfile(local.bolus_insulin_id)
+    : null;
+  const bolusSources = bolusProfile
+    ? dedupeSources([bolusProfile.label_source, ...bolusProfile.action.sources])
+    : [];
+  const dia = local.insulin_action_minutes;
+  const diaPlottable =
+    bolusProfile != null &&
+    dia != null &&
+    dia >= MIN_DIA_MINUTES &&
+    dia <= MAX_DIA_MINUTES &&
+    bolusProfile.action.peak_minutes * 2 < dia;
+  const diaOutOfRange = dia != null && !diaPlottable;
+  const diaRangeMessage = t(lang, "insulinActionOutOfRange")
+    .replace("{min}", String(MIN_DIA_MINUTES))
+    .replace("{max}", String(MAX_DIA_MINUTES));
 
   function updateWindow(
     index: number,
@@ -247,7 +284,7 @@ export function SettingsView({ settings, onSave, lang }: SettingsViewProps) {
         </select>
 
         {local.bolus_insulin_id && (
-          <>
+          <div className="insulin-bolus-group">
             <label className="settings-hint" htmlFor="insulin-action-minutes">
               {t(lang, "insulinActionDuration")}
             </label>
@@ -270,7 +307,52 @@ export function SettingsView({ settings, onSave, lang }: SettingsViewProps) {
                 })
               }
             />
-          </>
+            {diaOutOfRange && (
+              <span className="settings-warning">{diaRangeMessage}</span>
+            )}
+            <figure className="iob-curve-figure">
+              <div className="iob-curve-frame">
+                {diaPlottable && bolusProfile && dia != null ? (
+                  <IobCurve
+                    peakMinutes={bolusProfile.action.peak_minutes}
+                    durationMinutes={dia}
+                    peakLabel={`${t(lang, "insulinPeak")} ${formatMinutes(
+                      bolusProfile.action.peak_minutes,
+                    )}`}
+                  />
+                ) : (
+                  <p className="iob-curve-placeholder">{diaRangeMessage}</p>
+                )}
+              </div>
+              <div className="iob-curve-legend">
+                <span className="iob-legend iob-legend-activity">
+                  {t(lang, "activityLegend")}
+                </span>
+                <span className="iob-legend iob-legend-iob">
+                  {t(lang, "iobLegend")}
+                </span>
+              </div>
+              <figcaption className="iob-curve-caption">
+                {t(lang, "iobCurveCaption")}
+              </figcaption>
+              {bolusSources.length > 0 && (
+                <div className="iob-curve-sources">
+                  <span className="iob-curve-sources-label">
+                    {t(lang, "iobCurveSources")}
+                  </span>
+                  <ul>
+                    {bolusSources.map((source) => (
+                      <li key={source.url}>
+                        <a href={source.url} target="_blank" rel="noreferrer">
+                          {source.label}
+                        </a>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </figure>
+          </div>
         )}
 
         <label className="settings-hint" htmlFor="basal-insulin">
