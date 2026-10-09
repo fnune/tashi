@@ -46,6 +46,7 @@ Additional setup:
 - Fat/protein extra, as a percentage of the meal dose
 - Rapid insulin and its duration of action (drives insulin on board), basal insulin
 - Glucose unit (mg/dL or mmol/L) and language
+- Ratio format: grams of carbs per unit (g/U) or units per 10 g of carbs (U/ración in Spanish, as many Spanish endocrinologists prescribe). Ratios are always stored as g/U; the format only changes how they are shown and typed, and an untouched field keeps its exact stored value so switching formats never drifts.
 
 Every change saves immediately.
 
@@ -292,4 +293,3 @@ This is not a CGM app, meal planner, diet tracker, or insulin pump controller. I
 - Photo input via LLM vision? Accuracy is improving. Could be a v2 feature.
 - Barcode scanning for packaged foods via Open Food Facts?
 - CGM integration (e.g. LibreView) to auto-fill glucose and add a glucose chart to History; needs its own plan.
-- Carb ratio display as U per 10 g (Spanish raciones) or per BE/KE, alongside g per U.

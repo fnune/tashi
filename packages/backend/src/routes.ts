@@ -65,6 +65,7 @@ const settingsSchema = z
     correction_factor: z.number().positive().nullable(),
     target_blood_sugar: z.number().positive(),
     glucose_unit: z.union([z.literal("mg/dL"), z.literal("mmol/L")]),
+    ratio_format: z.enum(["grams_per_unit", "units_per_10g"]),
     pen_increment: z.union([z.literal(0.5), z.literal(1)]),
     fat_protein_multiplier: z.number().min(0).max(1),
     bolus_insulin_id: bolusInsulinIdSchema.nullable(),

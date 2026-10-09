@@ -3,6 +3,7 @@ import { activeProfile, effectiveRatio, findMealWindow } from "@pincho/shared";
 import { Link } from "react-router";
 import type { Language } from "../i18n.js";
 import { t } from "../i18n.js";
+import { formatRatio } from "../ratioLabels.js";
 import { Logo } from "./Logo.js";
 import "./AppHeader.css";
 
@@ -15,8 +16,10 @@ export function AppHeader({
 }) {
   const window = findMealWindow(settings);
   const ratio = window
-    ? new Intl.NumberFormat(lang, { maximumFractionDigits: 2 }).format(
+    ? formatRatio(
         effectiveRatio(activeProfile(settings), window),
+        settings.ratio_format,
+        lang,
       )
     : null;
 
@@ -30,7 +33,7 @@ export function AppHeader({
       </h1>
       {window && (
         <span className="meal-window-chip">
-          {window.name} · <b>{ratio} g/U</b>
+          {window.name} · <b>{ratio}</b>
         </span>
       )}
     </header>

@@ -72,6 +72,7 @@ export {
   effectiveRatio,
   renameWindowInProfiles,
 } from "./profiles.js";
+export { fromDisplayRatio, toDisplayRatio } from "./ratio-format.js";
 export type {
   ApiErrorCode,
   AppliedProfile,
@@ -95,6 +96,7 @@ export type {
   ParseTrace,
   Profile,
   ProfileAdjustment,
+  RatioFormat,
   SearchTraceEntry,
   Settings,
   SlowInsulinEntry,

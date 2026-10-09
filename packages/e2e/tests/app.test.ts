@@ -370,4 +370,32 @@ test.describe("full user flow", () => {
       page.getByRole("button", { name: "Switch profile?" }),
     ).toBeVisible();
   });
+
+  test("ratios can be shown and edited as units per 10 g", async ({ page }) => {
+    await page.goto("/settings");
+    await page.getByText("U/10 g", { exact: true }).click();
+    await expect(page.getByRole("button", { name: /morning/ })).toContainText(
+      "1.25 U/10 g",
+    );
+    const sheet = page.getByRole("dialog");
+
+    await page.getByRole("button", { name: /lunch/ }).click();
+    await sheet.getByLabel("Units per 10 g of carbs").fill("2");
+    await sheet.getByRole("button", { name: "Save" }).click();
+
+    await page.getByRole("button", { name: /dinner/ }).click();
+    await expect(sheet.getByLabel("Units per 10 g of carbs")).toHaveValue(
+      "0.83",
+    );
+    await sheet.getByLabel("Name").fill("supper");
+    await sheet.getByRole("button", { name: "Save" }).click();
+
+    await page.getByText("g/U", { exact: true }).click();
+    await expect(page.getByRole("button", { name: /lunch/ })).toContainText(
+      "5 g/U",
+    );
+    await expect(page.getByRole("button", { name: /supper/ })).toContainText(
+      "12 g/U",
+    );
+  });
 });

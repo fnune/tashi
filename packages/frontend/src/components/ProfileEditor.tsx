@@ -1,9 +1,15 @@
-import type { MealWindow, Profile } from "@pincho/shared";
+import type { MealWindow, Profile, RatioFormat } from "@pincho/shared";
 import { useId, useState } from "react";
 import { type Language, t } from "../i18n.js";
 import { profileName, signedPercent } from "../profileLabels.js";
+import {
+  formatRatio,
+  parseRatioInput,
+  ratioInputText,
+  ratioUnit,
+} from "../ratioLabels.js";
 import { Button } from "./ui/Button.js";
-import { NumberField, parseDecimal, TextField } from "./ui/Field.js";
+import { NumberField, TextField } from "./ui/Field.js";
 import { Notice } from "./ui/Notice.js";
 import { Segmented } from "./ui/Segmented.js";
 import { Stepper } from "./ui/Stepper.js";
@@ -15,20 +21,16 @@ const MIN_PERCENT = -90;
 
 type Mode = Profile["adjustment"]["mode"];
 
-function initialRatios(profile: Profile, lang: Language) {
-  if (profile.adjustment.mode !== "per_window") return {};
-  const decimal = new Intl.NumberFormat(lang, { maximumFractionDigits: 2 });
-  return Object.fromEntries(
-    Object.entries(profile.adjustment.ratios).map(([name, ratio]) => [
-      name,
-      decimal.format(ratio),
-    ]),
-  );
+function savedRatios(profile: Profile): Record<string, number> {
+  return profile.adjustment.mode === "per_window"
+    ? profile.adjustment.ratios
+    : {};
 }
 
 export function ProfileEditor({
   profile,
   isNew,
+  ratioFormat,
   windows,
   lang,
   error,
@@ -37,6 +39,7 @@ export function ProfileEditor({
 }: {
   profile: Profile;
   isNew: boolean;
+  ratioFormat: RatioFormat;
   windows: MealWindow[];
   lang: Language;
   error: string | null;
@@ -53,16 +56,29 @@ export function ProfileEditor({
     profile.adjustment.mode === "percent" ? profile.adjustment.percent : 0,
   );
   const [ratioTexts, setRatioTexts] = useState<Record<string, string>>(() =>
-    initialRatios(profile, lang),
+    Object.fromEntries(
+      Object.entries(savedRatios(profile)).map(([window, ratio]) => [
+        window,
+        ratioInputText(ratio, ratioFormat, lang),
+      ]),
+    ),
   );
-  const decimal = new Intl.NumberFormat(lang, { maximumFractionDigits: 2 });
 
   const parsedRatios = Object.entries(ratioTexts)
     .filter(([, text]) => text.trim() !== "")
-    .map(([window, text]) => [window, parseDecimal(text)] as const);
-  const ratiosValid = parsedRatios.every(
-    ([, ratio]) => ratio !== null && ratio > 0,
-  );
+    .map(
+      ([window, text]) =>
+        [
+          window,
+          parseRatioInput(
+            text,
+            ratioFormat,
+            lang,
+            savedRatios(profile)[window],
+          ),
+        ] as const,
+    );
+  const ratiosValid = parsedRatios.every(([, ratio]) => ratio !== null);
 
   function save() {
     onSave({
@@ -140,8 +156,8 @@ export function ProfileEditor({
             <NumberField
               key={window.name}
               label={window.name || t(lang, "unnamedWindow")}
-              unit="g/U"
-              hint={`${t(lang, "profile_normal")}: ${decimal.format(window.ratio)} g/U`}
+              unit={ratioUnit(ratioFormat, lang)}
+              hint={`${t(lang, "profile_normal")}: ${formatRatio(window.ratio, ratioFormat, lang)}`}
               value={ratioTexts[window.name] ?? ""}
               onChange={(text) =>
                 setRatioTexts({ ...ratioTexts, [window.name]: text })

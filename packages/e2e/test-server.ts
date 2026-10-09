@@ -148,6 +148,7 @@ async function startServer(): Promise<void> {
       correction_factor: null,
       target_blood_sugar: 100,
       glucose_unit: "mg/dL",
+      ratio_format: "grams_per_unit",
       pen_increment: 0.5,
       bolus_insulin_id: "novorapid",
       basal_insulin_id: "lantus",

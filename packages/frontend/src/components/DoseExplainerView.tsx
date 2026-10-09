@@ -1,3 +1,4 @@
+import type { RatioFormat } from "@pincho/shared";
 import type { ReactNode } from "react";
 import { useNavigate } from "react-router";
 import type { Language } from "../i18n.js";
@@ -14,6 +15,7 @@ interface Content {
   title: string;
   lead: string;
   steps: { title: string; formula: string; detail: ReactNode }[];
+  mealFormulaPerTenGrams: string;
   sections: { id: string; title: string; body: ReactNode }[];
   referencesTitle: string;
   references: Reference[];
@@ -141,6 +143,7 @@ const CONTENT: Record<Language, Content> = {
         ),
       },
     ],
+    mealFormulaPerTenGrams: "net carbs ÷ 10 × U per 10 g",
     referencesTitle: "References",
     references: [
       {
@@ -295,6 +298,7 @@ const CONTENT: Record<Language, Content> = {
         ),
       },
     ],
+    mealFormulaPerTenGrams: "HC netos ÷ 10 × U/ración",
     referencesTitle: "Referencias",
     references: [
       {
@@ -325,9 +329,20 @@ const CONTENT: Record<Language, Content> = {
   },
 };
 
-export function DoseExplainerView({ lang }: { lang: Language }) {
+export function DoseExplainerView({
+  lang,
+  ratioFormat,
+}: {
+  lang: Language;
+  ratioFormat: RatioFormat;
+}) {
   const navigate = useNavigate();
   const content = CONTENT[lang];
+  const steps = content.steps.map((step, i) =>
+    i === 0 && ratioFormat === "units_per_10g"
+      ? { ...step, formula: content.mealFormulaPerTenGrams }
+      : step,
+  );
 
   return (
     <article className="explainer">
@@ -346,7 +361,7 @@ export function DoseExplainerView({ lang }: { lang: Language }) {
       </header>
 
       <ol className="explainer-steps">
-        {content.steps.map((step) => (
+        {steps.map((step) => (
           <li key={step.title}>
             <b>{step.title}</b>
             <code>{step.formula}</code>

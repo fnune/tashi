@@ -157,7 +157,12 @@ function AppShell() {
         />
         <Route
           path="/dose-explained"
-          element={<DoseExplainerView lang={lang} />}
+          element={
+            <DoseExplainerView
+              lang={lang}
+              ratioFormat={settings.ratio_format}
+            />
+          }
         />
         <Route
           path="/fat-protein-info"

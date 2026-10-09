@@ -4,6 +4,7 @@ import type {
   GlucoseUnit,
   MealWindow,
   Profile,
+  RatioFormat,
   Settings,
   SourceRef,
 } from "@pincho/shared";
@@ -38,6 +39,13 @@ import {
   profileSummary,
   signedPercent,
 } from "../profileLabels.js";
+import {
+  formatRatio,
+  parseRatioInput,
+  ratioHint,
+  ratioInputText,
+  ratioUnit,
+} from "../ratioLabels.js";
 import { CycleSettings } from "./CycleSettings.js";
 import { DayBar } from "./DayBar.js";
 import { IobCurve } from "./IobCurve.js";
@@ -312,7 +320,7 @@ export function SettingsView({ settings, onSave, lang }: SettingsViewProps) {
               </span>
             }
             detail={windowLength(w) === 24 ? t(lang, "allDay") : formatRange(w)}
-            value={`${number.format(w.ratio)} g/U`}
+            value={formatRatio(w.ratio, settings.ratio_format, lang)}
             onClick={() =>
               setEditing({ kind: "window", index: i, draft: windows })
             }
@@ -392,6 +400,23 @@ export function SettingsView({ settings, onSave, lang }: SettingsViewProps) {
             onChange={(glucose_unit) => persist({ ...settings, glucose_unit })}
           />
         </ListRow>
+        <ListRow label={t(lang, "ratioFormat")}>
+          <Segmented<RatioFormat>
+            label={t(lang, "ratioFormat")}
+            value={settings.ratio_format}
+            options={[
+              {
+                value: "grams_per_unit",
+                label: ratioUnit("grams_per_unit", lang),
+              },
+              {
+                value: "units_per_10g",
+                label: ratioUnit("units_per_10g", lang),
+              },
+            ]}
+            onChange={(ratio_format) => persist({ ...settings, ratio_format })}
+          />
+        </ListRow>
         <ListRow label={t(lang, "language")}>
           <Segmented<Language>
             label={t(lang, "language")}
@@ -427,6 +452,7 @@ export function SettingsView({ settings, onSave, lang }: SettingsViewProps) {
           <ProfileEditor
             profile={editing.profile}
             isNew={editing.isNew}
+            ratioFormat={settings.ratio_format}
             windows={windows}
             lang={lang}
             error={error}
@@ -449,6 +475,7 @@ export function SettingsView({ settings, onSave, lang }: SettingsViewProps) {
         {editing?.kind === "window" && (
           <WindowEditor
             lang={lang}
+            ratioFormat={settings.ratio_format}
             windows={editing.draft}
             index={editing.index}
             error={error}
@@ -557,10 +584,12 @@ function WindowEditor({
   lang,
   windows: initial,
   index,
+  ratioFormat,
   error,
   onSave,
 }: {
   lang: Language;
+  ratioFormat: RatioFormat;
   windows: MealWindow[];
   index: number;
   error: string | null;
@@ -568,13 +597,16 @@ function WindowEditor({
 }) {
   const [windows, setWindows] = useState(initial);
   const window = windows[index];
+  const originalRatio = window?.ratio;
   const [ratioText, setRatioText] = useState(
-    window ? String(window.ratio).replace(".", lang === "es" ? "," : ".") : "",
+    originalRatio === undefined
+      ? ""
+      : ratioInputText(originalRatio, ratioFormat, lang),
   );
   if (!window) return null;
 
-  const ratio = parseDecimal(ratioText);
-  const valid = ratio !== null && ratio > 0;
+  const ratio = parseRatioInput(ratioText, ratioFormat, lang, originalRatio);
+  const valid = ratio !== null;
   const hourOptions = (hours: number[], current: number) =>
     [...new Set([current, ...hours])]
       .sort((a, b) => a - b)
@@ -614,8 +646,8 @@ function WindowEditor({
         </div>
       )}
       <NumberField
-        label={t(lang, "ratioUnitHint")}
-        unit="g/U"
+        label={ratioHint(ratioFormat, lang)}
+        unit={ratioUnit(ratioFormat, lang)}
         value={ratioText}
         onChange={setRatioText}
       />

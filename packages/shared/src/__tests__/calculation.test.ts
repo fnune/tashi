@@ -13,6 +13,7 @@ const BASE_SETTINGS: Settings = {
   correction_factor: 40,
   target_blood_sugar: 100,
   glucose_unit: "mg/dL",
+  ratio_format: "grams_per_unit",
   pen_increment: 0.5,
   fat_protein_multiplier: 0.2,
   bolus_insulin_id: "novorapid",

@@ -83,6 +83,8 @@ export interface MealWindow {
 
 export type GlucoseUnit = "mg/dL" | "mmol/L";
 
+export type RatioFormat = "grams_per_unit" | "units_per_10g";
+
 export type ProfileAdjustment =
   | { mode: "percent"; percent: number }
   | { mode: "per_window"; ratios: Record<string, number> };
@@ -111,6 +113,7 @@ export interface Settings {
   correction_factor: number | null;
   target_blood_sugar: number;
   glucose_unit: GlucoseUnit;
+  ratio_format: RatioFormat;
   pen_increment: 0.5 | 1;
   fat_protein_multiplier: number;
   bolus_insulin_id: BolusInsulinId | null;
@@ -281,6 +284,7 @@ export const DEFAULT_SETTINGS: Settings = {
   correction_factor: null,
   target_blood_sugar: 100,
   glucose_unit: "mg/dL",
+  ratio_format: "grams_per_unit",
   pen_increment: 0.5,
   fat_protein_multiplier: 0.2,
   bolus_insulin_id: null,
