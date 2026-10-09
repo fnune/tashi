@@ -6,20 +6,24 @@ import type {
   TimelineEntry,
 } from "@pincho/shared";
 import { cycleStatus, latestRecentReading } from "@pincho/shared";
-import { useState } from "react";
+import { type Dispatch, type SetStateAction, useState } from "react";
 import { Link } from "react-router";
 import * as api from "../api.js";
 import { apiErrorText, type Language, t } from "../i18n.js";
 import { MealBreakdown, totalDose } from "./MealBreakdown.js";
 import { ProfileChips } from "./ProfileChips.js";
+import { ProfileSwitcher } from "./ProfileSwitcher.js";
 import { SensorCard } from "./SensorCard.js";
 import { Button } from "./ui/Button.js";
 import { Segmented } from "./ui/Segmented.js";
+import { Sheet } from "./ui/Sheet.js";
 import "./CalculatorView.css";
 
 export interface CalculatorFormState {
   foodText: string;
   preBolusMinutes: number;
+  result: CalculationResult | null;
+  units: number;
 }
 
 interface CalculatorViewProps {
@@ -30,11 +34,10 @@ interface CalculatorViewProps {
   timeline: TimelineEntry[];
   onDataChanged: () => void;
   formState: CalculatorFormState;
-  onFormChange: (state: CalculatorFormState) => void;
+  onFormChange: Dispatch<SetStateAction<CalculatorFormState>>;
 }
 
 const PRE_BOLUS_OPTIONS = [0, 10, 20, 30];
-const PROFILE_CHIPS_ID = "profile-chips";
 
 const SETUP_ERRORS = new Set([
   "bolus_insulin_not_configured",
@@ -52,18 +55,20 @@ export function CalculatorView({
   formState,
   onFormChange,
 }: CalculatorViewProps) {
-  const { foodText, preBolusMinutes } = formState;
+  const { foodText, preBolusMinutes, result, units } = formState;
+  const update = (patch: Partial<CalculatorFormState>) =>
+    onFormChange((current) => ({ ...current, ...patch }));
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [clarification, setClarification] = useState<{
     kind: "needs_clarification" | "rejected";
     message: string;
   } | null>(null);
-  const [result, setResult] = useState<CalculationResult | null>(null);
   const [setupPrompt, setSetupPrompt] = useState<string | null>(null);
-  const [units, setUnits] = useState(0);
   const [logging, setLogging] = useState(false);
   const [logged, setLogged] = useState<string | null>(null);
+  const [switchingProfile, setSwitchingProfile] = useState(false);
+  const cycle = cycleStatus(settings.cycle, new Date());
   const reading = latestRecentReading(timeline, new Date());
 
   async function saveReading(value: number) {
@@ -95,7 +100,7 @@ export function CalculatorView({
     setClarification(null);
     setSetupPrompt(null);
     setLogged(null);
-    setResult(null);
+    update({ result: null });
 
     const req: CalculateRequest = { food_description: foodText.trim() };
     if (reading) req.current_blood_sugar = reading.value;
@@ -103,8 +108,7 @@ export function CalculatorView({
     try {
       const res = await api.calculate(req);
       if (res.status === "ok") {
-        setResult(res.result);
-        setUnits(totalDose(res.result) ?? 0);
+        update({ result: res.result, units: totalDose(res.result) ?? 0 });
       } else {
         setClarification({ kind: res.status, message: res.message });
       }
@@ -141,8 +145,7 @@ export function CalculatorView({
             )
           : t(lang, "loggedMealOnly"),
       );
-      setResult(null);
-      onFormChange({ ...formState, foodText: "" });
+      update({ result: null, foodText: "" });
       onDataChanged();
     } catch (err) {
       setError(apiErrorText(lang, err));
@@ -160,23 +163,12 @@ export function CalculatorView({
         lang={lang}
         reading={reading}
         iob={iob}
-        cycle={cycleStatus(settings.cycle, new Date())}
+        cycle={cycle}
         onSaveReading={saveReading}
-        onSuggestProfile={() => {
-          const chips = document.getElementById(PROFILE_CHIPS_ID);
-          chips?.scrollIntoView({ behavior: "smooth", block: "center" });
-          chips?.querySelector<HTMLInputElement>("input:checked")?.focus({
-            preventScroll: true,
-          });
-        }}
+        onSuggestProfile={() => setSwitchingProfile(true)}
       />
 
-      <ProfileChips
-        id={PROFILE_CHIPS_ID}
-        settings={settings}
-        lang={lang}
-        onSelect={selectProfile}
-      />
+      <ProfileChips settings={settings} lang={lang} onSelect={selectProfile} />
 
       {logged && <p className="calculator-logged">✓ {logged}</p>}
 
@@ -187,7 +179,7 @@ export function CalculatorView({
             <button
               type="button"
               className="meal-summary-change"
-              onClick={() => setResult(null)}
+              onClick={() => update({ result: null })}
             >
               {t(lang, "changeMeal")}
             </button>
@@ -196,7 +188,7 @@ export function CalculatorView({
             result={result}
             lang={lang}
             penIncrement={settings.pen_increment}
-            injection={{ units, onChange: setUnits }}
+            injection={{ units, onChange: (next) => update({ units: next }) }}
           />
           <Button disabled={logging} onClick={() => logMeal(result)}>
             {units > 0
@@ -216,9 +208,7 @@ export function CalculatorView({
             id="meal-text"
             className="meal-form-text"
             value={foodText}
-            onChange={(e) =>
-              onFormChange({ ...formState, foodText: e.target.value })
-            }
+            onChange={(e) => update({ foodText: e.target.value })}
             placeholder={t(lang, "foodPlaceholder")}
           />
           {clarification && (
@@ -241,9 +231,7 @@ export function CalculatorView({
                 value: minutes,
                 label: minutes ? `${minutes} min` : t(lang, "now"),
               }))}
-              onChange={(minutes) =>
-                onFormChange({ ...formState, preBolusMinutes: minutes })
-              }
+              onChange={(minutes) => update({ preBolusMinutes: minutes })}
             />
           </div>
           <Button type="submit" disabled={loading || !foodText.trim()}>
@@ -271,6 +259,24 @@ export function CalculatorView({
           <span>{t(lang, "calculating")}</span>
         </div>
       )}
+      <Sheet
+        open={switchingProfile}
+        title={t(lang, "switchProfile")}
+        closeLabel={t(lang, "close")}
+        onClose={() => setSwitchingProfile(false)}
+      >
+        {cycle && (
+          <ProfileSwitcher
+            settings={settings}
+            lang={lang}
+            phase={cycle.phase}
+            onSelect={async (profileId) => {
+              await selectProfile(profileId);
+              setSwitchingProfile(false);
+            }}
+          />
+        )}
+      </Sheet>
     </div>
   );
 }

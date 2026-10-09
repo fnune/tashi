@@ -15,7 +15,7 @@ import {
   type CalculatorFormState,
   CalculatorView,
 } from "./components/CalculatorView.js";
-import { FatProteinInfoView } from "./components/FatProteinInfoView.js";
+import { DoseExplainerView } from "./components/DoseExplainerView.js";
 import { SettingsView } from "./components/SettingsView.js";
 import { TabBar } from "./components/TabBar.js";
 import { TimelineView } from "./components/TimelineView.js";
@@ -24,6 +24,8 @@ import type { Language } from "./i18n.js";
 const INITIAL_FORM: CalculatorFormState = {
   foodText: "",
   preBolusMinutes: 0,
+  result: null,
+  units: 0,
 };
 
 const IOB_REFRESH_INTERVAL_MS = 30_000;
@@ -153,8 +155,12 @@ function AppShell() {
           }
         />
         <Route
+          path="/dose-explained"
+          element={<DoseExplainerView lang={lang} />}
+        />
+        <Route
           path="/fat-protein-info"
-          element={<FatProteinInfoView lang={lang} />}
+          element={<Navigate to="/dose-explained#fat-protein" replace />}
         />
         <Route
           path="/history/*"

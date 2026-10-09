@@ -1,12 +1,18 @@
 import type { CalculatedItem, CalculationResult } from "@pincho/shared";
 import { NORMAL_PROFILE_ID } from "@pincho/shared";
 import { Link } from "react-router";
-import { type Language, t } from "../i18n.js";
+import { type Language, type TranslationKey, t } from "../i18n.js";
 import { profileName, signedPercent } from "../profileLabels.js";
 import "./MealBreakdown.css";
 
 export type MealResult = Omit<CalculationResult, "recommended_dose"> & {
   recommended_dose?: number;
+};
+
+const FAT_PROTEIN_REASON: Record<string, TranslationKey> = {
+  high_fat: "highFat",
+  fat_and_protein: "fatAndProtein",
+  energy_ratio: "energyRatio",
 };
 
 const LOW_GI_MAX = 55;
@@ -119,6 +125,9 @@ export function DoseCard({
     `${units >= 0 ? "+" : "−"}${decimal.format(Math.abs(units))} U`;
   const correction = result.correction;
   const fatProtein = result.fat_protein_adjustment;
+  const fatProteinReason = fatProtein
+    ? FAT_PROTEIN_REASON[fatProtein.threshold_met]
+    : undefined;
 
   return (
     <div className="dose">
@@ -194,7 +203,12 @@ export function DoseCard({
           <dd>{fatProtein ? signed(fatProtein.adjustment_dose) : "—"}</dd>
         </div>
       </dl>
-      <Link to="/fat-protein-info" className="dose-why">
+      {fatProteinReason && (
+        <p className="dose-note">
+          {t(lang, "fatProteinPart")}: {t(lang, fatProteinReason)}
+        </p>
+      )}
+      <Link to="/dose-explained" className="dose-why">
         {t(lang, "fatProteinLearnMore")}
       </Link>
     </div>

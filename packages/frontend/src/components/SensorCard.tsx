@@ -9,9 +9,10 @@ import { correctionComponents, glucoseRange } from "@pincho/shared";
 import { useState } from "react";
 import type { Language, TranslationKey } from "../i18n.js";
 import { t } from "../i18n.js";
-import { CycleChip } from "./CycleChip.js";
+import { CycleBanner } from "./CycleBanner.js";
 import { Button } from "./ui/Button.js";
 import { NumberField, parseDecimal } from "./ui/Field.js";
+import { Icon } from "./ui/Icon.js";
 import { Sheet } from "./ui/Sheet.js";
 import "./SensorCard.css";
 
@@ -68,84 +69,80 @@ export function SensorCard({
       ? iobRunOut(iob, settings.insulin_action_minutes)
       : null;
 
+  const caption =
+    minutesAgo === null
+      ? t(lang, "tapToMeasure")
+      : `${range ? t(lang, RANGE_LABEL[range]) : ""} · ${
+          minutesAgo < 1
+            ? t(lang, "readingJustNow")
+            : t(lang, "readingMinutesAgo").replace("{min}", String(minutesAgo))
+        }`;
+
   return (
     <section className="sensor">
-      <div className="sensor-reading">
-        <button
-          type="button"
-          className="dial"
-          data-range={range ?? "none"}
-          onClick={() => setMeasuring(true)}
-          aria-label={t(lang, "currentGlucose")}
-        >
-          <span className="dial-value">
-            {reading ? decimal.format(reading.value) : "—"}
+      <div className="sensor-main">
+        <div className="sensor-reading">
+          <button
+            type="button"
+            className="dial"
+            data-range={range ?? "none"}
+            onClick={() => setMeasuring(true)}
+            aria-label={t(lang, "currentGlucose")}
+          >
+            <span className="dial-value">
+              {reading ? decimal.format(reading.value) : "—"}
+            </span>
+            <span className="dial-unit">{unit}</span>
+            <span className="dial-edit" aria-hidden="true">
+              <Icon name="pen" size="sm" />
+            </span>
+          </button>
+          <span className="sensor-caption" data-range={range ?? "none"}>
+            {caption}
           </span>
-          <span className="dial-unit">{unit}</span>
-          <span className="dial-action">✎ {t(lang, "measure")}</span>
-        </button>
-        <small className="sensor-age">
-          {minutesAgo === null
-            ? t(lang, "tapToMeasure")
-            : minutesAgo < 1
-              ? t(lang, "readingJustNow")
-              : t(lang, "readingMinutesAgo").replace(
-                  "{min}",
-                  String(minutesAgo),
-                )}
-        </small>
-      </div>
-
-      <div className="sensor-meta">
-        <span className="sensor-state" data-range={range ?? "none"}>
-          {range ? `● ${t(lang, RANGE_LABEL[range])}` : t(lang, "noReading")}
-        </span>
-
-        {cycle && (
-          <CycleChip
-            status={cycle}
-            lang={lang}
-            onSuggestProfile={onSuggestProfile}
-          />
-        )}
-
-        <div className="sensor-stat">
-          <div className="sensor-stat-row">
-            <span>{t(lang, "activeInsulin")}</span>
-            <b>{decimal.format(hasIob ? iobUnits : 0)} U</b>
-          </div>
-          <div className="sensor-bar">
-            <progress
-              max={1}
-              value={hasIob && injectedUnits ? iobUnits / injectedUnits : 0}
-            />
-            {runOut && (
-              <small>
-                {t(lang, "runsOutAt").replace(
-                  "{time}",
-                  clockTime(runOut, lang),
-                )}
-              </small>
-            )}
-          </div>
         </div>
 
-        <div className="sensor-stat">
-          <div className="sensor-stat-row">
-            <span>{t(lang, "target")}</span>
-            <b>
+        <dl className="sensor-stats">
+          <div className="sensor-stat">
+            <dt>{t(lang, "activeInsulin")}</dt>
+            <dd>{decimal.format(hasIob ? iobUnits : 0)} U</dd>
+            <div className="sensor-stat-extra sensor-bar">
+              <progress
+                max={1}
+                value={hasIob && injectedUnits ? iobUnits / injectedUnits : 0}
+              />
+              {runOut && (
+                <span>
+                  {t(lang, "runsOutAt").replace(
+                    "{time}",
+                    clockTime(runOut, lang),
+                  )}
+                </span>
+              )}
+            </div>
+          </div>
+          <div className="sensor-stat">
+            <dt>{t(lang, "target")}</dt>
+            <dd>
               {decimal.format(settings.target_blood_sugar)} {unit}
-            </b>
+            </dd>
           </div>
-        </div>
-
-        <CorrectionPreview
-          settings={settings}
-          lang={lang}
-          reading={reading}
-          iobUnits={hasIob ? iobUnits : 0}
-        />
+          <CorrectionPreview
+            settings={settings}
+            lang={lang}
+            reading={reading}
+            iobUnits={hasIob ? iobUnits : 0}
+          />
+        </dl>
       </div>
+
+      {cycle && (
+        <CycleBanner
+          status={cycle}
+          lang={lang}
+          onSuggestProfile={onSuggestProfile}
+        />
+      )}
 
       <Sheet
         open={measuring}
@@ -207,11 +204,9 @@ function CorrectionPreview({
 
   return (
     <div className="sensor-stat" data-tone={tone}>
-      <div className="sensor-stat-row">
-        <span>{t(lang, "correction")}</span>
-        <b className="sensor-correction">{value}</b>
-      </div>
-      <small>{detail}</small>
+      <dt>{t(lang, "correction")}</dt>
+      <dd className="sensor-correction">{value}</dd>
+      <div className="sensor-stat-extra">{detail}</div>
     </div>
   );
 }

@@ -291,10 +291,17 @@ test.describe("full user flow", () => {
     await expect(page.locator(".cycle-phase")).toHaveText("● Period");
 
     await page.getByRole("navigation").getByText("Calculate").click();
-    const chip = page.getByRole("button", { name: /D1 · period/ });
-    await expect(chip).toContainText("Switch profile?");
-    await chip.click();
-    await expect(page.getByRole("radio", { name: /Normal/ })).toBeFocused();
+    await expect(page.locator(".cycle-banner")).toContainText(
+      "Day 1 of 28 · Period",
+    );
+    await page.getByRole("button", { name: "Switch profile?" }).click();
+    const sheet = page.getByRole("dialog");
+    await expect(sheet).toContainText("Your period has started");
+    await sheet.getByText("Menstruation").click();
+    await expect(sheet).toBeHidden();
+    await expect(
+      page.getByRole("radio", { name: /Menstruation/ }),
+    ).toBeChecked();
   });
 
   test("cycle tracking never changes the dose", async ({ page }) => {
@@ -311,5 +318,20 @@ test.describe("full user flow", () => {
     await page.locator("textarea").fill("a banana");
     await page.getByRole("button", { name: "Calculate dose" }).click();
     await expect(page.locator(".dose-total b")).toHaveText(before ?? "");
+  });
+
+  test("the dose card explains how the dose is worked out", async ({
+    page,
+  }) => {
+    await page.goto("/");
+    await page.locator("textarea").fill("a banana");
+    await page.getByRole("button", { name: "Calculate dose" }).click();
+    await page.getByRole("link", { name: "Why?" }).click();
+    await expect(
+      page.getByRole("heading", { name: "How your dose is worked out" }),
+    ).toBeVisible();
+    await expect(page.locator("#profiles")).toContainText("−20 %");
+    await page.getByRole("button", { name: /Back/ }).click();
+    await expect(page.locator(".dose")).toBeVisible();
   });
 });

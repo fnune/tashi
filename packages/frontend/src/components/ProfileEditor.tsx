@@ -8,7 +8,7 @@ import { Segmented } from "./ui/Segmented.js";
 import { Stepper } from "./ui/Stepper.js";
 import "./ProfileEditor.css";
 
-const EMOJIS = ["🏃", "🤒", "🏖️", "✈️", "😴", "🍕", "💊", "🌙", "⭐"];
+const EMOJIS = ["🏃", "🤒", "🩸", "🏖️", "✈️", "😴", "🍕", "💊", "🌙", "⭐"];
 const PERCENT_STEP = 5;
 const MIN_PERCENT = -90;
 
@@ -85,7 +85,10 @@ export function ProfileEditor({
       <TextField label={t(lang, "mealName")} value={name} onChange={setName} />
       <fieldset className="emoji-picker">
         <legend>{t(lang, "profileIcon")}</legend>
-        {EMOJIS.map((option) => (
+        {(EMOJIS.includes(profile.emoji)
+          ? EMOJIS
+          : [profile.emoji, ...EMOJIS]
+        ).map((option) => (
           <label key={option}>
             <input
               type="radio"

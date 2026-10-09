@@ -105,6 +105,7 @@ export function CycleSettings({
                   {t(lang, "possibleResistance")}
                 </span>
               </div>
+              <p className="cycle-how-to">{t(lang, "cycleHowTo")}</p>
               <Button
                 variant="secondary"
                 onClick={() =>

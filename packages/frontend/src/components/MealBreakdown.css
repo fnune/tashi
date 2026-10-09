@@ -140,6 +140,11 @@
   font-weight: var(--weight-bold);
 }
 
+.dose-note {
+  font-size: var(--text-sm);
+  opacity: 0.85;
+}
+
 .dose-why {
   align-self: flex-start;
   font-size: var(--text-sm);

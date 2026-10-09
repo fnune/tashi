@@ -13,6 +13,7 @@ import {
   allowedStartHours,
   basalInsulinProfiles,
   bolusInsulinProfiles,
+  DEFAULT_SETTINGS,
   extendWindowOverGap,
   getBasalInsulinProfile,
   getBolusInsulinProfile,
@@ -29,7 +30,7 @@ import {
   windowLength,
 } from "@pincho/shared";
 import { useEffect, useState } from "react";
-import { useLocation } from "react-router";
+import { useLocation, useSearchParams } from "react-router";
 import * as api from "../api.js";
 import { apiErrorText, type Language, t } from "../i18n.js";
 import {
@@ -72,6 +73,10 @@ type Editing =
 
 const SERIES_COUNT = 4;
 
+const MENSTRUATION_PRESET = DEFAULT_SETTINGS.profiles.find(
+  (p) => p.id === "menstruation",
+);
+
 function formatHour(hour: number): string {
   return `${String(hour % 24).padStart(2, "0")}:00`;
 }
@@ -101,9 +106,27 @@ export function SettingsView({ settings, onSave, lang }: SettingsViewProps) {
   const [editing, setEditing] = useState<Editing | null>(null);
   const [error, setError] = useState<string | null>(null);
   const { hash } = useLocation();
+  const [searchParams, setSearchParams] = useSearchParams();
   useEffect(() => {
     if (hash) document.getElementById(hash.slice(1))?.scrollIntoView();
   }, [hash]);
+  useEffect(() => {
+    if (
+      !MENSTRUATION_PRESET ||
+      searchParams.get("newProfile") !== MENSTRUATION_PRESET.id
+    ) {
+      return;
+    }
+    setSearchParams({}, { replace: true });
+    setEditing({
+      kind: "profile",
+      isNew: true,
+      profile: {
+        ...MENSTRUATION_PRESET,
+        name: t(lang, "profile_menstruation"),
+      },
+    });
+  }, [searchParams, setSearchParams, lang]);
   const number = new Intl.NumberFormat(lang, { maximumFractionDigits: 2 });
   const unit = settings.glucose_unit;
   const windows = sortByStart(settings.meal_windows);

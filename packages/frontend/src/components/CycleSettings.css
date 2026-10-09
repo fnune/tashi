@@ -80,6 +80,14 @@
   border: var(--border-width) solid var(--color-warn);
 }
 
+.cycle-how-to {
+  padding: var(--space-3);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-raised);
+  font-size: var(--text-sm);
+  line-height: var(--leading-normal);
+}
+
 .cycle-settings .list-group-footer a {
   color: var(--color-accent);
 }
