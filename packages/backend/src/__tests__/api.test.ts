@@ -132,6 +132,8 @@ describe("API routes", () => {
       basal_insulin_id: "tresiba",
       insulin_action_minutes: 300,
       language: "en",
+      profiles: [],
+      active_profile_id: "normal",
     });
 
     const res = await app.request("/api/calculate", {
@@ -431,6 +433,8 @@ describe("API routes", () => {
       basal_insulin_id: "tresiba",
       insulin_action_minutes: 300,
       language: "en",
+      profiles: [],
+      active_profile_id: "normal",
     });
 
     const { result } = expectOkResponse(
@@ -487,6 +491,8 @@ describe("API routes", () => {
       basal_insulin_id: "tresiba",
       insulin_action_minutes: 300,
       language: "en",
+      profiles: [],
+      active_profile_id: "normal",
     });
 
     await app.request("/api/calculate", {
@@ -506,6 +512,27 @@ describe("API routes", () => {
       body: JSON.stringify({ food_description: "" }),
     });
     expect(res.status).toBe(400);
+  });
+  it("PUT /api/settings keeps the Normal profile and a valid active profile", async () => {
+    const withoutNormal = {
+      ...DEFAULT_SETTINGS,
+      profiles: DEFAULT_SETTINGS.profiles.filter((p) => p.id !== "normal"),
+      active_profile_id: "sport",
+    };
+    const missingActive = { ...DEFAULT_SETTINGS, active_profile_id: "gone" };
+    const sportActive = { ...DEFAULT_SETTINGS, active_profile_id: "sport" };
+
+    const put = (body: unknown) =>
+      app.request("/api/settings", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+
+    expect((await put(withoutNormal)).status).toBe(400);
+    expect((await put(missingActive)).status).toBe(400);
+    expect((await put(sportActive)).status).toBe(200);
+    expect((await storage.getSettings()).active_profile_id).toBe("sport");
   });
 });
 

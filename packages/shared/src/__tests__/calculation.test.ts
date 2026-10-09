@@ -19,6 +19,8 @@ const BASE_SETTINGS: Settings = {
   basal_insulin_id: "tresiba",
   insulin_action_minutes: 300,
   language: "en",
+  profiles: [],
+  active_profile_id: "normal",
 };
 
 function makeItem(overrides: Partial<CalculatedItem> = {}): CalculatedItem {

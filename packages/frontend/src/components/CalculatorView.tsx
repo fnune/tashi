@@ -11,6 +11,7 @@ import { Link } from "react-router";
 import * as api from "../api.js";
 import { apiErrorText, type Language, t } from "../i18n.js";
 import { MealBreakdown, totalDose } from "./MealBreakdown.js";
+import { ProfileChips } from "./ProfileChips.js";
 import { SensorCard } from "./SensorCard.js";
 import { Button } from "./ui/Button.js";
 import { Segmented } from "./ui/Segmented.js";
@@ -23,6 +24,7 @@ export interface CalculatorFormState {
 
 interface CalculatorViewProps {
   settings: Settings;
+  onSettingsSaved: (settings: Settings) => void;
   lang: Language;
   iob: InsulinOnBoard | null;
   timeline: TimelineEntry[];
@@ -41,6 +43,7 @@ const SETUP_ERRORS = new Set([
 
 export function CalculatorView({
   settings,
+  onSettingsSaved,
   lang,
   iob,
   timeline,
@@ -69,6 +72,17 @@ export function CalculatorView({
       unit: settings.glucose_unit,
     });
     onDataChanged();
+  }
+
+  async function selectProfile(profileId: string) {
+    setError(null);
+    try {
+      onSettingsSaved(
+        await api.saveSettings({ ...settings, active_profile_id: profileId }),
+      );
+    } catch (err) {
+      setError(apiErrorText(lang, err));
+    }
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -147,6 +161,8 @@ export function CalculatorView({
         iob={iob}
         onSaveReading={saveReading}
       />
+
+      <ProfileChips settings={settings} lang={lang} onSelect={selectProfile} />
 
       {logged && <p className="calculator-logged">✓ {logged}</p>}
 

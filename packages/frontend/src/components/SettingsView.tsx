@@ -3,10 +3,12 @@ import type {
   BolusInsulinId,
   GlucoseUnit,
   MealWindow,
+  Profile,
   Settings,
   SourceRef,
 } from "@pincho/shared";
 import {
+  activeProfile,
   allowedEndHours,
   allowedStartHours,
   basalInsulinProfiles,
@@ -19,6 +21,8 @@ import {
   mergeWindowIntoPrevious,
   moveWindowEnd,
   moveWindowStart,
+  NORMAL_PROFILE_ID,
+  renameWindowInProfiles,
   sortByStart,
   splitLongestWindow,
   uncoveredHours,
@@ -27,9 +31,15 @@ import {
 import { useState } from "react";
 import * as api from "../api.js";
 import { apiErrorText, type Language, t } from "../i18n.js";
+import {
+  profileName,
+  profileSummary,
+  signedPercent,
+} from "../profileLabels.js";
 import { DayBar } from "./DayBar.js";
 import { IobCurve } from "./IobCurve.js";
 import { Logo } from "./Logo.js";
+import { ProfileEditor } from "./ProfileEditor.js";
 import { Button } from "./ui/Button.js";
 import {
   NumberField,
@@ -50,6 +60,7 @@ interface SettingsViewProps {
 }
 
 type Editing =
+  | { kind: "profile"; profile: Profile; isNew: boolean }
   | { kind: "window"; index: number; draft: MealWindow[] }
   | { kind: "correction" }
   | { kind: "target" }
@@ -108,6 +119,38 @@ export function SettingsView({ settings, onSave, lang }: SettingsViewProps) {
     setEditing({ kind: "window", index: addedIndex, draft: next });
   }
 
+  function saveProfile(profile: Profile) {
+    const exists = settings.profiles.some((p) => p.id === profile.id);
+    persist({
+      ...settings,
+      profiles: exists
+        ? settings.profiles.map((p) => (p.id === profile.id ? profile : p))
+        : [...settings.profiles, profile],
+    });
+  }
+
+  function deleteProfile(id: string) {
+    persist({
+      ...settings,
+      profiles: settings.profiles.filter((p) => p.id !== id),
+      active_profile_id:
+        settings.active_profile_id === id
+          ? NORMAL_PROFILE_ID
+          : settings.active_profile_id,
+    });
+  }
+
+  function saveWindows(next: MealWindow[], edited: number) {
+    const before = windows[edited];
+    const after = next[edited];
+    const renamed =
+      before && after && before.start_hour === after.start_hour
+        ? renameWindowInProfiles(settings.profiles, before.name, after.name)
+        : settings.profiles;
+    persist({ ...settings, meal_windows: next, profiles: renamed });
+  }
+
+  const active = activeProfile(settings);
   const bolus = settings.bolus_insulin_id
     ? getBolusInsulinProfile(settings.bolus_insulin_id)
     : null;
@@ -149,6 +192,68 @@ export function SettingsView({ settings, onSave, lang }: SettingsViewProps) {
           </div>
         );
       })}
+
+      <ListGroup
+        title={t(lang, "profilesTitle")}
+        footer={t(lang, "profilesNote")}
+      >
+        {settings.profiles.map((profile) => {
+          const label = (
+            <span className="profile-label">
+              <span className="profile-emoji" aria-hidden="true">
+                {profile.emoji}
+              </span>
+              {profileName(profile, lang)}
+              {profile.id === active.id && (
+                <span className="profile-badge">{t(lang, "activeBadge")}</span>
+              )}
+            </span>
+          );
+          if (profile.id === NORMAL_PROFILE_ID) {
+            return (
+              <ListRow
+                key={profile.id}
+                label={label}
+                detail={t(lang, "profileNormalDetail")}
+              />
+            );
+          }
+          return (
+            <ListButton
+              key={profile.id}
+              label={label}
+              detail={
+                profile.adjustment.mode === "percent"
+                  ? t(lang, "profilePercentDetail").replace(
+                      "{percent}",
+                      signedPercent(profile.adjustment.percent),
+                    )
+                  : t(lang, "profilePerWindowDetail")
+              }
+              value={profileSummary(profile, lang)}
+              onClick={() =>
+                setEditing({ kind: "profile", profile, isNew: false })
+              }
+            />
+          );
+        })}
+        <ListButton
+          tone="accent"
+          label={t(lang, "newProfile")}
+          onClick={() =>
+            setEditing({
+              kind: "profile",
+              isNew: true,
+              profile: {
+                id: crypto.randomUUID(),
+                name: "",
+                emoji: "⭐",
+                adjustment: { mode: "percent", percent: 0 },
+              },
+            })
+          }
+        />
+      </ListGroup>
 
       <ListGroup
         title={t(lang, "ratiosByWindow")}
@@ -269,6 +374,33 @@ export function SettingsView({ settings, onSave, lang }: SettingsViewProps) {
       </section>
 
       <Sheet
+        open={editing?.kind === "profile"}
+        title={
+          editing?.kind === "profile" && !editing.isNew
+            ? t(lang, "editProfile")
+            : t(lang, "newProfileTitle")
+        }
+        closeLabel={t(lang, "close")}
+        onClose={() => setEditing(null)}
+      >
+        {editing?.kind === "profile" && (
+          <ProfileEditor
+            profile={editing.profile}
+            isNew={editing.isNew}
+            windows={windows}
+            lang={lang}
+            error={error}
+            onSave={saveProfile}
+            onDelete={
+              editing.isNew
+                ? undefined
+                : () => deleteProfile(editing.profile.id)
+            }
+          />
+        )}
+      </Sheet>
+
+      <Sheet
         open={editing?.kind === "window"}
         title={t(lang, "editWindow")}
         closeLabel={t(lang, "close")}
@@ -280,7 +412,7 @@ export function SettingsView({ settings, onSave, lang }: SettingsViewProps) {
             windows={editing.draft}
             index={editing.index}
             error={error}
-            onSave={(meal_windows) => persist({ ...settings, meal_windows })}
+            onSave={(meal_windows) => saveWindows(meal_windows, editing.index)}
           />
         )}
       </Sheet>

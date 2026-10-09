@@ -1,5 +1,5 @@
 import type { Settings } from "@pincho/shared";
-import { findMealWindow } from "@pincho/shared";
+import { activeProfile, effectiveRatio, findMealWindow } from "@pincho/shared";
 import { Link } from "react-router";
 import type { Language } from "../i18n.js";
 import { t } from "../i18n.js";
@@ -16,7 +16,7 @@ export function AppHeader({
   const window = findMealWindow(settings);
   const ratio = window
     ? new Intl.NumberFormat(lang, { maximumFractionDigits: 2 }).format(
-        window.ratio,
+        effectiveRatio(activeProfile(settings), window),
       )
     : null;
 

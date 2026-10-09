@@ -56,8 +56,16 @@ export {
   splitLongestWindow,
   windowLength,
 } from "./meal-windows.js";
+export {
+  activeProfile,
+  appliedProfile,
+  doseScale,
+  effectiveRatio,
+  renameWindowInProfiles,
+} from "./profiles.js";
 export type {
   ApiErrorCode,
+  AppliedProfile,
   CalculatedItem,
   CalculateRequest,
   CalculateResponse,
@@ -75,6 +83,8 @@ export type {
   MealWindow,
   ParsedFoodItem,
   ParseTrace,
+  Profile,
+  ProfileAdjustment,
   SearchTraceEntry,
   Settings,
   SlowInsulinEntry,
@@ -82,4 +92,4 @@ export type {
   UpdateTimelineRequest,
   UserCarbs,
 } from "./types.js";
-export { DEFAULT_SETTINGS } from "./types.js";
+export { DEFAULT_SETTINGS, NORMAL_PROFILE_ID } from "./types.js";

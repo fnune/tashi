@@ -3,6 +3,7 @@ import "./Stepper.css";
 export function Stepper({
   value,
   step,
+  min = 0,
   unit,
   format,
   decreaseLabel,
@@ -11,6 +12,7 @@ export function Stepper({
 }: {
   value: number;
   step: number;
+  min?: number;
   unit: string;
   format: (value: number) => string;
   decreaseLabel: string;
@@ -22,8 +24,8 @@ export function Stepper({
       <button
         type="button"
         aria-label={decreaseLabel}
-        disabled={value <= 0}
-        onClick={() => onChange(Math.max(0, value - step))}
+        disabled={value <= min}
+        onClick={() => onChange(Math.max(min, value - step))}
       >
         −
       </button>

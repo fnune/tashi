@@ -36,6 +36,8 @@ const TEST_SETTINGS: Settings = {
   basal_insulin_id: "tresiba",
   insulin_action_minutes: 300,
   language: "en",
+  profiles: [],
+  active_profile_id: "normal",
 };
 
 describe("Calculator", () => {
@@ -690,5 +692,93 @@ describe("FoodDatabase search", () => {
     const results = foodDb.search("cooking");
     expect(results.length).toBeGreaterThan(0);
     expect(results[0]!.fdc_id).toBe(169756);
+  });
+
+  describe("Calculator profiles", () => {
+    let parser: FakeFoodParser;
+    let calculator: Calculator;
+    let foodDb: FoodDatabase;
+    let tmpDir: string;
+
+    beforeEach(async () => {
+      tmpDir = await mkdtemp(join(tmpdir(), "pincho-profile-test-"));
+      parser = new FakeFoodParser();
+      foodDb = await createTestFoodDb(tmpDir);
+      calculator = new Calculator(parser, foodDb);
+    });
+
+    afterEach(async () => {
+      foodDb.close();
+      await rm(tmpDir, { recursive: true });
+    });
+
+    const fiftyGramsOfCarbs = () =>
+      parser.setResponse("pasta", [
+        {
+          description: "Pasta",
+          fdc_id: null,
+          weight_g: 100,
+          assumed_cooked: true,
+          confidence: "high",
+          notes: null,
+          estimated_net_carbs_per_100g: 50,
+          user_carbs: null,
+          estimated_glycemic_index: null,
+          estimated_fat_per_100g: null,
+          estimated_protein_per_100g: null,
+          warning: null,
+        },
+      ]);
+
+    function withProfile(
+      adjustment: Settings["profiles"][number]["adjustment"],
+    ): Settings {
+      return {
+        ...TEST_SETTINGS,
+        profiles: [{ id: "p", name: "Test", emoji: "⭐", adjustment }],
+        active_profile_id: "p",
+      };
+    }
+
+    it("scales only the final total by the profile's percentage", async () => {
+      fiftyGramsOfCarbs();
+      const result = await calculateOk(
+        calculator,
+        "pasta",
+        withProfile({ mode: "percent", percent: 20 }),
+        180,
+        "lunch",
+      );
+      expect(result.recommended_dose).toBe(5);
+      expect(result.correction?.correction_dose).toBe(2);
+      expect(result.total_dose).toBe(8.5);
+      expect(result.profile).toEqual({ id: "p", name: "Test", percent: 20 });
+    });
+
+    it("uses the profile's own ratio for the meal window", async () => {
+      fiftyGramsOfCarbs();
+      const result = await calculateOk(
+        calculator,
+        "pasta",
+        withProfile({ mode: "per_window", ratios: { lunch: 5 } }),
+        undefined,
+        "lunch",
+      );
+      expect(result.meal_window.ratio).toBe(5);
+      expect(result.recommended_dose).toBe(10);
+      expect(result.total_dose).toBe(10);
+    });
+
+    it("falls back to the window's ratio when the profile has none for it", async () => {
+      fiftyGramsOfCarbs();
+      const result = await calculateOk(
+        calculator,
+        "pasta",
+        withProfile({ mode: "per_window", ratios: { dinner: 5 } }),
+        undefined,
+        "lunch",
+      );
+      expect(result.meal_window.ratio).toBe(10);
+    });
   });
 });

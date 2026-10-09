@@ -21,6 +21,8 @@ const SETTINGS: Settings = {
   basal_insulin_id: "tresiba",
   insulin_action_minutes: 300,
   language: "en",
+  profiles: [],
+  active_profile_id: "normal",
 };
 
 const NOW = new Date("2026-06-13T12:00:00.000Z");

@@ -129,9 +129,11 @@ export function calculateDose(
   settings: Settings,
   currentBloodSugar?: number,
   iob = 0,
+  doseScale = 1,
 ): {
   totalNetCarbs: number;
   foodDose: number;
+  totalDose: number;
   correction?: CorrectionResult;
   fat_protein_adjustment?: FatProteinAdjustmentResult;
 } {
@@ -166,10 +168,11 @@ export function calculateDose(
   }
 
   let fat_protein_adjustment: FatProteinAdjustmentResult | undefined;
+  let rawAdjustmentDose = 0;
   if (settings.fat_protein_multiplier > 0) {
     const threshold = evaluateFatProteinThreshold(items);
     if (threshold.met) {
-      const rawAdjustmentDose = rawFoodDose * settings.fat_protein_multiplier;
+      rawAdjustmentDose = rawFoodDose * settings.fat_protein_multiplier;
       fat_protein_adjustment = {
         total_fat_g: threshold.total_fat_g,
         total_protein_g: threshold.total_protein_g,
@@ -187,9 +190,19 @@ export function calculateDose(
     }
   }
 
+  const rawTotal =
+    rawFoodDose +
+    rawCorrectionDose +
+    (fat_protein_adjustment
+      ? rawFoodDose * settings.fat_protein_multiplier
+      : 0);
   const result: ReturnType<typeof calculateDose> = {
     totalNetCarbs,
     foodDose,
+    totalDose: Math.max(
+      0,
+      roundToIncrement(rawTotal * doseScale, settings.pen_increment),
+    ),
   };
   if (correction) result.correction = correction;
   if (fat_protein_adjustment)

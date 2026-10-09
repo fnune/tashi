@@ -1,6 +1,8 @@
 import type { CalculatedItem, CalculationResult } from "@pincho/shared";
+import { NORMAL_PROFILE_ID } from "@pincho/shared";
 import { Link } from "react-router";
 import { type Language, t } from "../i18n.js";
+import { profileName, signedPercent } from "../profileLabels.js";
 import "./MealBreakdown.css";
 
 export type MealResult = Omit<CalculationResult, "recommended_dose"> & {
@@ -32,6 +34,7 @@ function sourceOf(item: CalculatedItem): { label: string; url: string | null } {
 
 export function totalDose(result: MealResult): number | undefined {
   return (
+    result.total_dose ??
     result.fat_protein_adjustment?.total_dose ??
     result.correction?.total_dose ??
     result.recommended_dose
@@ -123,6 +126,20 @@ export function DoseCard({
         {t(lang, "suggestedDose")
           .replace("{window}", result.meal_window.name)
           .replace("{pen}", decimal.format(penIncrement))}
+        {result.profile && result.profile.id !== NORMAL_PROFILE_ID && (
+          <>
+            {" · "}
+            {t(lang, "profileInDose")
+              .replace("{name}", profileName(result.profile, lang))
+              .replace(
+                "{percent}",
+                result.profile.percent
+                  ? signedPercent(result.profile.percent)
+                  : "",
+              )
+              .trim()}
+          </>
+        )}
       </div>
       <div className="dose-total">
         <b>{total === undefined ? "—" : decimal.format(total)}</b>

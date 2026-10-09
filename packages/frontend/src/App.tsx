@@ -120,6 +120,7 @@ function AppShell() {
           element={
             <CalculatorView
               settings={settings}
+              onSettingsSaved={handleSaveSettings}
               lang={lang}
               iob={iob}
               timeline={timeline}

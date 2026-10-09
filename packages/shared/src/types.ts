@@ -83,6 +83,23 @@ export interface MealWindow {
 
 export type GlucoseUnit = "mg/dL" | "mmol/L";
 
+export type ProfileAdjustment =
+  | { mode: "percent"; percent: number }
+  | { mode: "per_window"; ratios: Record<string, number> };
+
+export interface Profile {
+  id: string;
+  name: string;
+  emoji: string;
+  adjustment: ProfileAdjustment;
+}
+
+export interface AppliedProfile {
+  id: string;
+  name: string;
+  percent: number;
+}
+
 export interface Settings {
   meal_windows: MealWindow[];
   correction_factor: number | null;
@@ -94,6 +111,8 @@ export interface Settings {
   basal_insulin_id: BasalInsulinId | null;
   insulin_action_minutes: number | null;
   language: "en" | "es";
+  profiles: Profile[];
+  active_profile_id: string;
 }
 
 export interface CalculationResult {
@@ -105,6 +124,8 @@ export interface CalculationResult {
   items: CalculatedItem[];
   total_net_carbs_g: number;
   recommended_dose: number;
+  total_dose?: number;
+  profile?: AppliedProfile;
   correction?: {
     current_blood_sugar: number;
     target_blood_sugar: number;
@@ -140,6 +161,8 @@ export interface MealEntry extends BaseEntry {
   items: CalculatedItem[];
   total_net_carbs_g: number;
   recommended_dose?: number;
+  total_dose?: number;
+  profile?: AppliedProfile;
   correction?: CalculationResult["correction"];
   fat_protein_adjustment?: CalculationResult["fat_protein_adjustment"];
   trace?: ParseTrace;
@@ -240,6 +263,8 @@ export interface FoodVocabEntry {
   last_used: string;
 }
 
+export const NORMAL_PROFILE_ID = "normal";
+
 export const DEFAULT_SETTINGS: Settings = {
   meal_windows: [
     { name: "morning", start_hour: 6, end_hour: 11, ratio: 8 },
@@ -255,4 +280,25 @@ export const DEFAULT_SETTINGS: Settings = {
   basal_insulin_id: null,
   insulin_action_minutes: null,
   language: "en",
+  profiles: [
+    {
+      id: NORMAL_PROFILE_ID,
+      name: "",
+      emoji: "◎",
+      adjustment: { mode: "percent", percent: 0 },
+    },
+    {
+      id: "sport",
+      name: "",
+      emoji: "🏃",
+      adjustment: { mode: "percent", percent: -20 },
+    },
+    {
+      id: "sick",
+      name: "",
+      emoji: "🤒",
+      adjustment: { mode: "percent", percent: 20 },
+    },
+  ],
+  active_profile_id: NORMAL_PROFILE_ID,
 };

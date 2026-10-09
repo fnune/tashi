@@ -241,4 +241,43 @@ test.describe("full user flow", () => {
     await page.mouse.wheel(0, 5000);
     expect(await page.evaluate(() => window.scrollY)).toBe(pageScroll);
   });
+
+  test("an active profile scales the dose and is named on it", async ({
+    page,
+  }) => {
+    await page.goto("/");
+    await page.locator("textarea").fill("150g rice with chicken");
+    await page.getByRole("button", { name: "Calculate dose" }).click();
+    const normalDose = Number(
+      await page.locator(".dose-total b").textContent(),
+    );
+
+    await page.getByRole("button", { name: "Change meal" }).click();
+    await page.getByText("Sick day").click();
+    await expect(page.getByRole("radio", { name: /Sick day/ })).toBeChecked();
+    await page.getByRole("button", { name: "Calculate dose" }).click();
+
+    await expect(page.locator(".dose-caption")).toContainText(
+      "profile Sick day +20 %",
+    );
+    const sickDose = Number(await page.locator(".dose-total b").textContent());
+    expect(sickDose).toBeGreaterThan(normalDose);
+  });
+
+  test("create a per-window profile and use it", async ({ page }) => {
+    await page.goto("/settings");
+    await page.getByRole("button", { name: "+ New profile" }).click();
+    const sheet = page.getByRole("dialog");
+    await sheet.getByLabel("Name").fill("Night shift");
+    await sheet.getByText("By time of day").click();
+    await sheet.getByLabel("lunch").fill("5");
+    await sheet.getByRole("button", { name: "Save" }).click();
+    await expect(
+      page.getByRole("button", { name: /Night shift/ }),
+    ).toContainText("Own ratio per window");
+
+    await page.getByRole("navigation").getByText("Calculate").click();
+    await page.getByText("Night shift").click();
+    await expect(page.locator(".meal-window-chip")).toContainText("5 g/U");
+  });
 });

@@ -21,6 +21,7 @@ import {
   insulinOnBoard,
   MAX_DIA_MINUTES,
   MIN_DIA_MINUTES,
+  NORMAL_PROFILE_ID,
 } from "@pincho/shared";
 import { Hono } from "hono";
 import { z } from "zod";
@@ -49,29 +50,55 @@ const basalInsulinIdSchema = z.enum(
   ],
 );
 
-const settingsSchema = z.object({
-  meal_windows: z.array(
-    z.object({
-      name: z.string(),
-      start_hour: z.number().min(0).max(23),
-      end_hour: z.number().min(0).max(24),
-      ratio: z.number().positive(),
-    }),
-  ),
-  correction_factor: z.number().positive().nullable(),
-  target_blood_sugar: z.number().positive(),
-  glucose_unit: z.union([z.literal("mg/dL"), z.literal("mmol/L")]),
-  pen_increment: z.union([z.literal(0.5), z.literal(1)]),
-  fat_protein_multiplier: z.number().min(0).max(1),
-  bolus_insulin_id: bolusInsulinIdSchema.nullable(),
-  basal_insulin_id: basalInsulinIdSchema.nullable(),
-  insulin_action_minutes: z
-    .number()
-    .min(MIN_DIA_MINUTES)
-    .max(MAX_DIA_MINUTES)
-    .nullable(),
-  language: z.union([z.literal("en"), z.literal("es")]),
-});
+const settingsSchema = z
+  .object({
+    meal_windows: z.array(
+      z.object({
+        name: z.string(),
+        start_hour: z.number().min(0).max(23),
+        end_hour: z.number().min(0).max(24),
+        ratio: z.number().positive(),
+      }),
+    ),
+    correction_factor: z.number().positive().nullable(),
+    target_blood_sugar: z.number().positive(),
+    glucose_unit: z.union([z.literal("mg/dL"), z.literal("mmol/L")]),
+    pen_increment: z.union([z.literal(0.5), z.literal(1)]),
+    fat_protein_multiplier: z.number().min(0).max(1),
+    bolus_insulin_id: bolusInsulinIdSchema.nullable(),
+    basal_insulin_id: basalInsulinIdSchema.nullable(),
+    insulin_action_minutes: z
+      .number()
+      .min(MIN_DIA_MINUTES)
+      .max(MAX_DIA_MINUTES)
+      .nullable(),
+    language: z.union([z.literal("en"), z.literal("es")]),
+    profiles: z
+      .array(
+        z.object({
+          id: z.string().min(1),
+          name: z.string(),
+          emoji: z.string(),
+          adjustment: z.discriminatedUnion("mode", [
+            z.object({
+              mode: z.literal("percent"),
+              percent: z.number().min(-90).max(200),
+            }),
+            z.object({
+              mode: z.literal("per_window"),
+              ratios: z.record(z.string(), z.number().positive()),
+            }),
+          ]),
+        }),
+      )
+      .refine((profiles) => profiles.some((p) => p.id === NORMAL_PROFILE_ID), {
+        message: "The Normal profile cannot be removed",
+      }),
+    active_profile_id: z.string(),
+  })
+  .refine((s) => s.profiles.some((p) => p.id === s.active_profile_id), {
+    message: "The active profile must exist",
+  });
 
 const logMealSchema = z.object({
   result: z.object({

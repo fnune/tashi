@@ -1,8 +1,12 @@
 import type { FoodItem, FoodVocabEntry, ParsedFoodItem } from "@pincho/shared";
 import {
+  activeProfile,
+  appliedProfile,
   type CalculatedItem,
   type CalculationResult,
   calculateDose,
+  doseScale,
+  effectiveRatio,
   findMealWindow,
   type Settings,
 } from "@pincho/shared";
@@ -78,12 +82,15 @@ export class Calculator {
       throw new Error("No meal window matches the current time");
     }
 
+    const profile = activeProfile(settings);
+    const ratio = effectiveRatio(profile, mealWindow);
     const dose = calculateDose(
       items,
-      mealWindow.ratio,
+      ratio,
       settings,
       currentBloodSugar,
       iob,
+      doseScale(profile),
     );
 
     const inputLang = this.detectLanguage(foodDescription);
@@ -95,10 +102,12 @@ export class Calculator {
         timestamp: this.clock().toISOString(),
         input_text: foodDescription,
         language: inputLang,
-        meal_window: mealWindow,
+        meal_window: { ...mealWindow, ratio },
         items,
         total_net_carbs_g: Math.round(dose.totalNetCarbs * 10) / 10,
         recommended_dose: dose.foodDose,
+        total_dose: dose.totalDose,
+        profile: appliedProfile(profile),
         correction: dose.correction,
         fat_protein_adjustment: dose.fat_protein_adjustment,
         trace,
