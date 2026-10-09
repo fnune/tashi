@@ -1,14 +1,26 @@
 import type {
-  CreateTimelineRequest,
-  GlucoseUnit,
+  FastInsulinEntry,
+  GlucoseEntry,
+  MealEntry,
   Settings,
+  SlowInsulinEntry,
   TimelineEntry,
-  UpdateTimelineRequest,
+} from "@pincho/shared";
+import {
+  getBasalInsulinProfile,
+  getBolusInsulinProfile,
+  glucoseRange,
 } from "@pincho/shared";
 import { useState } from "react";
 import * as api from "../api.js";
 import { apiErrorText, type Language, t } from "../i18n.js";
 import { MealBreakdown } from "./MealBreakdown.js";
+import { Button } from "./ui/Button.js";
+import { DateTimeField, NumberField, parseDecimal } from "./ui/Field.js";
+import { Icon, type IconName } from "./ui/Icon.js";
+import { Sheet } from "./ui/Sheet.js";
+import { Stepper } from "./ui/Stepper.js";
+import "./TimelineView.css";
 
 interface TimelineViewProps {
   timeline: TimelineEntry[];
@@ -20,337 +32,314 @@ interface TimelineViewProps {
   onReuse?: (text: string) => void;
 }
 
-function formatTime(iso: string): string {
-  return new Date(iso).toLocaleString();
-}
+type DoseOrReading = FastInsulinEntry | SlowInsulinEntry | GlucoseEntry;
+type NewEntryType = DoseOrReading["type"];
 
-function toLocalDatetime(iso: string): string {
-  const d = new Date(iso);
+const DEFAULT_NEW_UNITS: Record<"fast_insulin" | "slow_insulin", number> = {
+  fast_insulin: 1,
+  slow_insulin: 10,
+};
+
+function toLocalDatetime(date: Date): string {
   const pad = (n: number) => String(n).padStart(2, "0");
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
 }
 
-function QuickAdd({
+function startOfDay(date: Date): number {
+  return new Date(
+    date.getFullYear(),
+    date.getMonth(),
+    date.getDate(),
+  ).getTime();
+}
+
+function dayLabel(date: Date, lang: Language): string {
+  const days = Math.round((startOfDay(new Date()) - startOfDay(date)) / 864e5);
+  if (days === 0) return t(lang, "today");
+  if (days === 1) return t(lang, "yesterday");
+  return date.toLocaleDateString(lang, {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+  });
+}
+
+function groupByDay(entries: TimelineEntry[], lang: Language) {
+  const groups: { label: string; entries: TimelineEntry[] }[] = [];
+  for (const entry of entries) {
+    const label = dayLabel(new Date(entry.timestamp), lang);
+    const last = groups.at(-1);
+    if (last?.label === label) last.entries.push(entry);
+    else groups.push({ label, entries: [entry] });
+  }
+  return groups;
+}
+
+function insulinName(entry: FastInsulinEntry | SlowInsulinEntry): string {
+  return entry.type === "fast_insulin"
+    ? getBolusInsulinProfile(entry.insulin_id).brand_name
+    : getBasalInsulinProfile(entry.insulin_id).brand_name;
+}
+
+const ICONS: Record<TimelineEntry["type"], IconName> = {
+  meal: "meal",
+  fast_insulin: "pen",
+  slow_insulin: "pen",
+  glucose_reading: "drop",
+};
+
+function EntryRow({
+  entry,
+  timeline,
   lang,
-  glucoseUnit,
-  onAdded,
+  onOpen,
 }: {
+  entry: TimelineEntry;
+  timeline: TimelineEntry[];
   lang: Language;
-  glucoseUnit: GlucoseUnit;
-  onAdded: () => void;
+  onOpen: () => void;
 }) {
-  const [mode, setMode] = useState<
-    "fast_insulin" | "slow_insulin" | "glucose_reading" | null
-  >(null);
-  const [value, setValue] = useState("");
-  const [error, setError] = useState<string | null>(null);
+  const decimal = new Intl.NumberFormat(lang, { maximumFractionDigits: 1 });
+  const time = new Date(entry.timestamp).toLocaleTimeString(lang, {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    if (!mode || !value) return;
-
-    const num = Number.parseFloat(value);
-    if (Number.isNaN(num) || num <= 0) return;
-
-    let req: CreateTimelineRequest;
-    if (mode === "glucose_reading") {
-      req = { type: "glucose_reading", value: num, unit: glucoseUnit };
-    } else {
-      req = { type: mode, units: num };
+  let title: string;
+  let detail: string;
+  let value: string;
+  let range: string | undefined;
+  switch (entry.type) {
+    case "meal":
+      title = entry.meal_window.name;
+      detail = entry.input_text;
+      value = `${decimal.format(entry.total_net_carbs_g)} g`;
+      break;
+    case "fast_insulin": {
+      const meal = timeline.find(
+        (e): e is MealEntry =>
+          e.type === "meal" && e.id === entry.related_meal_id,
+      );
+      title = `${t(lang, "rapidInsulin")} · ${insulinName(entry)}`;
+      detail = meal
+        ? t(lang, "forMeal").replace("{meal}", meal.meal_window.name)
+        : t(lang, "addedByHand");
+      value = `${decimal.format(entry.units)} U`;
+      break;
     }
+    case "slow_insulin":
+      title = `${t(lang, "basalInsulinShort")} · ${insulinName(entry)}`;
+      detail = t(lang, "addedByHand");
+      value = `${decimal.format(entry.units)} U`;
+      break;
+    case "glucose_reading":
+      title = t(lang, "glucoseLabel");
+      detail = t(lang, "manualReading");
+      value = `${decimal.format(entry.value)} ${entry.unit}`;
+      range = glucoseRange(entry.value, entry.unit);
+      break;
+  }
 
+  return (
+    <button
+      type="button"
+      className="event"
+      data-entry-type={entry.type}
+      onClick={onOpen}
+    >
+      <time dateTime={entry.timestamp}>{time}</time>
+      <span className="event-icon" data-kind={entry.type}>
+        <Icon name={ICONS[entry.type]} size="sm" />
+      </span>
+      <span className="event-text">
+        <b>{title}</b>
+        <span>{detail}</span>
+      </span>
+      <span className="event-value" data-range={range}>
+        {value}
+        <Icon name="chevron" size="sm" />
+      </span>
+    </button>
+  );
+}
+
+function EntryEditor({
+  entry,
+  type,
+  settings,
+  lang,
+  onDone,
+}: {
+  entry: DoseOrReading | null;
+  type: NewEntryType;
+  settings: Settings;
+  lang: Language;
+  onDone: () => void;
+}) {
+  const decimal = new Intl.NumberFormat(lang, { maximumFractionDigits: 1 });
+  const initialTime = entry ? new Date(entry.timestamp) : new Date();
+  const [when, setWhen] = useState(toLocalDatetime(initialTime));
+  const [units, setUnits] = useState(() => {
+    if (entry && entry.type !== "glucose_reading") return entry.units;
+    return type === "glucose_reading" ? 0 : DEFAULT_NEW_UNITS[type];
+  });
+  const [readingText, setReadingText] = useState(
+    entry?.type === "glucose_reading" ? decimal.format(entry.value) : "",
+  );
+  const [error, setError] = useState<string | null>(null);
+  const reading = parseDecimal(readingText);
+  const isReading = type === "glucose_reading";
+  const valid = isReading ? reading !== null && reading > 0 : units > 0;
+
+  async function save() {
     setError(null);
+    const timestamp = new Date(when).toISOString();
     try {
-      await api.createTimelineEntry(req);
-      setValue("");
-      setMode(null);
-      onAdded();
+      if (isReading && reading !== null) {
+        const saved =
+          entry ??
+          (await api.createTimelineEntry({
+            type: "glucose_reading",
+            value: reading,
+            unit: settings.glucose_unit,
+          }));
+        await api.updateTimelineEntry(saved.id, {
+          type: "glucose_reading",
+          value: reading,
+          timestamp,
+        });
+      } else if (type !== "glucose_reading") {
+        const saved = entry ?? (await api.createTimelineEntry({ type, units }));
+        await api.updateTimelineEntry(saved.id, { type, units, timestamp });
+      }
+      onDone();
     } catch (e) {
       setError(apiErrorText(lang, e));
     }
   }
 
-  if (!mode) {
-    return (
-      <div className="quick-add-buttons">
-        <button
-          type="button"
-          className="btn btn-small btn-secondary"
-          onClick={() => setMode("fast_insulin")}
-        >
-          + {t(lang, "fastInsulin")}
-        </button>
-        <button
-          type="button"
-          className="btn btn-small btn-secondary"
-          onClick={() => setMode("slow_insulin")}
-        >
-          + {t(lang, "slowInsulin")}
-        </button>
-        <button
-          type="button"
-          className="btn btn-small btn-secondary"
-          onClick={() => setMode("glucose_reading")}
-        >
-          + {t(lang, "glucoseReading")}
-        </button>
-      </div>
-    );
+  async function remove() {
+    if (!entry) return;
+    try {
+      await api.deleteTimelineEntry(entry.id);
+      onDone();
+    } catch (e) {
+      setError(apiErrorText(lang, e));
+    }
   }
 
-  const label =
-    mode === "glucose_reading"
-      ? `${t(lang, "glucoseReading")} (${glucoseUnit})`
-      : `${t(lang, mode === "fast_insulin" ? "fastInsulin" : "slowInsulin")} (U)`;
-
   return (
-    <form className="quick-add-form" onSubmit={handleSubmit}>
-      <label htmlFor="quick-add-value">{label}</label>
-      <div className="quick-add-row">
-        <input
-          id="quick-add-value"
-          type="number"
-          step="0.1"
-          min="0"
-          value={value}
-          onChange={(e) => setValue(e.target.value)}
+    <>
+      {isReading ? (
+        <NumberField
+          label={t(lang, "glucoseLabel")}
+          unit={settings.glucose_unit}
+          value={readingText}
+          onChange={setReadingText}
         />
-        <button type="submit" className="btn btn-small btn-primary">
-          {t(lang, "addEntry")}
-        </button>
-        <button
-          type="button"
-          className="btn btn-small btn-secondary"
-          onClick={() => {
-            setMode(null);
-            setValue("");
-            setError(null);
-          }}
-        >
-          {t(lang, "back")}
-        </button>
-      </div>
+      ) : (
+        <Stepper
+          value={units}
+          step={settings.pen_increment}
+          unit="U"
+          format={(v) => decimal.format(v)}
+          decreaseLabel={t(lang, "lessInsulin").replace(
+            "{step}",
+            decimal.format(settings.pen_increment),
+          )}
+          increaseLabel={t(lang, "moreInsulin").replace(
+            "{step}",
+            decimal.format(settings.pen_increment),
+          )}
+          onChange={setUnits}
+        />
+      )}
+      <DateTimeField
+        label={t(lang, "dateTime")}
+        value={when}
+        onChange={setWhen}
+      />
       {error && <div className="error-box">{error}</div>}
-    </form>
+      <Button disabled={!valid} onClick={save}>
+        {t(lang, "save")}
+      </Button>
+      {entry && (
+        <Button variant="danger" onClick={remove}>
+          {t(lang, "deleteEntry")}
+        </Button>
+      )}
+    </>
   );
 }
 
-function EntryCard({
+function MealDetails({
   entry,
+  settings,
   lang,
-  glucoseUnit,
-  penIncrement,
-  expanded,
-  onToggle,
-  onDelete,
-  onUpdated,
+  onDone,
   onReuse,
 }: {
-  entry: TimelineEntry;
+  entry: MealEntry;
+  settings: Settings;
   lang: Language;
-  glucoseUnit: GlucoseUnit;
-  penIncrement: number;
-  expanded: boolean;
-  onToggle: () => void;
-  onDelete: () => void;
-  onUpdated: () => void;
+  onDone: () => void;
   onReuse?: (text: string) => void;
 }) {
-  const [editTimestamp, setEditTimestamp] = useState(
-    toLocalDatetime(entry.timestamp),
-  );
-  const [editValue, setEditValue] = useState(() => {
-    if (entry.type === "fast_insulin" || entry.type === "slow_insulin")
-      return String(entry.units);
-    if (entry.type === "glucose_reading") return String(entry.value);
-    return "";
-  });
-  const [saving, setSaving] = useState(false);
-  const [saveError, setSaveError] = useState<string | null>(null);
+  const [when, setWhen] = useState(toLocalDatetime(new Date(entry.timestamp)));
+  const [error, setError] = useState<string | null>(null);
+  const moved = when !== toLocalDatetime(new Date(entry.timestamp));
 
-  const hasValueField = entry.type !== "meal";
-
-  async function handleSave() {
-    setSaving(true);
-    setSaveError(null);
-    const timestamp = new Date(editTimestamp).toISOString();
-    let updates: UpdateTimelineRequest;
-    if (entry.type === "fast_insulin") {
-      updates = {
-        type: "fast_insulin",
-        timestamp,
-        units: Number.parseFloat(editValue),
-      };
-    } else if (entry.type === "slow_insulin") {
-      updates = {
-        type: "slow_insulin",
-        timestamp,
-        units: Number.parseFloat(editValue),
-      };
-    } else if (entry.type === "glucose_reading") {
-      updates = {
-        type: "glucose_reading",
-        timestamp,
-        value: Number.parseFloat(editValue),
-      };
-    } else {
-      updates = { type: "meal", timestamp };
-    }
+  async function run(action: () => Promise<unknown>) {
+    setError(null);
     try {
-      await api.updateTimelineEntry(entry.id, updates);
-      onUpdated();
+      await action();
+      onDone();
     } catch (e) {
-      setSaveError(apiErrorText(lang, e));
-    } finally {
-      setSaving(false);
+      setError(apiErrorText(lang, e));
     }
-  }
-
-  const dirty =
-    editTimestamp !== toLocalDatetime(entry.timestamp) ||
-    (hasValueField && editValue !== getOriginalValue());
-
-  function getOriginalValue(): string {
-    if (entry.type === "fast_insulin" || entry.type === "slow_insulin")
-      return String(entry.units);
-    if (entry.type === "glucose_reading") return String(entry.value);
-    return "";
-  }
-
-  function renderSummary() {
-    switch (entry.type) {
-      case "meal":
-        return <span className="history-summary">{entry.input_text}</span>;
-      case "fast_insulin":
-        return (
-          <span className="history-summary">
-            {t(lang, "fastInsulin")}: {entry.units}U
-          </span>
-        );
-      case "slow_insulin":
-        return (
-          <span className="history-summary">
-            {t(lang, "slowInsulin")}: {entry.units}U
-          </span>
-        );
-      case "glucose_reading":
-        return (
-          <span className="history-summary">
-            {t(lang, "glucoseReading")}: {entry.value} {entry.unit}
-          </span>
-        );
-    }
-  }
-
-  function renderBadge() {
-    switch (entry.type) {
-      case "meal":
-        return <span className="entry-badge entry-badge-meal">🍽</span>;
-      case "fast_insulin":
-        return <span className="entry-badge entry-badge-fast">⚡</span>;
-      case "slow_insulin":
-        return <span className="entry-badge entry-badge-slow">💉</span>;
-      case "glucose_reading":
-        return <span className="entry-badge entry-badge-glucose">🩸</span>;
-    }
-  }
-
-  function valueLabel(): string {
-    if (entry.type === "fast_insulin") return `${t(lang, "fastInsulin")} (U)`;
-    if (entry.type === "slow_insulin") return `${t(lang, "slowInsulin")} (U)`;
-    if (entry.type === "glucose_reading")
-      return `${t(lang, "glucoseReading")} (${glucoseUnit})`;
-    return "";
   }
 
   return (
-    <div className="history-entry" data-entry-type={entry.type}>
-      <button type="button" className="history-entry-header" onClick={onToggle}>
-        {renderBadge()}
-        <span className="history-timestamp">{formatTime(entry.timestamp)}</span>
-        {renderSummary()}
-      </button>
-      {expanded && (
-        <div>
-          {entry.type === "meal" && (
-            <div className="entry-meal-detail">
-              <div className="entry-input-text">{entry.input_text}</div>
-              <MealBreakdown
-                result={{
-                  id: entry.id,
-                  timestamp: entry.timestamp,
-                  input_text: entry.input_text,
-                  language: entry.language,
-                  meal_window: entry.meal_window,
-                  items: entry.items,
-                  total_net_carbs_g: entry.total_net_carbs_g,
-                  recommended_dose: entry.recommended_dose,
-                  correction: entry.correction,
-                  fat_protein_adjustment: entry.fat_protein_adjustment,
-                }}
-                lang={lang}
-                penIncrement={penIncrement}
-              />
-            </div>
-          )}
-          <div className="entry-edit">
-            <div className="input-group">
-              <label htmlFor={`ts-${entry.id}`}>{t(lang, "dateTime")}</label>
-              <input
-                id={`ts-${entry.id}`}
-                type="datetime-local"
-                value={editTimestamp}
-                onChange={(e) => setEditTimestamp(e.target.value)}
-              />
-            </div>
-            {hasValueField && (
-              <div className="input-group">
-                <label htmlFor={`val-${entry.id}`}>{valueLabel()}</label>
-                <input
-                  id={`val-${entry.id}`}
-                  type="number"
-                  step="0.1"
-                  min="0"
-                  value={editValue}
-                  onChange={(e) => setEditValue(e.target.value)}
-                />
-              </div>
-            )}
-          </div>
-          {saveError && (
-            <div className="error-box entry-error">{saveError}</div>
-          )}
-          <div className="history-actions">
-            {dirty && (
-              <button
-                type="button"
-                className="btn btn-small btn-primary"
-                onClick={handleSave}
-                disabled={saving}
-              >
-                {t(lang, "save")}
-              </button>
-            )}
-            {entry.type === "meal" && onReuse && (
-              <button
-                type="button"
-                className="btn btn-small btn-secondary"
-                onClick={() => onReuse(entry.input_text)}
-              >
-                {t(lang, "reuseEntry")}
-              </button>
-            )}
-            <button
-              type="button"
-              className="btn btn-small btn-danger"
-              onClick={onDelete}
-            >
-              {t(lang, "deleteEntry")}
-            </button>
-          </div>
-        </div>
+    <>
+      <p className="meal-details-text">{entry.input_text}</p>
+      <MealBreakdown
+        result={entry}
+        lang={lang}
+        penIncrement={settings.pen_increment}
+        flush
+      />
+      <DateTimeField
+        label={t(lang, "dateTime")}
+        value={when}
+        onChange={setWhen}
+      />
+      {error && <div className="error-box">{error}</div>}
+      {moved && (
+        <Button
+          onClick={() =>
+            run(() =>
+              api.updateTimelineEntry(entry.id, {
+                type: "meal",
+                timestamp: new Date(when).toISOString(),
+              }),
+            )
+          }
+        >
+          {t(lang, "save")}
+        </Button>
       )}
-    </div>
+      {onReuse && (
+        <Button variant="secondary" onClick={() => onReuse(entry.input_text)}>
+          {t(lang, "reuseEntry")}
+        </Button>
+      )}
+      <Button
+        variant="danger"
+        onClick={() => run(() => api.deleteTimelineEntry(entry.id))}
+      >
+        {t(lang, "deleteEntry")}
+      </Button>
+    </>
   );
 }
 
@@ -363,59 +352,121 @@ export function TimelineView({
   onExpand,
   onReuse,
 }: TimelineViewProps) {
-  async function handleDelete(id: string) {
-    try {
-      await api.deleteTimelineEntry(id);
-      if (expandedId === id) onExpand(undefined);
-      onRefresh();
-    } catch (e) {
-      console.error("Failed to delete entry:", e);
-    }
+  const [adding, setAdding] = useState<NewEntryType | null>(null);
+  const sorted = [...timeline].sort(
+    (a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime(),
+  );
+  const open = sorted.find((e) => e.id === expandedId) ?? null;
+
+  function close() {
+    setAdding(null);
+    onExpand(undefined);
+  }
+
+  function done() {
+    close();
+    onRefresh();
   }
 
   async function handleClear() {
     if (!window.confirm(t(lang, "confirmClearTimeline"))) return;
-    try {
-      await api.clearTimeline();
-      onExpand(undefined);
-      onRefresh();
-    } catch (e) {
-      console.error("Failed to clear timeline:", e);
-    }
+    await api.clearTimeline();
+    done();
   }
 
+  const editorType: NewEntryType | null =
+    adding ?? (open && open.type !== "meal" ? open.type : null);
+  const editorTitle =
+    adding === "fast_insulin"
+      ? t(lang, "newRapid")
+      : adding === "slow_insulin"
+        ? t(lang, "newBasal")
+        : adding === "glucose_reading"
+          ? t(lang, "newReading")
+          : open?.type === "glucose_reading"
+            ? t(lang, "editReading")
+            : t(lang, "editInsulin");
+
   return (
-    <div className="history-list">
-      <QuickAdd
-        lang={lang}
-        glucoseUnit={settings.glucose_unit}
-        onAdded={onRefresh}
-      />
+    <div className="timeline">
+      <h2 className="screen-title">{t(lang, "timeline")}</h2>
 
-      {timeline.length === 0 && <p>{t(lang, "noTimeline")}</p>}
+      <div className="timeline-add">
+        <Button variant="secondary" onClick={() => setAdding("fast_insulin")}>
+          {t(lang, "addRapid")}
+        </Button>
+        <Button variant="secondary" onClick={() => setAdding("slow_insulin")}>
+          {t(lang, "addBasal")}
+        </Button>
+        <Button
+          variant="secondary"
+          onClick={() => setAdding("glucose_reading")}
+        >
+          {t(lang, "addGlucose")}
+        </Button>
+      </div>
 
-      {timeline.map((entry) => (
-        <EntryCard
-          key={entry.id}
-          entry={entry}
-          lang={lang}
-          glucoseUnit={settings.glucose_unit}
-          penIncrement={settings.pen_increment}
-          expanded={expandedId === entry.id}
-          onToggle={() =>
-            onExpand(expandedId === entry.id ? undefined : entry.id)
-          }
-          onDelete={() => handleDelete(entry.id)}
-          onUpdated={onRefresh}
-          onReuse={onReuse}
-        />
+      {sorted.length === 0 && (
+        <p className="timeline-empty">{t(lang, "noTimeline")}</p>
+      )}
+
+      {groupByDay(sorted, lang).map((group) => (
+        <section className="timeline-day" key={group.label}>
+          <h3>{group.label}</h3>
+          <div className="timeline-events">
+            {group.entries.map((entry) => (
+              <EntryRow
+                key={entry.id}
+                entry={entry}
+                timeline={sorted}
+                lang={lang}
+                onOpen={() => onExpand(entry.id)}
+              />
+            ))}
+          </div>
+        </section>
       ))}
 
-      {timeline.length > 0 && (
-        <button type="button" className="btn btn-danger" onClick={handleClear}>
+      {sorted.length > 0 && (
+        <button type="button" className="timeline-clear" onClick={handleClear}>
           {t(lang, "clearTimeline")}
         </button>
       )}
+
+      <Sheet
+        open={editorType !== null}
+        title={editorTitle}
+        closeLabel={t(lang, "close")}
+        onClose={close}
+      >
+        {editorType && (
+          <EntryEditor
+            key={open?.id ?? editorType}
+            entry={open && open.type !== "meal" ? open : null}
+            type={editorType}
+            settings={settings}
+            lang={lang}
+            onDone={done}
+          />
+        )}
+      </Sheet>
+
+      <Sheet
+        open={open?.type === "meal"}
+        title={open?.type === "meal" ? open.meal_window.name : ""}
+        closeLabel={t(lang, "close")}
+        onClose={close}
+      >
+        {open?.type === "meal" && (
+          <MealDetails
+            entry={open}
+            settings={settings}
+            lang={lang}
+            onDone={done}
+            onReuse={onReuse}
+          />
+        )}
+      </Sheet>
     </div>
   );
 }

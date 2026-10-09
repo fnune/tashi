@@ -122,3 +122,27 @@ export function SelectField<T extends string | number>({
     </Field>
   );
 }
+
+export function DateTimeField({
+  label,
+  value,
+  onChange,
+}: {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+}) {
+  return (
+    <Field label={label}>
+      {(id) => (
+        <input
+          id={id}
+          className="field-input"
+          type="datetime-local"
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+        />
+      )}
+    </Field>
+  );
+}

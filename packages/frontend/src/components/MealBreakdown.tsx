@@ -189,15 +189,17 @@ export function MealBreakdown({
   lang,
   penIncrement,
   injection,
+  flush = false,
 }: {
   result: MealResult;
   lang: Language;
   penIncrement: number;
   injection?: Injection;
+  flush?: boolean;
 }) {
   const decimal = new Intl.NumberFormat(lang, { maximumFractionDigits: 1 });
   return (
-    <section className="breakdown">
+    <section className={flush ? "breakdown breakdown-flush" : "breakdown"}>
       <h3 className="breakdown-title">{t(lang, "breakdown")}</h3>
       <ul className="foods">
         {result.items.map((item, i) => (

@@ -40,22 +40,20 @@ test.describe("full user flow", () => {
       .click();
     await expect(page.getByText(`meal and ${injected} U`)).toBeVisible();
 
-    // Go to history
     await page.getByRole("navigation").getByText("History").click();
 
-    const meals = page.locator('.history-entry[data-entry-type="meal"]');
+    const meals = page.locator('.event[data-entry-type="meal"]');
     await expect(meals).toHaveCount(1);
     await expect(
-      page.locator('.history-entry[data-entry-type="fast_insulin"]'),
+      page.locator('.event[data-entry-type="fast_insulin"]'),
     ).toContainText(`${injected}`);
-    await expect(meals.locator(".history-summary")).toContainText(
-      "150g rice with chicken",
-    );
+    await expect(meals).toContainText("150g rice with chicken");
 
-    await meals.locator(".history-entry-header").click();
-    await expect(meals.locator(".history-actions")).toBeVisible();
-
-    await meals.locator(".history-actions").getByText("Delete").click();
+    await meals.click();
+    await page
+      .getByRole("dialog")
+      .getByRole("button", { name: "Delete" })
+      .click();
     await expect(meals).toHaveCount(0);
   });
 
@@ -85,13 +83,12 @@ test.describe("full user flow", () => {
     await page.getByRole("button", { name: "Calculate dose" }).click();
     await page.getByRole("button", { name: /Log meal/ }).click();
 
-    // Go to history
     await page.getByRole("navigation").getByText("History").click();
-    const meals = page.locator('.history-entry[data-entry-type="meal"]');
+    const meals = page.locator('.event[data-entry-type="meal"]');
     await expect(meals).toHaveCount(1);
 
     // Expand and reuse
-    await meals.locator(".history-entry-header").click();
+    await meals.click();
     await page.getByRole("button", { name: "Use again" }).click();
 
     // Should be back on calculator with the text pre-filled
@@ -185,6 +182,43 @@ test.describe("full user flow", () => {
     await page.getByRole("button", { name: /Target blood sugar/ }).click();
     await expect(sheet).toBeVisible();
     await sheet.getByRole("button", { name: "Close" }).click();
+    await expect(sheet).toBeHidden();
+  });
+
+  test("log, edit and delete a manual insulin dose", async ({ page }) => {
+    await page.goto("/timeline");
+    const doses = page.locator('.event[data-entry-type="slow_insulin"]');
+    const sheet = page.getByRole("dialog");
+
+    await page.getByRole("button", { name: "+ Basal" }).click();
+    await sheet.getByRole("button", { name: "0.5 U more" }).click();
+    await sheet.getByRole("button", { name: "Save" }).click();
+    await expect(doses).toContainText("10.5 U");
+
+    await doses.click();
+    await sheet.getByRole("button", { name: "0.5 U less" }).click();
+    await sheet.getByRole("button", { name: "0.5 U less" }).click();
+    await sheet.getByRole("button", { name: "Save" }).click();
+    await expect(doses).toContainText("9.5 U");
+
+    await doses.click();
+    await sheet.getByRole("button", { name: "Delete" }).click();
+    await expect(doses).toHaveCount(0);
+  });
+
+  test("clicks inside a sheet keep it open, the backdrop closes it", async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 1280, height: 800 });
+    await page.goto("/settings");
+    const sheet = page.getByRole("dialog");
+    await page.getByRole("button", { name: /Target blood sugar/ }).click();
+    await expect(sheet).toBeVisible();
+
+    await sheet.getByRole("heading").click();
+    await expect(sheet).toBeVisible();
+
+    await page.mouse.click(20, 400);
     await expect(sheet).toBeHidden();
   });
 });
