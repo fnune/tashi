@@ -5,7 +5,7 @@ import type {
   Settings,
   TimelineEntry,
 } from "@pincho/shared";
-import { latestRecentReading } from "@pincho/shared";
+import { cycleStatus, latestRecentReading } from "@pincho/shared";
 import { useState } from "react";
 import { Link } from "react-router";
 import * as api from "../api.js";
@@ -34,6 +34,7 @@ interface CalculatorViewProps {
 }
 
 const PRE_BOLUS_OPTIONS = [0, 10, 20, 30];
+const PROFILE_CHIPS_ID = "profile-chips";
 
 const SETUP_ERRORS = new Set([
   "bolus_insulin_not_configured",
@@ -159,10 +160,23 @@ export function CalculatorView({
         lang={lang}
         reading={reading}
         iob={iob}
+        cycle={cycleStatus(settings.cycle, new Date())}
         onSaveReading={saveReading}
+        onSuggestProfile={() => {
+          const chips = document.getElementById(PROFILE_CHIPS_ID);
+          chips?.scrollIntoView({ behavior: "smooth", block: "center" });
+          chips?.querySelector<HTMLInputElement>("input:checked")?.focus({
+            preventScroll: true,
+          });
+        }}
       />
 
-      <ProfileChips settings={settings} lang={lang} onSelect={selectProfile} />
+      <ProfileChips
+        id={PROFILE_CHIPS_ID}
+        settings={settings}
+        lang={lang}
+        onSelect={selectProfile}
+      />
 
       {logged && <p className="calculator-logged">✓ {logged}</p>}
 

@@ -1,4 +1,5 @@
 import type {
+  CycleStatus,
   GlucoseEntry,
   GlucoseRange,
   InsulinOnBoard,
@@ -8,6 +9,7 @@ import { correctionComponents, glucoseRange } from "@pincho/shared";
 import { useState } from "react";
 import type { Language, TranslationKey } from "../i18n.js";
 import { t } from "../i18n.js";
+import { CycleChip } from "./CycleChip.js";
 import { Button } from "./ui/Button.js";
 import { NumberField, parseDecimal } from "./ui/Field.js";
 import { Sheet } from "./ui/Sheet.js";
@@ -37,13 +39,17 @@ export function SensorCard({
   lang,
   reading,
   iob,
+  cycle,
   onSaveReading,
+  onSuggestProfile,
 }: {
   settings: Settings;
   lang: Language;
   reading: GlucoseEntry | null;
   iob: InsulinOnBoard | null;
+  cycle: CycleStatus | null;
   onSaveReading: (value: number) => Promise<void>;
+  onSuggestProfile: () => void;
 }) {
   const [measuring, setMeasuring] = useState(false);
   const decimal = new Intl.NumberFormat(lang, { maximumFractionDigits: 1 });
@@ -94,6 +100,14 @@ export function SensorCard({
         <span className="sensor-state" data-range={range ?? "none"}>
           {range ? `● ${t(lang, RANGE_LABEL[range])}` : t(lang, "noReading")}
         </span>
+
+        {cycle && (
+          <CycleChip
+            status={cycle}
+            lang={lang}
+            onSuggestProfile={onSuggestProfile}
+          />
+        )}
 
         <div className="sensor-stat">
           <div className="sensor-stat-row">

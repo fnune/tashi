@@ -32,6 +32,11 @@
   --color-series-3: var(--color-accent);
   --color-series-4: var(--color-fg-muted);
 
+  --color-hormone-progesterone: var(--color-warn);
+  --color-hormone-estradiol: var(--color-accent);
+  --color-cycle-luteal: var(--color-warn-soft);
+  --color-cycle-period: var(--color-danger-soft);
+
   --font-sans:
     "Figtree Variable", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   --font-mono: "SF Mono", "Cascadia Code", "Fira Code", monospace;
@@ -100,6 +105,8 @@
   --icon-lg: 1.75rem;
   --control-height: 2.75rem;
   --dial-size: 8rem;
+  --toggle-width: 2.875rem;
+  --toggle-height: 1.75rem;
   --dial-ring: 0.625rem;
 }
 

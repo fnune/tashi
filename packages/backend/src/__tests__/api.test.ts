@@ -134,6 +134,7 @@ describe("API routes", () => {
       language: "en",
       profiles: [],
       active_profile_id: "normal",
+      cycle: { enabled: false, last_period_start: null, length_days: 28 },
     });
 
     const res = await app.request("/api/calculate", {
@@ -435,6 +436,7 @@ describe("API routes", () => {
       language: "en",
       profiles: [],
       active_profile_id: "normal",
+      cycle: { enabled: false, last_period_start: null, length_days: 28 },
     });
 
     const { result } = expectOkResponse(
@@ -493,6 +495,7 @@ describe("API routes", () => {
       language: "en",
       profiles: [],
       active_profile_id: "normal",
+      cycle: { enabled: false, last_period_start: null, length_days: 28 },
     });
 
     await app.request("/api/calculate", {

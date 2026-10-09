@@ -280,4 +280,36 @@ test.describe("full user flow", () => {
     await page.getByText("Night shift").click();
     await expect(page.locator(".meal-window-chip")).toContainText("5 g/U");
   });
+
+  test("cycle tracking shows the phase and suggests a profile on day 1", async ({
+    page,
+  }) => {
+    await page.goto("/settings");
+    await page.getByRole("switch", { name: "Track my cycle" }).check();
+    await page.getByRole("button", { name: "🩸 Today is my day 1" }).click();
+    await expect(page.getByText("Day 1 of 28")).toBeVisible();
+    await expect(page.locator(".cycle-phase")).toHaveText("● Period");
+
+    await page.getByRole("navigation").getByText("Calculate").click();
+    const chip = page.getByRole("button", { name: /D1 · period/ });
+    await expect(chip).toContainText("Switch profile?");
+    await chip.click();
+    await expect(page.getByRole("radio", { name: /Normal/ })).toBeFocused();
+  });
+
+  test("cycle tracking never changes the dose", async ({ page }) => {
+    await page.goto("/");
+    await page.locator("textarea").fill("a banana");
+    await page.getByRole("button", { name: "Calculate dose" }).click();
+    const before = await page.locator(".dose-total b").textContent();
+
+    await page.goto("/settings");
+    await page.getByRole("switch", { name: "Track my cycle" }).check();
+    await page.getByRole("button", { name: "🩸 Today is my day 1" }).click();
+
+    await page.getByRole("navigation").getByText("Calculate").click();
+    await page.locator("textarea").fill("a banana");
+    await page.getByRole("button", { name: "Calculate dose" }).click();
+    await expect(page.locator(".dose-total b")).toHaveText(before ?? "");
+  });
 });

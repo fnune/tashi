@@ -1,0 +1,85 @@
+.cycle-settings {
+  scroll-margin-top: var(--space-4);
+}
+
+.cycle-status {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4) var(--space-4);
+  border-top: var(--border-width) solid var(--color-line);
+}
+
+.cycle-status-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: var(--space-2);
+}
+
+.cycle-status-head b {
+  font-size: var(--text-md);
+}
+
+.cycle-phase {
+  padding: var(--space-1) var(--space-2-5);
+  border-radius: var(--radius-full);
+  background: var(--color-surface-raised);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-bold);
+  color: var(--color-fg-muted);
+  white-space: nowrap;
+}
+
+.cycle-status[data-phase="luteal"] .cycle-phase {
+  background: var(--color-warn-soft);
+  color: var(--color-warn);
+}
+
+.cycle-status[data-phase="period"] .cycle-phase {
+  background: var(--color-danger-soft);
+  color: var(--color-danger);
+}
+
+.cycle-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1) var(--space-3-5);
+  font-size: var(--text-xs);
+  color: var(--color-fg-muted);
+}
+
+.cycle-legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1-5);
+}
+
+.cycle-legend span::before {
+  content: "";
+  width: var(--space-2-5);
+  height: var(--space-2-5);
+  border-radius: var(--radius-full);
+}
+
+.cycle-legend [data-series="period"]::before {
+  background: var(--color-cycle-period);
+  border: var(--border-width) solid var(--color-danger);
+}
+
+.cycle-legend [data-series="progesterone"]::before {
+  background: var(--color-hormone-progesterone);
+}
+
+.cycle-legend [data-series="estradiol"]::before {
+  background: var(--color-hormone-estradiol);
+}
+
+.cycle-legend [data-series="luteal"]::before {
+  background: var(--color-cycle-luteal);
+  border: var(--border-width) solid var(--color-warn);
+}
+
+.cycle-settings .list-group-footer a {
+  color: var(--color-accent);
+}

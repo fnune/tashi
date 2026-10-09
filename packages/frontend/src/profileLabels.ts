@@ -6,6 +6,7 @@ const SEEDED_NAMES: Record<string, TranslationKey> = {
   normal: "profile_normal",
   sport: "profile_sport",
   sick: "profile_sick",
+  menstruation: "profile_menstruation",
 };
 
 export function profileName(

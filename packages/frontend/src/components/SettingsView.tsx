@@ -28,7 +28,8 @@ import {
   uncoveredHours,
   windowLength,
 } from "@pincho/shared";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useLocation } from "react-router";
 import * as api from "../api.js";
 import { apiErrorText, type Language, t } from "../i18n.js";
 import {
@@ -36,6 +37,7 @@ import {
   profileSummary,
   signedPercent,
 } from "../profileLabels.js";
+import { CycleSettings } from "./CycleSettings.js";
 import { DayBar } from "./DayBar.js";
 import { IobCurve } from "./IobCurve.js";
 import { Logo } from "./Logo.js";
@@ -98,17 +100,24 @@ function dedupeSources(sources: SourceRef[]): SourceRef[] {
 export function SettingsView({ settings, onSave, lang }: SettingsViewProps) {
   const [editing, setEditing] = useState<Editing | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const { hash } = useLocation();
+  useEffect(() => {
+    if (hash) document.getElementById(hash.slice(1))?.scrollIntoView();
+  }, [hash]);
   const number = new Intl.NumberFormat(lang, { maximumFractionDigits: 2 });
   const unit = settings.glucose_unit;
   const windows = sortByStart(settings.meal_windows);
   const gaps = uncoveredHours(windows);
 
   async function persist(next: Settings) {
+    const previous = settings;
     setError(null);
+    onSave(next);
     try {
       onSave(await api.saveSettings(next));
       setEditing(null);
     } catch (e) {
+      onSave(previous);
       setError(apiErrorText(lang, e));
     }
   }
@@ -254,6 +263,13 @@ export function SettingsView({ settings, onSave, lang }: SettingsViewProps) {
           }
         />
       </ListGroup>
+
+      <CycleSettings
+        id="cycle"
+        settings={settings}
+        lang={lang}
+        onChange={(cycle) => persist({ ...settings, cycle })}
+      />
 
       <ListGroup
         title={t(lang, "ratiosByWindow")}

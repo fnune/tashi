@@ -1,0 +1,31 @@
+.toggle {
+  flex: none;
+  position: relative;
+  width: var(--toggle-width);
+  height: var(--toggle-height);
+  margin: 0;
+  border-radius: var(--radius-full);
+  background: var(--color-line);
+  appearance: none;
+  cursor: pointer;
+  transition: background var(--duration-fast) var(--ease-standard);
+}
+
+.toggle::after {
+  content: "";
+  position: absolute;
+  inset: var(--space-0-5) auto var(--space-0-5) var(--space-0-5);
+  aspect-ratio: 1;
+  border-radius: var(--radius-full);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-sm);
+  transition: translate var(--duration-fast) var(--ease-standard);
+}
+
+.toggle:checked {
+  background: var(--color-accent);
+}
+
+.toggle:checked::after {
+  translate: calc(var(--toggle-width) - var(--toggle-height)) 0;
+}

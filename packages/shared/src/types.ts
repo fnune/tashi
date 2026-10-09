@@ -94,6 +94,12 @@ export interface Profile {
   adjustment: ProfileAdjustment;
 }
 
+export interface CycleTracking {
+  enabled: boolean;
+  last_period_start: string | null;
+  length_days: number;
+}
+
 export interface AppliedProfile {
   id: string;
   name: string;
@@ -113,6 +119,7 @@ export interface Settings {
   language: "en" | "es";
   profiles: Profile[];
   active_profile_id: string;
+  cycle: CycleTracking;
 }
 
 export interface CalculationResult {
@@ -299,6 +306,13 @@ export const DEFAULT_SETTINGS: Settings = {
       emoji: "🤒",
       adjustment: { mode: "percent", percent: 20 },
     },
+    {
+      id: "menstruation",
+      name: "",
+      emoji: "🩸",
+      adjustment: { mode: "percent", percent: 15 },
+    },
   ],
   active_profile_id: NORMAL_PROFILE_ID,
+  cycle: { enabled: false, last_period_start: null, length_days: 28 },
 };

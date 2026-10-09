@@ -19,7 +19,9 @@ import {
   bolusInsulinProfiles,
   findMealWindow,
   insulinOnBoard,
+  MAX_CYCLE_DAYS,
   MAX_DIA_MINUTES,
+  MIN_CYCLE_DAYS,
   MIN_DIA_MINUTES,
   NORMAL_PROFILE_ID,
 } from "@pincho/shared";
@@ -95,6 +97,14 @@ const settingsSchema = z
         message: "The Normal profile cannot be removed",
       }),
     active_profile_id: z.string(),
+    cycle: z.object({
+      enabled: z.boolean(),
+      last_period_start: z
+        .string()
+        .regex(/^\d{4}-\d{2}-\d{2}$/)
+        .nullable(),
+      length_days: z.number().int().min(MIN_CYCLE_DAYS).max(MAX_CYCLE_DAYS),
+    }),
   })
   .refine((s) => s.profiles.some((p) => p.id === s.active_profile_id), {
     message: "The active profile must exist",

@@ -8,6 +8,15 @@ export {
   uncoveredHours,
   windowCovers,
 } from "./calculation.js";
+export type { CyclePhase, CycleStatus } from "./cycle.js";
+export {
+  cyclePhase,
+  cycleStatus,
+  MAX_CYCLE_DAYS,
+  MIN_CYCLE_DAYS,
+  ovulationDay,
+  toLocalDateString,
+} from "./cycle.js";
 export type { GlucoseRange } from "./glucose.js";
 export {
   glucoseRange,
@@ -71,6 +80,7 @@ export type {
   CalculateResponse,
   CalculationResult,
   CreateTimelineRequest,
+  CycleTracking,
   ErrorResponse,
   FastInsulinEntry,
   FoodItem,

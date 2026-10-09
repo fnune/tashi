@@ -6,10 +6,12 @@ import { profileName, profileSummary } from "../profileLabels.js";
 import "./ProfileChips.css";
 
 export function ProfileChips({
+  id,
   settings,
   lang,
   onSelect,
 }: {
+  id?: string;
   settings: Settings;
   lang: Language;
   onSelect: (profileId: string) => void;
@@ -17,7 +19,7 @@ export function ProfileChips({
   const name = useId();
   const active = activeProfile(settings);
   return (
-    <fieldset className="profile-chips">
+    <fieldset id={id} className="profile-chips">
       <legend>{t(lang, "profilesTitle")}</legend>
       <div className="profile-chips-row">
         {settings.profiles.map((profile) => (

@@ -26,11 +26,12 @@ describe("profiles", () => {
     expect(activeProfile(settings).id).toBe("normal");
   });
 
-  it("seeds Normal, a lighter sport profile and a heavier sick-day profile", () => {
+  it("seeds Normal plus sport, sick-day and menstruation examples", () => {
     expect(DEFAULT_SETTINGS.profiles.map((p) => [p.id, doseScale(p)])).toEqual([
       ["normal", 1],
       ["sport", 0.8],
       ["sick", 1.2],
+      ["menstruation", 1.15],
     ]);
   });
 

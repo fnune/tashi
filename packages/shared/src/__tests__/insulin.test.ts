@@ -23,6 +23,7 @@ const SETTINGS: Settings = {
   language: "en",
   profiles: [],
   active_profile_id: "normal",
+  cycle: { enabled: false, last_period_start: null, length_days: 28 },
 };
 
 const NOW = new Date("2026-06-13T12:00:00.000Z");
