@@ -3,24 +3,23 @@ import { DEFAULT_SETTINGS } from "@pincho/shared";
 import { useCallback, useEffect, useState } from "react";
 import {
   BrowserRouter,
-  Link,
   Navigate,
   Route,
   Routes,
-  useLocation,
   useNavigate,
   useParams,
 } from "react-router";
 import * as api from "./api.js";
+import { AppHeader } from "./components/AppHeader.js";
 import {
   type CalculatorFormState,
   CalculatorView,
 } from "./components/CalculatorView.js";
 import { FatProteinInfoView } from "./components/FatProteinInfoView.js";
 import { SettingsView } from "./components/SettingsView.js";
+import { TabBar } from "./components/TabBar.js";
 import { TimelineView } from "./components/TimelineView.js";
 import type { Language } from "./i18n.js";
-import { t } from "./i18n.js";
 
 const INITIAL_FORM: CalculatorFormState = {
   foodText: "",
@@ -39,7 +38,6 @@ function getSavedLanguage(): Language {
 
 function AppShell() {
   const navigate = useNavigate();
-  const location = useLocation();
   const [settings, setSettings] = useState<Settings>({
     ...DEFAULT_SETTINGS,
     language: getSavedLanguage(),
@@ -104,14 +102,6 @@ function AppShell() {
     navigate("/");
   }
 
-  const currentPath = location.pathname;
-
-  function navClass(path: string) {
-    if (path === "/" && currentPath === "/") return "nav-btn active";
-    if (path !== "/" && currentPath.startsWith(path)) return "nav-btn active";
-    return "nav-btn";
-  }
-
   if (loadError) {
     return (
       <div className="app">
@@ -124,28 +114,7 @@ function AppShell() {
 
   return (
     <div className="app">
-      <header className="header">
-        <h1>
-          <Link to="/" className="app-title">
-            {t(lang, "appTitle")}
-          </Link>
-        </h1>
-        <nav>
-          <Link to="/" className={navClass("/")}>
-            {t(lang, "calculate")}
-          </Link>
-          <Link
-            to="/timeline"
-            className={navClass("/timeline")}
-            onClick={refreshTimeline}
-          >
-            {t(lang, "timeline")}
-          </Link>
-          <Link to="/settings" className={navClass("/settings")}>
-            {t(lang, "settings")}
-          </Link>
-        </nav>
-      </header>
+      <AppHeader settings={settings} lang={lang} />
 
       <Routes>
         <Route
@@ -193,6 +162,12 @@ function AppShell() {
         />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
+      <TabBar
+        lang={lang}
+        onNavigate={(to) => {
+          if (to === "/timeline") refreshTimeline();
+        }}
+      />
     </div>
   );
 }
