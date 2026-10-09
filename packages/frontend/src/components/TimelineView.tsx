@@ -262,7 +262,7 @@ function EntryCard({
   }
 
   return (
-    <div className="history-entry">
+    <div className="history-entry" data-entry-type={entry.type}>
       <button type="button" className="history-entry-header" onClick={onToggle}>
         {renderBadge()}
         <span className="history-timestamp">{formatTime(entry.timestamp)}</span>

@@ -9,7 +9,7 @@
     "check:fix": "biome check --write .",
     "test:unit": "pnpm --filter @pincho/backend test",
     "test:e2e": "pnpm --filter @pincho/frontend build && pnpm --filter @pincho/e2e test",
-    "typecheck": "pnpm --filter @pincho/shared --filter @pincho/backend --filter @pincho/frontend exec tsc --noEmit"
+    "typecheck": "pnpm --filter @pincho/shared --filter @pincho/backend --filter @pincho/frontend --filter @pincho/e2e exec tsc --noEmit"
   },
   "devDependencies": {
     "@biomejs/biome": "2.4.16",

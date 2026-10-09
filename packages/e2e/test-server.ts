@@ -6,10 +6,11 @@ import { serveStatic } from "@hono/node-server/serve-static";
 import { Calculator } from "@pincho/backend/calculator";
 // E2E tests use the real food database
 import { FoodDatabase } from "@pincho/backend/db/food-db";
-import type { FoodParser, ParseResult } from "@pincho/backend/food-parser";
+import type { FoodParser, ParseOutcome } from "@pincho/backend/food-parser";
 import { createRoutes } from "@pincho/backend/routes";
 import { FileStorage } from "@pincho/backend/storage";
 import type { FoodVocabEntry, ParsedFoodItem } from "@pincho/shared";
+import { DEFAULT_SETTINGS } from "@pincho/shared";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 
@@ -17,7 +18,8 @@ class FakeFoodParser implements FoodParser {
   async parse(
     foodDescription: string,
     _vocabulary: FoodVocabEntry[] = [],
-  ): Promise<ParseResult> {
+    _language: "en" | "es" = "en",
+  ): Promise<ParseOutcome> {
     const lower = foodDescription.toLowerCase();
 
     if (lower.includes("arroz") || lower.includes("rice")) {
@@ -38,6 +40,8 @@ class FakeFoodParser implements FoodParser {
           estimated_net_carbs_per_100g: 28,
           user_carbs: null,
           estimated_glycemic_index: 73,
+          estimated_fat_per_100g: null,
+          estimated_protein_per_100g: null,
           warning: null,
         },
       ];
@@ -55,6 +59,8 @@ class FakeFoodParser implements FoodParser {
           estimated_net_carbs_per_100g: 0,
           user_carbs: null,
           estimated_glycemic_index: null,
+          estimated_fat_per_100g: null,
+          estimated_protein_per_100g: null,
           warning: null,
         });
       }
@@ -76,6 +82,8 @@ class FakeFoodParser implements FoodParser {
           estimated_net_carbs_per_100g: 20,
           user_carbs: null,
           estimated_glycemic_index: 51,
+          estimated_fat_per_100g: null,
+          estimated_protein_per_100g: null,
           warning: null,
         },
       ]);
@@ -92,13 +100,16 @@ class FakeFoodParser implements FoodParser {
         estimated_net_carbs_per_100g: 15.0,
         user_carbs: null,
         estimated_glycemic_index: 40,
+        estimated_fat_per_100g: null,
+        estimated_protein_per_100g: null,
         warning: null,
       },
     ]);
   }
 
-  private result(items: ParsedFoodItem[]): ParseResult {
+  private result(items: ParsedFoodItem[]): ParseOutcome {
     return {
+      status: "ok",
       items,
       trace: {
         searches: [],
@@ -128,6 +139,7 @@ async function startServer(): Promise<void> {
   app.post("/api/__reset", async (c) => {
     await storage.clearTimeline();
     await storage.saveSettings({
+      ...DEFAULT_SETTINGS,
       meal_windows: [
         { name: "morning", start_hour: 6, end_hour: 11, ratio: 8 },
         { name: "lunch", start_hour: 11, end_hour: 16, ratio: 10 },
@@ -137,6 +149,8 @@ async function startServer(): Promise<void> {
       target_blood_sugar: 100,
       glucose_unit: "mg/dL",
       pen_increment: 0.5,
+      bolus_insulin_id: "novorapid",
+      insulin_action_minutes: null,
       language: "en",
     });
     return c.json({ ok: true });

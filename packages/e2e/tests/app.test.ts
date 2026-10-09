@@ -48,19 +48,20 @@ test.describe("full user flow", () => {
     // Go to history
     await page.getByRole("navigation").getByText("History").click();
 
-    // Verify the entry is there
-    await expect(page.locator(".history-entry")).toHaveCount(1);
-    await expect(page.locator(".history-summary")).toContainText(
+    const meals = page.locator('.history-entry[data-entry-type="meal"]');
+    await expect(meals).toHaveCount(1);
+    await expect(
+      page.locator('.history-entry[data-entry-type="fast_insulin"]'),
+    ).toHaveCount(1);
+    await expect(meals.locator(".history-summary")).toContainText(
       "150g rice with chicken",
     );
 
-    // Expand it
-    await page.locator(".history-entry-header").click();
-    await expect(page.locator(".history-actions")).toBeVisible();
+    await meals.locator(".history-entry-header").click();
+    await expect(meals.locator(".history-actions")).toBeVisible();
 
-    // Delete it
-    await page.locator(".history-actions").getByText("Delete").click();
-    await expect(page.locator(".history-entry")).toHaveCount(0);
+    await meals.locator(".history-actions").getByText("Delete").click();
+    await expect(meals).toHaveCount(0);
   });
 
   test("language switch to Spanish", async ({ page }) => {
@@ -95,10 +96,11 @@ test.describe("full user flow", () => {
 
     // Go to history
     await page.getByRole("navigation").getByText("History").click();
-    await expect(page.locator(".history-entry")).toHaveCount(1);
+    const meals = page.locator('.history-entry[data-entry-type="meal"]');
+    await expect(meals).toHaveCount(1);
 
     // Expand and reuse
-    await page.locator(".history-entry-header").click();
+    await meals.locator(".history-entry-header").click();
     await page.getByRole("button", { name: "Use again" }).click();
 
     // Should be back on calculator with the text pre-filled
