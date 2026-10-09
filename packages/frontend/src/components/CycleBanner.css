@@ -23,6 +23,7 @@
 }
 
 .cycle-banner-suggest {
+  border-top-color: var(--color-warn-line);
   background: var(--color-warn-soft);
 }
 

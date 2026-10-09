@@ -18,6 +18,7 @@
   --color-warn: #e39b12;
   --color-warn-soft: #fcefd2;
   --color-warn-fg: #1d1400;
+  --color-warn-line: color-mix(in srgb, var(--color-warn) 45%, transparent);
   --color-danger: #d9473f;
   --color-danger-soft: #fbe1df;
   --color-scrim: rgb(5 15 20 / 0.45);

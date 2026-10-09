@@ -51,6 +51,7 @@ import {
   TextField,
 } from "./ui/Field.js";
 import { ListButton, ListGroup, ListRow } from "./ui/List.js";
+import { Notice } from "./ui/Notice.js";
 import { OptionList } from "./ui/OptionList.js";
 import { Segmented } from "./ui/Segmented.js";
 import { Sheet } from "./ui/Sheet.js";
@@ -194,7 +195,7 @@ export function SettingsView({ settings, onSave, lang }: SettingsViewProps) {
     <div className="settings">
       <h2 className="screen-title">{t(lang, "settings")}</h2>
 
-      {error && !editing && <div className="error-box">{error}</div>}
+      {error && !editing && <Notice tone="danger">{error}</Notice>}
 
       {gaps.map((gap) => {
         const before = windows.find(
@@ -549,7 +550,7 @@ export function SettingsView({ settings, onSave, lang }: SettingsViewProps) {
 }
 
 function SheetError({ error }: { error: string | null }) {
-  return error ? <div className="error-box">{error}</div> : null;
+  return error ? <Notice tone="danger">{error}</Notice> : null;
 }
 
 function WindowEditor({

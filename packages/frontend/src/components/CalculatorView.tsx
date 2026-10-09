@@ -7,7 +7,6 @@ import type {
 } from "@pincho/shared";
 import { cycleStatus, latestRecentReading } from "@pincho/shared";
 import { type Dispatch, type SetStateAction, useState } from "react";
-import { Link } from "react-router";
 import * as api from "../api.js";
 import { apiErrorText, type Language, t } from "../i18n.js";
 import { MealBreakdown, totalDose } from "./MealBreakdown.js";
@@ -15,6 +14,7 @@ import { ProfileChips } from "./ProfileChips.js";
 import { ProfileSwitcher } from "./ProfileSwitcher.js";
 import { SensorCard } from "./SensorCard.js";
 import { Button } from "./ui/Button.js";
+import { Notice } from "./ui/Notice.js";
 import { Segmented } from "./ui/Segmented.js";
 import { Sheet } from "./ui/Sheet.js";
 import "./CalculatorView.css";
@@ -170,7 +170,7 @@ export function CalculatorView({
 
       <ProfileChips settings={settings} lang={lang} onSelect={selectProfile} />
 
-      {logged && <p className="calculator-logged">✓ {logged}</p>}
+      {logged && <Notice tone="ok">✓ {logged}</Notice>}
 
       {result ? (
         <>
@@ -212,15 +212,11 @@ export function CalculatorView({
             placeholder={t(lang, "foodPlaceholder")}
           />
           {clarification && (
-            <div
-              className={
-                clarification.kind === "rejected"
-                  ? "rejection-box"
-                  : "clarification-box"
-              }
+            <Notice
+              tone={clarification.kind === "rejected" ? "danger" : "warn"}
             >
               {clarification.message}
-            </div>
+            </Notice>
           )}
           <div className="meal-form-field">
             <span className="meal-form-label">{t(lang, "eatingIn")}</span>
@@ -240,23 +236,25 @@ export function CalculatorView({
         </form>
       )}
 
-      {error && <div className="error-box">{error}</div>}
+      {error && <Notice tone="danger">{error}</Notice>}
 
       {setupPrompt && (
-        <div className="info-box">
-          <span>{setupPrompt}</span>
-          <Link to="/settings" className="btn btn-small btn-secondary">
-            {t(lang, "goToSettings")}
-          </Link>
-        </div>
+        <Notice
+          tone="info"
+          action={{ label: t(lang, "goToSettings"), to: "/settings" }}
+        >
+          {setupPrompt}
+        </Notice>
       )}
 
       {loading && (
-        <div className="loading-box">
-          <span className="loading-dot" />
-          <span className="loading-dot" />
-          <span className="loading-dot" />
-          <span>{t(lang, "calculating")}</span>
+        <div className="calculator-loading" role="status">
+          <span className="calculator-loading-dots" aria-hidden="true">
+            <span />
+            <span />
+            <span />
+          </span>
+          {t(lang, "calculating")}
         </div>
       )}
       <Sheet

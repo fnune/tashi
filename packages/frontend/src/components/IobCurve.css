@@ -1,0 +1,120 @@
+.iob-curve-figure {
+  margin: 0;
+}
+
+.iob-curve-frame {
+  width: 100%;
+  aspect-ratio: 480 / 150;
+  margin-top: var(--space-2-5);
+  border: var(--border-width) solid var(--color-line);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  overflow: hidden;
+}
+
+.iob-curve {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.iob-curve-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  padding: 0 var(--space-6);
+  text-align: center;
+  font-size: var(--text-xs);
+  color: var(--color-fg-muted);
+}
+
+.iob-curve-line {
+  fill: none;
+  stroke: var(--color-accent);
+  stroke-width: 2;
+}
+
+.iob-curve-activity-area {
+  fill: var(--color-warn);
+  opacity: 0.12;
+}
+
+.iob-curve-activity-line {
+  fill: none;
+  stroke: var(--color-warn);
+  stroke-width: 2;
+}
+
+.iob-curve-legend {
+  display: flex;
+  gap: var(--space-4);
+  margin-top: var(--space-2);
+  font-size: var(--text-xs);
+  color: var(--color-fg-muted);
+}
+
+.iob-legend {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1-5);
+}
+
+.iob-legend::before {
+  content: "";
+  width: var(--space-3-5);
+  height: var(--space-1);
+  border-radius: var(--radius-xs);
+}
+
+.iob-legend-iob::before {
+  background: var(--color-accent);
+}
+
+.iob-legend-activity::before {
+  background: var(--color-warn);
+}
+
+.iob-curve-caption {
+  margin-top: var(--space-1-5);
+  font-size: var(--text-xs);
+  color: var(--color-fg-muted);
+}
+
+.iob-curve-sources {
+  margin-top: var(--space-2);
+  font-size: var(--text-2xs);
+  color: var(--color-fg-muted);
+}
+
+.iob-curve-sources-label {
+  font-weight: var(--weight-semibold);
+}
+
+.iob-curve-sources ul {
+  margin: var(--space-1) 0 0;
+  padding-left: var(--space-4);
+}
+
+.iob-curve-sources a {
+  color: var(--color-accent);
+}
+
+.iob-curve-peak-label {
+  fill: var(--color-fg-muted);
+  font-size: var(--text-2xs);
+  font-family: var(--font-sans);
+}
+
+.iob-curve-peak {
+  stroke: var(--color-fg-muted);
+  stroke-width: 1;
+  stroke-dasharray: 3 3;
+  opacity: 0.6;
+}
+
+.iob-curve-label {
+  fill: var(--color-fg-muted);
+  font-size: var(--text-2xs);
+  font-family: var(--font-mono);
+}

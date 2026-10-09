@@ -19,6 +19,7 @@ import { DoseExplainerView } from "./components/DoseExplainerView.js";
 import { SettingsView } from "./components/SettingsView.js";
 import { TabBar } from "./components/TabBar.js";
 import { TimelineView } from "./components/TimelineView.js";
+import { Notice } from "./components/ui/Notice.js";
 import type { Language } from "./i18n.js";
 
 const INITIAL_FORM: CalculatorFormState = {
@@ -105,7 +106,7 @@ function AppShell() {
   if (loadError) {
     return (
       <div className="app">
-        <div className="error-box">{loadError}</div>
+        <Notice tone="danger">{loadError}</Notice>
       </div>
     );
   }

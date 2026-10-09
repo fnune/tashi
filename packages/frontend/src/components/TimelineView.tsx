@@ -18,6 +18,7 @@ import { MealBreakdown } from "./MealBreakdown.js";
 import { Button } from "./ui/Button.js";
 import { DateTimeField, NumberField, parseDecimal } from "./ui/Field.js";
 import { Icon, type IconName } from "./ui/Icon.js";
+import { Notice } from "./ui/Notice.js";
 import { Sheet } from "./ui/Sheet.js";
 import { Stepper } from "./ui/Stepper.js";
 import "./TimelineView.css";
@@ -259,7 +260,7 @@ function EntryEditor({
         value={when}
         onChange={setWhen}
       />
-      {error && <div className="error-box">{error}</div>}
+      {error && <Notice tone="danger">{error}</Notice>}
       <Button disabled={!valid} onClick={save}>
         {t(lang, "save")}
       </Button>
@@ -313,7 +314,7 @@ function MealDetails({
         value={when}
         onChange={setWhen}
       />
-      {error && <div className="error-box">{error}</div>}
+      {error && <Notice tone="danger">{error}</Notice>}
       {moved && (
         <Button
           onClick={() =>

@@ -71,13 +71,53 @@
   cursor: pointer;
 }
 
-.calculator-logged {
-  padding: var(--space-3) var(--space-3-5);
-  border-radius: var(--radius-lg);
-  background: var(--color-ok-soft);
-  color: var(--color-ok);
+.calculator-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2-5);
+  padding: var(--space-6);
+  border-radius: var(--radius-xl);
+  background: var(--color-surface);
+  color: var(--color-fg-muted);
   font-size: var(--text-sm);
-  font-weight: var(--weight-bold);
+}
+
+.calculator-loading-dots {
+  display: inline-flex;
+  gap: var(--space-1);
+}
+
+.calculator-loading-dots span {
+  width: var(--space-2);
+  height: var(--space-2);
+  border-radius: var(--radius-full);
+  background: var(--color-accent);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .calculator-loading-dots span {
+    animation: calculator-pulse 1s var(--ease-standard) infinite;
+  }
+
+  .calculator-loading-dots span:nth-child(2) {
+    animation-delay: 0.15s;
+  }
+
+  .calculator-loading-dots span:nth-child(3) {
+    animation-delay: 0.3s;
+  }
+
+  @keyframes calculator-pulse {
+    0%,
+    100% {
+      opacity: 0.3;
+    }
+
+    50% {
+      opacity: 1;
+    }
+  }
 }
 
 .profile-switcher-reason {

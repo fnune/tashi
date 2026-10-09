@@ -4,6 +4,7 @@ import { type Language, t } from "../i18n.js";
 import { profileName, signedPercent } from "../profileLabels.js";
 import { Button } from "./ui/Button.js";
 import { NumberField, parseDecimal, TextField } from "./ui/Field.js";
+import { Notice } from "./ui/Notice.js";
 import { Segmented } from "./ui/Segmented.js";
 import { Stepper } from "./ui/Stepper.js";
 import "./ProfileEditor.css";
@@ -150,7 +151,7 @@ export function ProfileEditor({
           <p className="profile-editor-hint">{t(lang, "perWindowHint")}</p>
         </>
       )}
-      {error && <div className="error-box">{error}</div>}
+      {error && <Notice tone="danger">{error}</Notice>}
       <Button disabled={mode === "per_window" && !ratiosValid} onClick={save}>
         {t(lang, "save")}
       </Button>

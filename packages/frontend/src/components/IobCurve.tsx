@@ -2,6 +2,7 @@ import {
   insulinActivityFraction,
   insulinRemainingFraction,
 } from "@pincho/shared";
+import "./IobCurve.css";
 
 interface IobCurveProps {
   peakMinutes: number;
