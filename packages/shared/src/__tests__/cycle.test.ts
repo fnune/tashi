@@ -54,4 +54,26 @@ describe("cycleStatus", () => {
       cycleStatus(tracking("2026-10-20"), new Date(2026, 9, 9)),
     ).toBeNull();
   });
+
+  it("expects the period from three days before the predicted date", () => {
+    const start = "2026-09-01";
+    const on = (day: number) =>
+      cycleStatus(tracking(start), new Date(2026, 8, day))?.periodExpected;
+    expect(on(25)).toBe(false);
+    expect(on(26)).toBe(true);
+    expect(on(28)).toBe(true);
+  });
+
+  it("keeps expecting an unconfirmed period for three days after it was due", () => {
+    const status = (day: number) =>
+      cycleStatus(tracking("2026-09-01"), new Date(2026, 8, day));
+    expect(status(29)).toMatchObject({ day: 1, periodExpected: true });
+    expect(status(31)).toMatchObject({ day: 3, periodExpected: true });
+    expect(status(32)).toMatchObject({ day: 4, periodExpected: false });
+  });
+
+  it("stops expecting the period once day 1 is logged", () => {
+    const status = cycleStatus(tracking("2026-09-29"), new Date(2026, 8, 29));
+    expect(status).toMatchObject({ day: 1, periodExpected: false });
+  });
 });

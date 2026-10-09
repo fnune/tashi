@@ -10,6 +10,7 @@ import { type Language, t } from "../i18n.js";
 import { HormoneChart } from "./HormoneChart.js";
 import { Button } from "./ui/Button.js";
 import { ListButton, ListGroup, ListRow } from "./ui/List.js";
+import { Segmented } from "./ui/Segmented.js";
 import { Sheet } from "./ui/Sheet.js";
 import { Stepper } from "./ui/Stepper.js";
 import { Toggle } from "./ui/Toggle.js";
@@ -106,14 +107,6 @@ export function CycleSettings({
                 </span>
               </div>
               <p className="cycle-how-to">{t(lang, "cycleHowTo")}</p>
-              <Button
-                variant="secondary"
-                onClick={() =>
-                  update({ last_period_start: toLocalDateString(new Date()) })
-                }
-              >
-                {t(lang, "todayIsDayOne")}
-              </Button>
             </div>
             <ListButton
               label={t(lang, "lastPeriodStart")}
@@ -179,18 +172,33 @@ function StartEditor({
   initial: string | null;
   onSave: (date: string) => void;
 }) {
-  const today = toLocalDateString(new Date());
+  const now = new Date();
+  const today = toLocalDateString(now);
+  const yesterday = toLocalDateString(
+    new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1),
+  );
   const [date, setDate] = useState(initial ?? today);
   return (
     <>
-      <input
-        className="field-input"
-        type="date"
-        aria-label={t(lang, "lastPeriodStart")}
-        max={today}
-        value={date}
-        onChange={(e) => setDate(e.target.value)}
-      />
+      <div className="cycle-start-picker">
+        <Segmented
+          label={t(lang, "lastPeriodStart")}
+          value={date}
+          options={[
+            { value: today, label: t(lang, "today") },
+            { value: yesterday, label: t(lang, "yesterday") },
+          ]}
+          onChange={setDate}
+        />
+        <input
+          className="field-input"
+          type="date"
+          aria-label={t(lang, "lastPeriodStart")}
+          max={today}
+          value={date}
+          onChange={(e) => setDate(e.target.value)}
+        />
+      </div>
       <Button disabled={!date || date > today} onClick={() => onSave(date)}>
         {t(lang, "save")}
       </Button>

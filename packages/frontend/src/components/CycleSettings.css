@@ -91,3 +91,10 @@
 .cycle-settings .list-group-footer a {
   color: var(--color-accent);
 }
+
+.cycle-start-picker {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: var(--space-2);
+  align-items: center;
+}

@@ -43,6 +43,7 @@ export function SensorCard({
   cycle,
   onSaveReading,
   onSuggestProfile,
+  onConfirmPeriod,
 }: {
   settings: Settings;
   lang: Language;
@@ -51,6 +52,7 @@ export function SensorCard({
   cycle: CycleStatus | null;
   onSaveReading: (value: number) => Promise<void>;
   onSuggestProfile: () => void;
+  onConfirmPeriod: () => void;
 }) {
   const [measuring, setMeasuring] = useState(false);
   const decimal = new Intl.NumberFormat(lang, { maximumFractionDigits: 1 });
@@ -141,6 +143,7 @@ export function SensorCard({
           status={cycle}
           lang={lang}
           onSuggestProfile={onSuggestProfile}
+          onConfirmPeriod={onConfirmPeriod}
         />
       )}
 

@@ -15,10 +15,12 @@ export function CycleBanner({
   status,
   lang,
   onSuggestProfile,
+  onConfirmPeriod,
 }: {
   status: CycleStatus;
   lang: Language;
   onSuggestProfile: () => void;
+  onConfirmPeriod: () => void;
 }) {
   const summary = (
     <span className="cycle-banner-summary">
@@ -31,6 +33,19 @@ export function CycleBanner({
     </span>
   );
 
+  if (status.periodExpected) {
+    return (
+      <div className="cycle-banner cycle-banner-suggest">
+        <span className="cycle-banner-text">
+          {summary}
+          <b>{t(lang, "periodStartedQuestion")}</b>
+        </span>
+        <button type="button" onClick={onConfirmPeriod}>
+          {t(lang, "yesToday")}
+        </button>
+      </div>
+    );
+  }
   if (status.phaseStartsToday) {
     return (
       <div className="cycle-banner cycle-banner-suggest">

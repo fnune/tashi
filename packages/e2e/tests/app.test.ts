@@ -1,4 +1,15 @@
-import { expect, test } from "@playwright/test";
+import { expect, type Page, test } from "@playwright/test";
+
+async function logPeriodStart(
+  page: Page,
+  pick: (sheet: ReturnType<Page["getByRole"]>) => Promise<void>,
+) {
+  await page.getByRole("button", { name: /First day of last period/ }).click();
+  const sheet = page.getByRole("dialog");
+  await pick(sheet);
+  await sheet.getByRole("button", { name: "Save" }).click();
+  await expect(sheet).toBeHidden();
+}
 
 test.describe("full user flow", () => {
   test.beforeEach(async ({ request, page }) => {
@@ -286,7 +297,7 @@ test.describe("full user flow", () => {
   }) => {
     await page.goto("/settings");
     await page.getByRole("switch", { name: "Track my cycle" }).check();
-    await page.getByRole("button", { name: "🩸 Today is my day 1" }).click();
+    await logPeriodStart(page, (sheet) => sheet.getByText("Today").click());
     await expect(page.getByText("Day 1 of 28")).toBeVisible();
     await expect(page.locator(".cycle-phase")).toHaveText("● Period");
 
@@ -312,7 +323,7 @@ test.describe("full user flow", () => {
 
     await page.goto("/settings");
     await page.getByRole("switch", { name: "Track my cycle" }).check();
-    await page.getByRole("button", { name: "🩸 Today is my day 1" }).click();
+    await logPeriodStart(page, (sheet) => sheet.getByText("Today").click());
 
     await page.getByRole("navigation").getByText("Calculate").click();
     await page.locator("textarea").fill("a banana");
@@ -333,5 +344,30 @@ test.describe("full user flow", () => {
     await expect(page.locator("#profiles")).toContainText("−20 %");
     await page.getByRole("button", { name: /Back/ }).click();
     await expect(page.locator(".dose")).toBeVisible();
+  });
+
+  test("asks whether the period has started around the predicted date", async ({
+    page,
+  }) => {
+    await page.goto("/settings");
+    await page.getByRole("switch", { name: "Track my cycle" }).check();
+    const serverToday = new Date();
+    serverToday.setHours(13, 0, 0, 0);
+    const start = new Date(serverToday);
+    start.setDate(start.getDate() - 26);
+    const iso = `${start.getFullYear()}-${String(start.getMonth() + 1).padStart(2, "0")}-${String(start.getDate()).padStart(2, "0")}`;
+    await logPeriodStart(page, (sheet) =>
+      sheet.getByLabel("First day of last period").last().fill(iso),
+    );
+
+    await page.getByRole("navigation").getByText("Calculate").click();
+    const banner = page.locator(".cycle-banner");
+    await expect(banner).toContainText("Day 27 of 28");
+    await expect(banner).toContainText("Has your period started?");
+    await page.getByRole("button", { name: "Yes, today" }).click();
+    await expect(banner).toContainText("Day 1 of 28 · Period");
+    await expect(
+      page.getByRole("button", { name: "Switch profile?" }),
+    ).toBeVisible();
   });
 });

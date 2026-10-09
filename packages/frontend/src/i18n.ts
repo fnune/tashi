@@ -103,13 +103,14 @@ const translations = {
     phase_ovulation: "Ovulation",
     phase_luteal: "Luteal phase",
     switchProfile: "Switch profile?",
+    periodStartedQuestion: "Has your period started?",
+    yesToday: "Yes, today",
     switchProfileLuteal:
       "Your luteal phase starts today. If you tend to need more insulin now, switch to your menstruation profile.",
     switchProfilePeriod:
       "Your period has started. If you were on a luteal-phase profile, switch back to Normal.",
     suggested: "Suggested",
     createMenstruationProfile: "Create a menstruation profile",
-    todayIsDayOne: "🩸 Today is my day 1",
     lastPeriodStart: "First day of last period",
     cycleLength: "Average cycle length",
     daysUnit: "days",
@@ -286,13 +287,14 @@ const translations = {
     phase_ovulation: "Ovulación",
     phase_luteal: "Fase lútea",
     switchProfile: "¿Cambiar de perfil?",
+    periodStartedQuestion: "¿Te ha bajado la regla?",
+    yesToday: "Sí, hoy",
     switchProfileLuteal:
       "Hoy empieza tu fase lútea. Si sueles necesitar más insulina, cambia a tu perfil de menstruación.",
     switchProfilePeriod:
       "Te ha bajado la regla. Si estabas en un perfil para la fase lútea, vuelve a Normal.",
     suggested: "Sugerido",
     createMenstruationProfile: "Crear un perfil de menstruación",
-    todayIsDayOne: "🩸 Hoy es mi día 1",
     lastPeriodStart: "Primer día del último periodo",
     cycleLength: "Duración media del ciclo",
     daysUnit: "días",

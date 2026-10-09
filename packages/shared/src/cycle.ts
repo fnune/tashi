@@ -3,6 +3,7 @@ import type { CycleTracking } from "./types.js";
 export type CyclePhase = "period" | "follicular" | "ovulation" | "luteal";
 
 const PERIOD_DAYS = 5;
+const PERIOD_PROMPT_WINDOW_DAYS = 3;
 const LUTEAL_PHASE_DAYS = 14;
 const DAY_MS = 86_400_000;
 
@@ -14,6 +15,7 @@ export interface CycleStatus {
   length: number;
   phase: CyclePhase;
   phaseStartsToday: boolean;
+  periodExpected: boolean;
   nextPeriod: Date;
 }
 
@@ -52,11 +54,14 @@ export function cycleStatus(
   const cyclesDone = Math.floor(elapsed / length);
   const day = (elapsed % length) + 1;
   const phase = cyclePhase(day, length);
+  const dueSoon = length - day < PERIOD_PROMPT_WINDOW_DAYS;
+  const overdueUnconfirmed = cyclesDone > 0 && day <= PERIOD_PROMPT_WINDOW_DAYS;
   return {
     day,
     length,
     phase,
     phaseStartsToday: day === 1 || day === ovulationDay(length) + 1,
+    periodExpected: dueSoon || overdueUnconfirmed,
     nextPeriod: new Date(
       start.getFullYear(),
       start.getMonth(),

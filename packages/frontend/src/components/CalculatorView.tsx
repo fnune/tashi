@@ -5,7 +5,11 @@ import type {
   Settings,
   TimelineEntry,
 } from "@pincho/shared";
-import { cycleStatus, latestRecentReading } from "@pincho/shared";
+import {
+  cycleStatus,
+  latestRecentReading,
+  toLocalDateString,
+} from "@pincho/shared";
 import { type Dispatch, type SetStateAction, useState } from "react";
 import * as api from "../api.js";
 import { apiErrorText, type Language, t } from "../i18n.js";
@@ -80,15 +84,17 @@ export function CalculatorView({
     onDataChanged();
   }
 
-  async function selectProfile(profileId: string) {
+  async function saveSettings(next: Settings) {
     setError(null);
     try {
-      onSettingsSaved(
-        await api.saveSettings({ ...settings, active_profile_id: profileId }),
-      );
+      onSettingsSaved(await api.saveSettings(next));
     } catch (err) {
       setError(apiErrorText(lang, err));
     }
+  }
+
+  function selectProfile(profileId: string) {
+    return saveSettings({ ...settings, active_profile_id: profileId });
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -166,6 +172,15 @@ export function CalculatorView({
         cycle={cycle}
         onSaveReading={saveReading}
         onSuggestProfile={() => setSwitchingProfile(true)}
+        onConfirmPeriod={() =>
+          saveSettings({
+            ...settings,
+            cycle: {
+              ...settings.cycle,
+              last_period_start: toLocalDateString(new Date()),
+            },
+          })
+        }
       />
 
       <ProfileChips settings={settings} lang={lang} onSelect={selectProfile} />
