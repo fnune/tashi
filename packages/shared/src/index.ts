@@ -38,6 +38,17 @@ export {
   NOVORAPID,
   TRESIBA,
 } from "./insulin.js";
+export {
+  allowedEndHours,
+  allowedStartHours,
+  extendWindowOverGap,
+  mergeWindowIntoPrevious,
+  moveWindowEnd,
+  moveWindowStart,
+  sortByStart,
+  splitLongestWindow,
+  windowLength,
+} from "./meal-windows.js";
 export type {
   ApiErrorCode,
   CalculatedItem,
