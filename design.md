@@ -1,4 +1,6 @@
-# Pincho: T1D fast insulin dose calculator
+# Musa: T1D fast insulin dose calculator
+
+The app is called Musa; the repository, packages and deployment keep the original name, pincho.
 
 ## Problem
 
@@ -27,22 +29,38 @@ App shows breakdown table + recommended dose
 
 ## Setup (one-time)
 
-Insulin-to-carb ratios, from the user's endocrinologist:
+Insulin-to-carb ratios, from the user's endocrinologist, per meal window:
 
 | Meal window | Ratio |
 |---|---|
-| Morning (06:00-11:00) | 1U per X g |
-| Lunch (11:00-16:00) | 1U per X g |
-| Dinner (16:00-23:00) | 1U per X g |
+| Morning (06:00-11:00) | X g per 1U |
+| Lunch (11:00-16:00) | X g per 1U |
+| Dinner (16:00-06:00) | X g per 1U |
 
-Time windows are editable. Users can add extra windows (snack, night).
+Meal windows always tile the whole day, so a ratio applies at every hour. The settings UI enforces this by construction: moving a window's edge moves its neighbour's, adding a window splits the longest one, and removing one hands its hours to the previous window. Windows may run past midnight. Settings saved with a gap show a one-tap fix, and the API still answers `no_meal_window` for an uncovered time as a safety net.
 
 Additional setup:
-- Correction factor: 1U drops blood sugar by X mmol/L
-- Target blood sugar: assumed 6.0 mmol/L by default
-- Pen increment: 0.5U or 1U (for rounding the recommended dose)
+- Correction factor: 1U lowers glucose by X (mg/dL or mmol/L)
+- Target glucose
+- Pen increment: 0.5U or 1U (for rounding the final dose)
+- Fat/protein extra, as a percentage of the meal dose
+- Rapid insulin and its duration of action (drives insulin on board), basal insulin
+- Glucose unit (mg/dL or mmol/L) and language
 
-European units only (mmol/L, grams) to start.
+Every change saves immediately.
+
+### Profiles
+
+A profile adapts doses to a situation (sport, sick day, a phase of the menstrual cycle). Exactly one is active, switched by hand from the chips on Calcular; profiles never expire or switch on their own.
+
+- Percentage: multiplies the final total, after correction and fat/protein and before pen rounding. Ratios and the correction factor are untouched.
+- By time of day: replaces the ratio of each window it sets; other windows keep theirs. Renaming a window carries its per-window ratios along.
+
+Normal is built in and cannot be removed. Sport (-20 %), Sick day (+20 %) and Menstruation (+15 %) are seeded as editable examples, labelled as values to agree with the care team. Every result and logged meal records the profile it used.
+
+### Menstrual cycle
+
+Optional and informational: it never changes a dose. From the first day of the last period and the average cycle length (21-45 days) it works out the cycle day and phase, assuming a 5-day period and a 14-day luteal phase. Calcular shows the day and phase; on day 1 and on the first luteal day it suggests switching profile and opens a picker with the likely profile marked. The evidence for lower insulin sensitivity in the luteal phase is mixed (systematic review, 2023), which is why the decision stays with the user.
 
 ## Input
 
@@ -158,54 +176,29 @@ For "sushi", "lasagna", "a burrito", two strategies:
 
 ## Output
 
-A single compact table. Glance, confirm, inject.
+Calcular is built to glance, confirm and inject:
 
-```
-Almuerzo | 1U : 10g | fuente: USDA, BEDCA
+- A sensor card: the latest manual glucose reading from the last 30 minutes in a dial coloured by range (70-180 mg/dL, 3.9-10 mmol/L), insulin on board with its run-out time, the target, and a live correction preview. Tapping the dial logs a new reading.
+- The meal description and pre-bolus time ("eating in" now, 10, 20 or 30 min).
+- After calculating: one row per food with weight, carbs per 100 g, GI band and data source, items with 0 g included so nothing looks forgotten, then the net carb total.
+- A dose card: the final dose, its parts (meal, correction, fat/protein), the meal window and profile used, and which fat/protein threshold applied. A "Why?" link opens an explainer of every step and its references.
+- An "I'll inject" stepper in pen increments. Calculating is only a preview; logging records the meal and the units actually injected.
 
- Alimento                  | Cant. | HC netos
----------------------------|-------|----------
- Arroz blanco (cocido)     | 150g  |    42g
- Pechuga de pollo (plancha)| 170g  |     0g
- Ensalada mixta            |  80g  |     2g
- Aceite de oliva           |  15g  |     0g
----------------------------|-------|----------
- Total                     |       |    44g
- Dosis recomendada         |       |   4.5U
-```
-
-Design notes:
-- Meal type and ratio shown once at the top
-- Data sources cited at the top
-- Items with 0g carbs still shown (nothing was forgotten)
-- Dose rounded to the user's configured pen increment
-- Ambiguous items marked: "Arroz blanco (cocido*)" with a footnote "*peso cocido asumido"
-- Every number is tappable and editable
-- GI column is optional (off by default, togglable in settings). When shown, it's informational only -- not used in dose math, since the standard of care is carb counting
+GI is informational only and never enters the dose math, since the standard of care is carb counting.
 
 ### Correction bolus
 
-If the user enters their current blood sugar, the output adds one line:
+Correction = (glucose - target) / correction factor, using the recent manual reading if there is one. Insulin on board can cancel a correction for high glucose but never reduces the meal dose; below target the correction is negative and lowers the dose. The preview on the sensor card uses the same function as the calculation. Could eventually auto-fill from CGM APIs (Dexcom, Libre).
 
-```
- Glucosa actual: 10.0 mmol/L | Objetivo: 6.0 | Factor: 1U / 2.2 mmol/L
- Correccion: 1.8U
- Total (comida + correccion): 6.5U
-```
+## History
 
-Optional per-calculation. Could eventually auto-fill from CGM APIs (Dexcom, Libre).
+History is a day-grouped timeline of meals, rapid and basal doses, and glucose readings:
 
-## Calculation history
-
-The app keeps a history of all calculations, organized as a chat-like list:
-
-- Each entry shows: timestamp, the food description as entered, the result table, and the recommended dose
-- Users can tap any past entry to see the full breakdown
-- Users can re-use a past entry as a template ("I'm eating this again")
-- Users can delete individual entries or clear all history
-- History is local-only, never sent to any server
-
-This doubles as a testing/exploration tool: try different food descriptions and compare results without any commitment.
+- Each row shows time, type, a short description and the value
+- Doses and readings open a sheet to change the amount or time, or delete them
+- Meals open their full breakdown, can move in time, be deleted, or be reused as the starting point for a new calculation
+- Quick-add buttons log rapid insulin, basal insulin or a glucose reading
+- History lives on the user's own server and is never shared
 
 ## Localization
 
@@ -219,7 +212,7 @@ This app influences medical decisions:
 
 - Show every item, every carb estimate, every assumption, every source
 - Make it trivial to edit any value (tap a row to override)
-- Always show which ratio was used and allow override
+- Always show which ratio and profile were used
 - Never connect to pumps or auto-inject (recommendation only)
 
 ## Engineering requirements
@@ -232,6 +225,10 @@ This app influences medical decisions:
 - pnpm workspaces monorepo
 - Biome for linting and formatting (single tool, fast)
 - Vitest for testing
+
+### Design system
+
+All visual values (colour, type, spacing, radii, elevation, motion) live as custom properties in `packages/frontend/src/tokens.css`, with dark mode following the system. Stylelint rejects raw colours, lengths and font weights anywhere else, so restyling means editing tokens. Each component keeps its stylesheet next to it, built from shared primitives in `components/ui/` (sheet, list rows, fields, segmented control, option list, stepper, toggle, notice, button). Bottom sheets close by dragging down, tapping the handle or tapping the backdrop, and keep their scroll to themselves, since the UI is meant to ship inside an Android app.
 
 ### Development environment
 
@@ -294,4 +291,5 @@ This is not a CGM app, meal planner, diet tracker, or insulin pump controller. I
 - Should the app learn from user corrections? (User always bumps "150g rice" to "200g" -> app adjusts portion intuition.) Privacy implications but useful.
 - Photo input via LLM vision? Accuracy is improving. Could be a v2 feature.
 - Barcode scanning for packaged foods via Open Food Facts?
-- CGM integration (Dexcom/Libre APIs) to auto-fill blood sugar for correction bolus?
+- CGM integration (e.g. LibreView) to auto-fill glucose and add a glucose chart to History; needs its own plan.
+- Carb ratio display as U per 10 g (Spanish raciones) or per BE/KE, alongside g per U.
