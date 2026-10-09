@@ -45,10 +45,13 @@ function sourceLink(item: CalculatedItem): {
   };
 }
 
-function giColor(gi: number): string {
-  const clamped = Math.min(Math.max(0, gi), 100) / 100;
-  const hue = 120 * (1 - clamped);
-  return `hsl(${hue}, 70%, 40%)`;
+const LOW_GI_MAX = 55;
+const HIGH_GI_MIN = 70;
+
+function giBand(gi: number): "low" | "medium" | "high" {
+  if (gi <= LOW_GI_MAX) return "low";
+  if (gi < HIGH_GI_MIN) return "medium";
+  return "high";
 }
 
 function DoseDisplay({
@@ -194,17 +197,7 @@ export function ResultTable({ result, lang, glucoseUnit }: ResultTableProps) {
                 <td className="num" data-label="GI">
                   {gi != null ? (
                     <span
-                      className="gi-badge"
-                      style={{
-                        background: giColor(gi),
-                        ...(giIsEstimated
-                          ? {
-                              borderStyle: "dashed",
-                              borderWidth: 1,
-                              borderColor: "rgba(255,255,255,0.6)",
-                            }
-                          : {}),
-                      }}
+                      className={`gi-badge gi-badge-${giBand(gi)}${giIsEstimated ? " gi-badge-estimated" : ""}`}
                       title={
                         giIsEstimated
                           ? t(lang, "giEstimated")

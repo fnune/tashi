@@ -271,7 +271,7 @@ function EntryCard({
       {expanded && (
         <div>
           {entry.type === "meal" && (
-            <div style={{ padding: "8px 12px" }}>
+            <div className="entry-meal-detail">
               <div className="entry-input-text">{entry.input_text}</div>
               <ResultTable
                 result={{
@@ -316,9 +316,7 @@ function EntryCard({
             )}
           </div>
           {saveError && (
-            <div className="error-box" style={{ margin: "0 12px" }}>
-              {saveError}
-            </div>
+            <div className="error-box entry-error">{saveError}</div>
           )}
           <div className="history-actions">
             {dirty && (
