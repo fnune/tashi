@@ -5,6 +5,8 @@ import type {
   CreateTimelineRequest,
   ErrorResponse,
   InsulinOnBoard,
+  LogMealRequest,
+  LogMealResponse,
   Settings,
   TimelineEntry,
   UpdateTimelineRequest,
@@ -64,6 +66,13 @@ export function saveSettings(settings: Settings): Promise<Settings> {
 
 export function calculate(req: CalculateRequest): Promise<CalculateResponse> {
   return request<CalculateResponse>("/api/calculate", {
+    method: "POST",
+    body: JSON.stringify(req),
+  });
+}
+
+export function logMeal(req: LogMealRequest): Promise<LogMealResponse> {
+  return request<LogMealResponse>("/api/meals", {
     method: "POST",
     body: JSON.stringify(req),
   });

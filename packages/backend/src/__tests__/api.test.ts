@@ -6,6 +6,7 @@ import {
   DEFAULT_SETTINGS,
   type InsulinOnBoard,
   insulinRemainingFraction,
+  type LogMealResponse,
   type ParsedFoodItem,
   type Settings,
   type TimelineEntry,
@@ -50,6 +51,24 @@ function carbItem(netCarbsPer100g: number, weightG = 100): ParsedFoodItem {
 
 type CalculateOk = Extract<CalculateResponse, { status: "ok" }>;
 
+async function postJson(
+  app: ReturnType<typeof createRoutes>,
+  path: string,
+  body: unknown,
+): Promise<Response> {
+  return app.request(path, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+}
+
+async function readTimeline(
+  app: ReturnType<typeof createRoutes>,
+): Promise<TimelineEntry[]> {
+  return (await (await app.request("/api/timeline")).json()) as TimelineEntry[];
+}
+
 function expectOkResponse(body: CalculateResponse): CalculateOk {
   if (body.status !== "ok") {
     throw new Error(
@@ -84,7 +103,7 @@ describe("API routes", () => {
     await rm(tmpDir, { recursive: true });
   });
 
-  it("POST /api/calculate creates paired timeline entries with dose data", async () => {
+  it("POST /api/calculate previews a dose without touching the timeline", async () => {
     parser.setResponse("100g white rice", [
       {
         description: "White rice (cooked)",
@@ -125,24 +144,32 @@ describe("API routes", () => {
     const body = expectOkResponse((await res.json()) as CalculateResponse);
     expect(body.result.items).toHaveLength(1);
     expect(body.result.total_net_carbs_g).toBeCloseTo(27.8, 0);
-    expect(body.meal_entry_id).toBeDefined();
-    expect(body.insulin_entry_id).toBeDefined();
+    expect(await readTimeline(app)).toHaveLength(0);
+  });
 
-    const timelineRes = await app.request("/api/timeline");
-    const timeline = (await timelineRes.json()) as TimelineEntry[];
-    expect(timeline).toHaveLength(2);
+  it("POST /api/meals logs the meal with the units actually injected", async () => {
+    parser.setResponse("rice", [carbItem(30)]);
+    await storage.saveSettings(configured());
+    const { result } = expectOkResponse(
+      (await (
+        await postJson(app, "/api/calculate", { food_description: "rice" })
+      ).json()) as CalculateResponse,
+    );
 
-    const insulin = timeline.find((e) => e.type === "fast_insulin");
-    const meal = timeline.find((e) => e.type === "meal");
-    expect(insulin).toBeDefined();
-    expect(meal).toBeDefined();
-    if (insulin?.type === "fast_insulin") {
-      expect(insulin.related_meal_id).toBe(meal?.id);
-    }
-    if (meal?.type === "meal") {
-      expect(meal.recommended_dose).toBe(body.result.recommended_dose);
-      expect(meal.correction).toEqual(body.result.correction);
-    }
+    const res = await postJson(app, "/api/meals", { result, units: 2.5 });
+    expect(res.status).toBe(200);
+    const ids = (await res.json()) as LogMealResponse;
+
+    const timeline = await readTimeline(app);
+    const meal = timeline.find((e) => e.id === ids.meal_entry_id);
+    const insulin = timeline.find((e) => e.id === ids.insulin_entry_id);
+    expect(meal?.type === "meal" && meal.recommended_dose).toBe(
+      result.recommended_dose,
+    );
+    expect(insulin?.type === "fast_insulin" && insulin.units).toBe(2.5);
+    expect(insulin?.type === "fast_insulin" && insulin.related_meal_id).toBe(
+      ids.meal_entry_id,
+    );
   });
 
   it("POST /api/calculate errors with a code when no insulin is configured", async () => {
@@ -184,23 +211,21 @@ describe("API routes", () => {
     expect(body.code).toBe("no_meal_window");
   });
 
-  it("POST /api/calculate does not log an injection for a zero-unit dose", async () => {
+  it("POST /api/meals logs no injection for zero units", async () => {
     parser.setResponse("lettuce", [carbItem(0)]);
     await storage.saveSettings(configured());
+    const { result } = expectOkResponse(
+      (await (
+        await postJson(app, "/api/calculate", { food_description: "lettuce" })
+      ).json()) as CalculateResponse,
+    );
 
-    const res = await app.request("/api/calculate", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ food_description: "lettuce" }),
-    });
+    const ids = (await (
+      await postJson(app, "/api/meals", { result, units: 0 })
+    ).json()) as LogMealResponse;
+    expect(ids.insulin_entry_id).toBeNull();
 
-    const body = expectOkResponse((await res.json()) as CalculateResponse);
-    expect(body.result.recommended_dose).toBe(0);
-    expect(body.insulin_entry_id).toBeNull();
-
-    const timeline = (await (
-      await app.request("/api/timeline")
-    ).json()) as TimelineEntry[];
+    const timeline = await readTimeline(app);
     expect(timeline.filter((e) => e.type === "fast_insulin")).toHaveLength(0);
     expect(timeline.filter((e) => e.type === "meal")).toHaveLength(1);
   });
@@ -264,57 +289,30 @@ describe("API routes", () => {
     expect(iob.contributions[0]!.units).toBe(8);
   });
 
-  it("POST /api/calculate offsets meal timestamp by pre_bolus_minutes", async () => {
-    parser.setResponse("a banana", [
-      {
-        description: "Banana",
-        fdc_id: 173944,
-        weight_g: 120,
-        assumed_cooked: false,
-        confidence: "medium",
-        notes: null,
-        estimated_net_carbs_per_100g: 20,
-        user_carbs: null,
-        estimated_glycemic_index: 51,
-        estimated_fat_per_100g: null,
-        estimated_protein_per_100g: null,
-        warning: null,
-      },
-    ]);
+  it("POST /api/meals offsets the meal by pre_bolus_minutes", async () => {
+    parser.setResponse("a banana", [carbItem(20, 120)]);
+    await storage.saveSettings(configured());
+    const { result } = expectOkResponse(
+      (await (
+        await postJson(app, "/api/calculate", { food_description: "a banana" })
+      ).json()) as CalculateResponse,
+    );
 
-    await storage.saveSettings({
-      meal_windows: [
-        { name: "all-day", start_hour: 0, end_hour: 24, ratio: 10 },
-      ],
-      correction_factor: null,
-      target_blood_sugar: 6.0,
-      glucose_unit: "mg/dL",
-      pen_increment: 0.5,
-      fat_protein_multiplier: 0.2,
-      bolus_insulin_id: "novorapid",
-      basal_insulin_id: "tresiba",
-      insulin_action_minutes: 300,
-      language: "en",
+    await postJson(app, "/api/meals", {
+      result,
+      units: 2,
+      pre_bolus_minutes: 15,
     });
 
-    await app.request("/api/calculate", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        food_description: "a banana",
-        pre_bolus_minutes: 15,
-      }),
-    });
-
-    const timelineRes = await app.request("/api/timeline");
-    const timeline = (await timelineRes.json()) as TimelineEntry[];
-    const insulin = timeline.find((e) => e.type === "fast_insulin")!;
-    const meal = timeline.find((e) => e.type === "meal")!;
-
-    const insulinTime = new Date(insulin.timestamp).getTime();
-    const mealTime = new Date(meal.timestamp).getTime();
-    const diffMinutes = (mealTime - insulinTime) / 60_000;
-    expect(diffMinutes).toBeCloseTo(15, 0);
+    const timeline = await readTimeline(app);
+    const insulin = timeline.find((e) => e.type === "fast_insulin");
+    const meal = timeline.find((e) => e.type === "meal");
+    if (!insulin || !meal) throw new Error("expected both entries");
+    const diffMinutes =
+      (new Date(meal.timestamp).getTime() -
+        new Date(insulin.timestamp).getTime()) /
+      60_000;
+    expect(diffMinutes).toBe(15);
   });
 
   it("POST /api/timeline creates manual entries", async () => {
@@ -404,7 +402,7 @@ describe("API routes", () => {
     expect(saved.language).toBe("es");
   });
 
-  it("learns food vocabulary from calculations", async () => {
+  it("learns food vocabulary from logged meals only", async () => {
     parser.setResponse("100g white rice", [
       {
         description: "White rice (cooked)",
@@ -435,11 +433,16 @@ describe("API routes", () => {
       language: "en",
     });
 
-    await app.request("/api/calculate", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ food_description: "100g white rice" }),
-    });
+    const { result } = expectOkResponse(
+      (await (
+        await postJson(app, "/api/calculate", {
+          food_description: "100g white rice",
+        })
+      ).json()) as CalculateResponse,
+    );
+    expect(await storage.getVocabulary()).toHaveLength(0);
+
+    await postJson(app, "/api/meals", { result, units: 3 });
 
     const vocab = await storage.getVocabulary();
     expect(vocab).toHaveLength(1);
@@ -447,11 +450,7 @@ describe("API routes", () => {
     expect(vocab[0]!.description).toBe("White rice (cooked)");
     expect(vocab[0]!.use_count).toBe(1);
 
-    await app.request("/api/calculate", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ food_description: "100g white rice" }),
-    });
+    await postJson(app, "/api/meals", { result, units: 3 });
 
     const vocab2 = await storage.getVocabulary();
     expect(vocab2).toHaveLength(1);

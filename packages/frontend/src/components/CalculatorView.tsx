@@ -10,7 +10,7 @@ import { useState } from "react";
 import { Link } from "react-router";
 import * as api from "../api.js";
 import { apiErrorText, type Language, t } from "../i18n.js";
-import { MealBreakdown } from "./MealBreakdown.js";
+import { MealBreakdown, totalDose } from "./MealBreakdown.js";
 import { SensorCard } from "./SensorCard.js";
 import { Button } from "./ui/Button.js";
 import { Segmented } from "./ui/Segmented.js";
@@ -57,6 +57,9 @@ export function CalculatorView({
   } | null>(null);
   const [result, setResult] = useState<CalculationResult | null>(null);
   const [setupPrompt, setSetupPrompt] = useState<string | null>(null);
+  const [units, setUnits] = useState(0);
+  const [logging, setLogging] = useState(false);
+  const [logged, setLogged] = useState<string | null>(null);
   const reading = latestRecentReading(timeline, new Date());
 
   async function saveReading(value: number) {
@@ -76,17 +79,17 @@ export function CalculatorView({
     setError(null);
     setClarification(null);
     setSetupPrompt(null);
+    setLogged(null);
     setResult(null);
 
     const req: CalculateRequest = { food_description: foodText.trim() };
     if (reading) req.current_blood_sugar = reading.value;
-    if (preBolusMinutes) req.pre_bolus_minutes = preBolusMinutes;
 
     try {
       const res = await api.calculate(req);
       if (res.status === "ok") {
         setResult(res.result);
-        onDataChanged();
+        setUnits(totalDose(res.result) ?? 0);
       } else {
         setClarification({ kind: res.status, message: res.message });
       }
@@ -105,6 +108,36 @@ export function CalculatorView({
     }
   }
 
+  async function logMeal(meal: CalculationResult) {
+    setLogging(true);
+    setError(null);
+    try {
+      await api.logMeal({
+        result: meal,
+        units,
+        pre_bolus_minutes: preBolusMinutes,
+      });
+      const decimal = new Intl.NumberFormat(lang, { maximumFractionDigits: 1 });
+      setLogged(
+        units > 0
+          ? t(lang, "loggedMealAndUnits").replace(
+              "{units}",
+              decimal.format(units),
+            )
+          : t(lang, "loggedMealOnly"),
+      );
+      setResult(null);
+      onFormChange({ ...formState, foodText: "" });
+      onDataChanged();
+    } catch (err) {
+      setError(apiErrorText(lang, err));
+    } finally {
+      setLogging(false);
+    }
+  }
+
+  const decimal = new Intl.NumberFormat(lang, { maximumFractionDigits: 1 });
+
   return (
     <div className="calculator">
       <SensorCard
@@ -114,6 +147,8 @@ export function CalculatorView({
         iob={iob}
         onSaveReading={saveReading}
       />
+
+      {logged && <p className="calculator-logged">✓ {logged}</p>}
 
       {result ? (
         <>
@@ -131,8 +166,16 @@ export function CalculatorView({
             result={result}
             lang={lang}
             penIncrement={settings.pen_increment}
+            injection={{ units, onChange: setUnits }}
           />
-          <p className="calculator-logged">✓ {t(lang, "loggedInHistory")}</p>
+          <Button disabled={logging} onClick={() => logMeal(result)}>
+            {units > 0
+              ? t(lang, "logMealAndUnits").replace(
+                  "{units}",
+                  decimal.format(units),
+                )
+              : t(lang, "logMealOnly")}
+          </Button>
         </>
       ) : (
         <form className="meal-form" onSubmit={handleSubmit}>

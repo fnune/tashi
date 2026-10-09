@@ -94,14 +94,21 @@ function FoodRow({ item, lang }: { item: CalculatedItem; lang: Language }) {
   );
 }
 
+export interface Injection {
+  units: number;
+  onChange: (units: number) => void;
+}
+
 export function DoseCard({
   result,
   lang,
   penIncrement,
+  injection,
 }: {
   result: MealResult;
   lang: Language;
   penIncrement: number;
+  injection?: Injection;
 }) {
   const decimal = new Intl.NumberFormat(lang, { maximumFractionDigits: 1 });
   const total = totalDose(result);
@@ -121,6 +128,37 @@ export function DoseCard({
         <b>{total === undefined ? "—" : decimal.format(total)}</b>
         <span>U</span>
       </div>
+      {injection && (
+        <div className="dose-injection">
+          <span>{t(lang, "iWillInject")}</span>
+          <div className="dose-stepper">
+            <button
+              type="button"
+              aria-label={t(lang, "lessInsulin").replace(
+                "{step}",
+                decimal.format(penIncrement),
+              )}
+              disabled={injection.units <= 0}
+              onClick={() =>
+                injection.onChange(Math.max(0, injection.units - penIncrement))
+              }
+            >
+              −
+            </button>
+            <output>{decimal.format(injection.units)} U</output>
+            <button
+              type="button"
+              aria-label={t(lang, "moreInsulin").replace(
+                "{step}",
+                decimal.format(penIncrement),
+              )}
+              onClick={() => injection.onChange(injection.units + penIncrement)}
+            >
+              +
+            </button>
+          </div>
+        </div>
+      )}
       <dl className="dose-parts">
         <div>
           <dt>{t(lang, "mealPart")}</dt>
@@ -150,10 +188,12 @@ export function MealBreakdown({
   result,
   lang,
   penIncrement,
+  injection,
 }: {
   result: MealResult;
   lang: Language;
   penIncrement: number;
+  injection?: Injection;
 }) {
   const decimal = new Intl.NumberFormat(lang, { maximumFractionDigits: 1 });
   return (
@@ -168,7 +208,12 @@ export function MealBreakdown({
         <span>{t(lang, "netCarbsTotal")}</span>
         <span>{decimal.format(result.total_net_carbs_g)} g</span>
       </div>
-      <DoseCard result={result} lang={lang} penIncrement={penIncrement} />
+      <DoseCard
+        result={result}
+        lang={lang}
+        penIncrement={penIncrement}
+        injection={injection}
+      />
     </section>
   );
 }

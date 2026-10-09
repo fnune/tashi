@@ -32,7 +32,13 @@ test.describe("full user flow", () => {
     await expect(page.locator(".dose")).toBeVisible({ timeout: 5000 });
 
     await expect(page.locator(".food")).toHaveCount(2);
-    await expect(page.locator(".dose-total")).toContainText("U");
+    const recommended = await page.locator(".dose-total b").textContent();
+    await page.getByRole("button", { name: "0.5 U more" }).click();
+    const injected = String(Number(recommended) + 0.5);
+    await page
+      .getByRole("button", { name: `Log meal and ${injected} U` })
+      .click();
+    await expect(page.getByText(`meal and ${injected} U`)).toBeVisible();
 
     // Go to history
     await page.getByRole("navigation").getByText("History").click();
@@ -41,7 +47,7 @@ test.describe("full user flow", () => {
     await expect(meals).toHaveCount(1);
     await expect(
       page.locator('.history-entry[data-entry-type="fast_insulin"]'),
-    ).toHaveCount(1);
+    ).toContainText(`${injected}`);
     await expect(meals.locator(".history-summary")).toContainText(
       "150g rice with chicken",
     );
@@ -75,10 +81,9 @@ test.describe("full user flow", () => {
   test("reuse a history entry", async ({ page }) => {
     await page.goto("/");
 
-    // Calculate something first
     await page.locator("textarea").fill("a banana");
     await page.getByRole("button", { name: "Calculate dose" }).click();
-    await expect(page.locator(".dose")).toBeVisible({ timeout: 5000 });
+    await page.getByRole("button", { name: /Log meal/ }).click();
 
     // Go to history
     await page.getByRole("navigation").getByText("History").click();

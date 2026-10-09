@@ -69,6 +69,8 @@ export type {
   FoodVocabEntry,
   GlucoseEntry,
   GlucoseUnit,
+  LogMealRequest,
+  LogMealResponse,
   MealEntry,
   MealWindow,
   ParsedFoodItem,

@@ -1,10 +1,13 @@
 import type {
   BasalInsulinId,
   BolusInsulinId,
+  CalculatedItem,
   CalculateRequest,
+  CalculationResult,
   CreateTimelineRequest,
   FastInsulinEntry,
   GlucoseEntry,
+  LogMealResponse,
   MealEntry,
   Settings,
   SlowInsulinEntry,
@@ -30,7 +33,6 @@ const calculateSchema = z.object({
   food_description: z.string().min(1),
   current_blood_sugar: z.number().positive().optional(),
   meal_window_override: z.string().optional(),
-  pre_bolus_minutes: z.number().min(0).max(60).optional(),
 });
 
 const bolusInsulinIdSchema = z.enum(
@@ -69,6 +71,29 @@ const settingsSchema = z.object({
     .max(MAX_DIA_MINUTES)
     .nullable(),
   language: z.union([z.literal("en"), z.literal("es")]),
+});
+
+const logMealSchema = z.object({
+  result: z.object({
+    input_text: z.string(),
+    language: z.union([z.literal("en"), z.literal("es")]),
+    meal_window: z.object({
+      name: z.string(),
+      start_hour: z.number(),
+      end_hour: z.number(),
+      ratio: z.number().positive(),
+    }),
+    items: z.array(z.custom<CalculatedItem>()),
+    total_net_carbs_g: z.number(),
+    recommended_dose: z.number(),
+    correction: z.custom<CalculationResult["correction"]>().optional(),
+    fat_protein_adjustment: z
+      .custom<CalculationResult["fat_protein_adjustment"]>()
+      .optional(),
+    trace: z.custom<CalculationResult["trace"]>().optional(),
+  }),
+  units: z.number().min(0),
+  pre_bolus_minutes: z.number().int().min(0).max(60).default(0),
 });
 
 const timelineEntrySchema = z.discriminatedUnion("type", [
@@ -140,58 +165,65 @@ export function createRoutes(
         });
       }
 
-      const result = outcome.result;
-      const preBolusMs = (parsed.data.pre_bolus_minutes ?? 0) * 60_000;
-      const now = clock();
-
-      const doseUnits =
-        result.fat_protein_adjustment?.total_dose ??
-        result.correction?.total_dose ??
-        result.recommended_dose;
-
-      const mealEntry: MealEntry = {
-        id: result.id,
-        timestamp: new Date(now.getTime() + preBolusMs).toISOString(),
-        type: "meal",
-        input_text: result.input_text,
-        language: result.language,
-        meal_window: result.meal_window,
-        items: result.items,
-        total_net_carbs_g: result.total_net_carbs_g,
-        recommended_dose: result.recommended_dose,
-        correction: result.correction,
-        fat_protein_adjustment: result.fat_protein_adjustment,
-        trace: result.trace,
-      };
-
-      const entries: TimelineEntry[] = [mealEntry];
-      let insulinEntryId: string | null = null;
-      if (doseUnits > 0) {
-        const insulinEntry: FastInsulinEntry = {
-          id: crypto.randomUUID(),
-          timestamp: now.toISOString(),
-          type: "fast_insulin",
-          units: doseUnits,
-          insulin_id: bolusInsulinId,
-          related_meal_id: mealEntry.id,
-        };
-        entries.push(insulinEntry);
-        insulinEntryId = insulinEntry.id;
-      }
-
-      await storage.addTimelineEntries(entries);
-      await storage.learnFromItems(result.items);
-
-      return c.json({
-        status: "ok" as const,
-        result,
-        meal_entry_id: mealEntry.id,
-        insulin_entry_id: insulinEntryId,
-      });
+      return c.json({ status: "ok" as const, result: outcome.result });
     } catch (e) {
       const message = e instanceof Error ? e.message : "Unknown error";
       return apiError(c, "internal_error", 500, message);
     }
+  });
+
+  api.post("/api/meals", async (c) => {
+    const parsed = logMealSchema.safeParse(await c.req.json());
+    if (!parsed.success) {
+      return apiError(c, "validation_failed", 400, parsed.error.message);
+    }
+    const settings = await storage.getSettings();
+    const bolusInsulinId = settings.bolus_insulin_id;
+    if (bolusInsulinId === null) {
+      return apiError(c, "bolus_insulin_not_configured", 400);
+    }
+
+    const { result } = parsed.data;
+    const now = clock();
+    const preBolusMs = parsed.data.pre_bolus_minutes * 60_000;
+    const mealEntry: MealEntry = {
+      id: crypto.randomUUID(),
+      timestamp: new Date(now.getTime() + preBolusMs).toISOString(),
+      type: "meal",
+      input_text: result.input_text,
+      language: result.language,
+      meal_window: result.meal_window,
+      items: result.items,
+      total_net_carbs_g: result.total_net_carbs_g,
+      recommended_dose: result.recommended_dose,
+      correction: result.correction,
+      fat_protein_adjustment: result.fat_protein_adjustment,
+      trace: result.trace,
+    };
+
+    const entries: TimelineEntry[] = [mealEntry];
+    let insulinEntryId: string | null = null;
+    if (parsed.data.units > 0) {
+      const insulinEntry: FastInsulinEntry = {
+        id: crypto.randomUUID(),
+        timestamp: now.toISOString(),
+        type: "fast_insulin",
+        units: parsed.data.units,
+        insulin_id: bolusInsulinId,
+        related_meal_id: mealEntry.id,
+      };
+      entries.push(insulinEntry);
+      insulinEntryId = insulinEntry.id;
+    }
+
+    await storage.addTimelineEntries(entries);
+    await storage.learnFromItems(result.items);
+
+    const response: LogMealResponse = {
+      meal_entry_id: mealEntry.id,
+      insulin_entry_id: insulinEntryId,
+    };
+    return c.json(response);
   });
 
   api.get("/api/settings", async (c) => {

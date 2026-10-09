@@ -176,15 +176,12 @@ export interface CalculateRequest {
   food_description: string;
   current_blood_sugar?: number;
   meal_window_override?: string;
-  pre_bolus_minutes?: number;
 }
 
 export type CalculateResponse =
   | {
       status: "ok";
       result: CalculationResult;
-      meal_entry_id: string;
-      insulin_entry_id: string | null;
     }
   | {
       status: "needs_clarification";
@@ -195,6 +192,17 @@ export type CalculateResponse =
       status: "rejected";
       message: string;
     };
+
+export interface LogMealRequest {
+  result: CalculationResult;
+  units: number;
+  pre_bolus_minutes?: number;
+}
+
+export interface LogMealResponse {
+  meal_entry_id: string;
+  insulin_entry_id: string | null;
+}
 
 export type ApiErrorCode =
   | "bolus_insulin_not_configured"
