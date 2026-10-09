@@ -27,9 +27,6 @@ test.describe("full user flow", () => {
     // Enter a food description
     await page.locator("textarea").fill("150g rice with chicken");
 
-    // Select a meal window explicitly so the test is deterministic
-    await page.locator("#meal-window").selectOption({ index: 2 });
-
     // Submit the form
     await page.locator("form").getByRole("button").click();
 
@@ -90,7 +87,6 @@ test.describe("full user flow", () => {
 
     // Calculate something first
     await page.locator("textarea").fill("a banana");
-    await page.locator("#meal-window").selectOption({ index: 1 });
     await page.locator("form").getByRole("button").click();
     await expect(page.locator(".result-dose")).toBeVisible({ timeout: 5000 });
 
@@ -111,7 +107,6 @@ test.describe("full user flow", () => {
     await page.goto("/");
 
     await page.locator("textarea").fill("100g something exotic");
-    await page.locator("#meal-window").selectOption({ index: 1 });
     await page.locator("form").getByRole("button").click();
     await expect(page.locator(".result-dose")).toBeVisible({ timeout: 5000 });
 
@@ -141,7 +136,6 @@ test.describe("full user flow", () => {
 
     await page.locator("textarea").fill("a banana");
     await page.locator("#blood-sugar").fill("180");
-    await page.locator("#meal-window").selectOption({ index: 1 });
     await page.locator("form").getByRole("button").click();
 
     await expect(page.locator(".result-dose")).toBeVisible({ timeout: 5000 });

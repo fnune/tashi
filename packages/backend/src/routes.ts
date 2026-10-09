@@ -14,6 +14,7 @@ import type {
 import {
   basalInsulinProfiles,
   bolusInsulinProfiles,
+  findMealWindow,
   insulinOnBoard,
   MAX_DIA_MINUTES,
   MIN_DIA_MINUTES,
@@ -104,6 +105,12 @@ export function createRoutes(
     const bolusInsulinId = settings.bolus_insulin_id;
     if (bolusInsulinId === null) {
       return apiError(c, "bolus_insulin_not_configured", 400);
+    }
+    if (
+      !parsed.data.meal_window_override &&
+      findMealWindow(settings, clock()) === null
+    ) {
+      return apiError(c, "no_meal_window", 400);
     }
     const vocabulary = await storage.getVocabulary();
 

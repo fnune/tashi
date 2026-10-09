@@ -95,6 +95,8 @@ const translations = {
       "Choose which long-acting insulin you're using in settings first.",
     insulin_action_not_configured:
       "Choose which insulin you're using in settings to see insulin on board.",
+    no_meal_window:
+      "No meal window covers this time. Add one in settings to calculate a dose.",
     validation_failed: "Please check the values you entered.",
     not_found: "Not found.",
     internal_error: "Something went wrong. Please try again.",
@@ -194,6 +196,8 @@ const translations = {
       "Elige qué insulina lenta usas en ajustes primero.",
     insulin_action_not_configured:
       "Elige qué insulina usas en ajustes para ver la insulina activa.",
+    no_meal_window:
+      "Ninguna franja cubre esta hora. Añade una en ajustes para calcular la dosis.",
     validation_failed: "Revisa los valores introducidos.",
     not_found: "No encontrado.",
     internal_error: "Algo salió mal. Inténtalo de nuevo.",

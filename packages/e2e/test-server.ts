@@ -131,7 +131,12 @@ async function startServer(): Promise<void> {
   );
 
   const parser = new FakeFoodParser();
-  const calculator = new Calculator(parser, foodDb);
+  const lunchtimeClock = () => {
+    const now = new Date();
+    now.setHours(13, 0, 0, 0);
+    return now;
+  };
+  const calculator = new Calculator(parser, foodDb, lunchtimeClock);
 
   const app = new Hono();
   app.use("/api/*", cors());
@@ -156,7 +161,7 @@ async function startServer(): Promise<void> {
     return c.json({ ok: true });
   });
 
-  const routes = createRoutes(calculator, storage);
+  const routes = createRoutes(calculator, storage, lunchtimeClock);
   app.route("/", routes);
 
   app.use("/*", serveStatic({ root: "../frontend/dist" }));

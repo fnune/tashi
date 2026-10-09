@@ -13,7 +13,6 @@ import { ResultTable } from "./ResultTable.js";
 export interface CalculatorFormState {
   foodText: string;
   bloodSugar: string;
-  mealOverride: string;
   preBolus: string;
 }
 
@@ -34,7 +33,7 @@ export function CalculatorView({
   formState,
   onFormChange,
 }: CalculatorViewProps) {
-  const { foodText, bloodSugar, mealOverride, preBolus } = formState;
+  const { foodText, bloodSugar, preBolus } = formState;
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [clarification, setClarification] = useState<{
@@ -64,9 +63,6 @@ export function CalculatorView({
     if (bloodSugar) {
       req.current_blood_sugar = Number.parseFloat(bloodSugar);
     }
-    if (mealOverride) {
-      req.meal_window_override = mealOverride;
-    }
     if (preBolus) {
       req.pre_bolus_minutes = Number.parseInt(preBolus, 10);
     }
@@ -83,7 +79,8 @@ export function CalculatorView({
       if (
         err instanceof api.ApiError &&
         (err.code === "bolus_insulin_not_configured" ||
-          err.code === "insulin_action_not_configured")
+          err.code === "insulin_action_not_configured" ||
+          err.code === "no_meal_window")
       ) {
         setConfigPrompt(t(lang, err.code));
       } else {
@@ -148,21 +145,6 @@ export function CalculatorView({
               value={bloodSugar}
               onChange={(e) => update({ bloodSugar: e.target.value })}
             />
-          </div>
-          <div className="input-group">
-            <label htmlFor="meal-window">{t(lang, "mealWindow")}</label>
-            <select
-              id="meal-window"
-              value={mealOverride}
-              onChange={(e) => update({ mealOverride: e.target.value })}
-            >
-              <option value="">{t(lang, "auto")}</option>
-              {settings.meal_windows.map((w) => (
-                <option key={w.name} value={w.name}>
-                  {w.name} ({w.start_hour}:00-{w.end_hour}:00 | 1U:{w.ratio}g)
-                </option>
-              ))}
-            </select>
           </div>
           <div className="input-group">
             <label htmlFor="pre-bolus">

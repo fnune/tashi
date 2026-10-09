@@ -24,7 +24,6 @@ import type { Language } from "./i18n.js";
 const INITIAL_FORM: CalculatorFormState = {
   foodText: "",
   bloodSugar: "",
-  mealOverride: "",
   preBolus: "",
 };
 

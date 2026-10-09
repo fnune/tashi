@@ -200,6 +200,7 @@ export type ApiErrorCode =
   | "bolus_insulin_not_configured"
   | "basal_insulin_not_configured"
   | "insulin_action_not_configured"
+  | "no_meal_window"
   | "validation_failed"
   | "not_found"
   | "internal_error";

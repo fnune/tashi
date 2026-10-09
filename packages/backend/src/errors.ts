@@ -8,6 +8,7 @@ const FALLBACK_MESSAGES: Record<ApiErrorCode, string> = {
     "Choose which long-acting insulin you're using in settings first.",
   insulin_action_not_configured:
     "Choose which insulin you're using in settings to see insulin on board.",
+  no_meal_window: "No meal window covers the current time",
   validation_failed: "Invalid request.",
   not_found: "Not found.",
   internal_error: "Something went wrong.",

@@ -159,6 +159,24 @@ describe("API routes", () => {
     expect(body.code).toBe("bolus_insulin_not_configured");
   });
 
+  it("POST /api/calculate rejects a time no meal window covers", async () => {
+    parser.setResponse("rice", [carbItem(30)]);
+    await storage.saveSettings({
+      ...configured(),
+      meal_windows: [{ name: "never", start_hour: 0, end_hour: 0, ratio: 10 }],
+    });
+
+    const res = await app.request("/api/calculate", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ food_description: "rice" }),
+    });
+
+    expect(res.status).toBe(400);
+    const body = (await res.json()) as { code?: string };
+    expect(body.code).toBe("no_meal_window");
+  });
+
   it("POST /api/calculate does not log an injection for a zero-unit dose", async () => {
     parser.setResponse("lettuce", [carbItem(0)]);
     await storage.saveSettings(configured());
