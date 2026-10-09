@@ -3,37 +3,52 @@ import type {
   CalculationResult,
   InsulinOnBoard,
   Settings,
+  TimelineEntry,
 } from "@pincho/shared";
+import { latestRecentReading } from "@pincho/shared";
 import { useState } from "react";
 import { Link } from "react-router";
 import * as api from "../api.js";
 import { apiErrorText, type Language, t } from "../i18n.js";
-import { ResultTable } from "./ResultTable.js";
+import { MealBreakdown } from "./MealBreakdown.js";
+import { SensorCard } from "./SensorCard.js";
+import { Button } from "./ui/Button.js";
+import { Segmented } from "./ui/Segmented.js";
+import "./CalculatorView.css";
 
 export interface CalculatorFormState {
   foodText: string;
-  bloodSugar: string;
-  preBolus: string;
+  preBolusMinutes: number;
 }
 
 interface CalculatorViewProps {
   settings: Settings;
   lang: Language;
   iob: InsulinOnBoard | null;
-  onNewResult: () => void;
+  timeline: TimelineEntry[];
+  onDataChanged: () => void;
   formState: CalculatorFormState;
   onFormChange: (state: CalculatorFormState) => void;
 }
+
+const PRE_BOLUS_OPTIONS = [0, 10, 20, 30];
+
+const SETUP_ERRORS = new Set([
+  "bolus_insulin_not_configured",
+  "insulin_action_not_configured",
+  "no_meal_window",
+]);
 
 export function CalculatorView({
   settings,
   lang,
   iob,
-  onNewResult,
+  timeline,
+  onDataChanged,
   formState,
   onFormChange,
 }: CalculatorViewProps) {
-  const { foodText, bloodSugar, preBolus } = formState;
+  const { foodText, preBolusMinutes } = formState;
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [clarification, setClarification] = useState<{
@@ -41,10 +56,16 @@ export function CalculatorView({
     message: string;
   } | null>(null);
   const [result, setResult] = useState<CalculationResult | null>(null);
-  const [configPrompt, setConfigPrompt] = useState<string | null>(null);
+  const [setupPrompt, setSetupPrompt] = useState<string | null>(null);
+  const reading = latestRecentReading(timeline, new Date());
 
-  function update(patch: Partial<CalculatorFormState>) {
-    onFormChange({ ...formState, ...patch });
+  async function saveReading(value: number) {
+    await api.createTimelineEntry({
+      type: "glucose_reading",
+      value,
+      unit: settings.glucose_unit,
+    });
+    onDataChanged();
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -54,35 +75,28 @@ export function CalculatorView({
     setLoading(true);
     setError(null);
     setClarification(null);
-    setConfigPrompt(null);
+    setSetupPrompt(null);
     setResult(null);
 
-    const req: CalculateRequest = {
-      food_description: foodText.trim(),
-    };
-    if (bloodSugar) {
-      req.current_blood_sugar = Number.parseFloat(bloodSugar);
-    }
-    if (preBolus) {
-      req.pre_bolus_minutes = Number.parseInt(preBolus, 10);
-    }
+    const req: CalculateRequest = { food_description: foodText.trim() };
+    if (reading) req.current_blood_sugar = reading.value;
+    if (preBolusMinutes) req.pre_bolus_minutes = preBolusMinutes;
 
     try {
       const res = await api.calculate(req);
       if (res.status === "ok") {
         setResult(res.result);
-        onNewResult();
+        onDataChanged();
       } else {
         setClarification({ kind: res.status, message: res.message });
       }
     } catch (err) {
       if (
         err instanceof api.ApiError &&
-        (err.code === "bolus_insulin_not_configured" ||
-          err.code === "insulin_action_not_configured" ||
-          err.code === "no_meal_window")
+        err.code &&
+        SETUP_ERRORS.has(err.code)
       ) {
-        setConfigPrompt(t(lang, err.code));
+        setSetupPrompt(apiErrorText(lang, err));
       } else {
         setError(apiErrorText(lang, err));
       }
@@ -91,91 +105,85 @@ export function CalculatorView({
     }
   }
 
-  const insulinConfigured =
-    settings.bolus_insulin_id !== null &&
-    settings.insulin_action_minutes !== null;
-
   return (
-    <div>
-      <div className="iob-banner">
-        {!insulinConfigured ? (
-          <span>
-            {t(lang, "iobSetupPrompt")}{" "}
-            <Link to="/settings" className="iob-setup-link">
-              {t(lang, "goToSettings")}
-            </Link>
-          </span>
-        ) : iob !== null && iob.total_units > 0.05 ? (
-          <span>
-            {t(lang, "insulinOnBoard")}: {iob.total_units.toFixed(1)} U.
-          </span>
-        ) : (
-          <span>{t(lang, "iobZero")}</span>
-        )}
-      </div>
-      <form className="calculator-form" onSubmit={handleSubmit}>
-        <textarea
-          className="food-input"
-          value={foodText}
-          onChange={(e) => update({ foodText: e.target.value })}
-          placeholder={t(lang, "foodPlaceholder")}
-        />
-        {clarification && (
-          <div
-            className={
-              clarification.kind === "rejected"
-                ? "rejection-box"
-                : "clarification-box"
+    <div className="calculator">
+      <SensorCard
+        settings={settings}
+        lang={lang}
+        reading={reading}
+        iob={iob}
+        onSaveReading={saveReading}
+      />
+
+      {result ? (
+        <>
+          <section className="meal-summary">
+            <p>{result.input_text}</p>
+            <button
+              type="button"
+              className="meal-summary-change"
+              onClick={() => setResult(null)}
+            >
+              {t(lang, "changeMeal")}
+            </button>
+          </section>
+          <MealBreakdown
+            result={result}
+            lang={lang}
+            penIncrement={settings.pen_increment}
+          />
+          <p className="calculator-logged">✓ {t(lang, "loggedInHistory")}</p>
+        </>
+      ) : (
+        <form className="meal-form" onSubmit={handleSubmit}>
+          <label className="meal-form-label" htmlFor="meal-text">
+            {t(lang, "whatAreYouEating")}
+          </label>
+          <textarea
+            id="meal-text"
+            className="meal-form-text"
+            value={foodText}
+            onChange={(e) =>
+              onFormChange({ ...formState, foodText: e.target.value })
             }
-          >
-            {clarification.message}
-          </div>
-        )}
-        <div className="input-row">
-          <div className="input-group">
-            <label htmlFor="blood-sugar">
-              {t(lang, "currentBloodSugar")} ({settings.glucose_unit},{" "}
-              {t(lang, "optional")})
-            </label>
-            <input
-              id="blood-sugar"
-              type="number"
-              step="0.1"
-              min="0"
-              value={bloodSugar}
-              onChange={(e) => update({ bloodSugar: e.target.value })}
+            placeholder={t(lang, "foodPlaceholder")}
+          />
+          {clarification && (
+            <div
+              className={
+                clarification.kind === "rejected"
+                  ? "rejection-box"
+                  : "clarification-box"
+              }
+            >
+              {clarification.message}
+            </div>
+          )}
+          <div className="meal-form-field">
+            <span className="meal-form-label">{t(lang, "eatingIn")}</span>
+            <Segmented
+              label={t(lang, "eatingIn")}
+              value={preBolusMinutes}
+              options={PRE_BOLUS_OPTIONS.map((minutes) => ({
+                value: minutes,
+                label: minutes ? `${minutes} min` : t(lang, "now"),
+              }))}
+              onChange={(minutes) =>
+                onFormChange({ ...formState, preBolusMinutes: minutes })
+              }
             />
           </div>
-          <div className="input-group">
-            <label htmlFor="pre-bolus">
-              {t(lang, "eatingIn")} ({t(lang, "minutes")})
-            </label>
-            <input
-              id="pre-bolus"
-              type="number"
-              min="0"
-              max="60"
-              step="1"
-              value={preBolus}
-              onChange={(e) => update({ preBolus: e.target.value })}
-              placeholder="0"
-            />
-          </div>
-        </div>
-        <button
-          type="submit"
-          className="btn btn-primary"
-          disabled={loading || !foodText.trim()}
-        >
-          {loading ? t(lang, "calculating") : t(lang, "calculate")}
-        </button>
-      </form>
+          <Button type="submit" disabled={loading || !foodText.trim()}>
+            {loading ? t(lang, "calculating") : t(lang, "calculateDose")}
+          </Button>
+        </form>
+      )}
 
       {error && <div className="error-box">{error}</div>}
 
-      {configPrompt && (
+      {setupPrompt && (
         <div className="info-box">
-          <span>{configPrompt}</span>
+          <span>{setupPrompt}</span>
           <Link to="/settings" className="btn btn-small btn-secondary">
             {t(lang, "goToSettings")}
           </Link>
@@ -189,14 +197,6 @@ export function CalculatorView({
           <span className="loading-dot" />
           <span>{t(lang, "calculating")}</span>
         </div>
-      )}
-
-      {result && (
-        <ResultTable
-          result={result}
-          lang={lang}
-          glucoseUnit={settings.glucose_unit}
-        />
       )}
     </div>
   );

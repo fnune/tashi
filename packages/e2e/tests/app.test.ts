@@ -1,8 +1,11 @@
 import { expect, test } from "@playwright/test";
 
 test.describe("full user flow", () => {
-  test.beforeEach(async ({ request }) => {
+  test.beforeEach(async ({ request, page }) => {
     await request.post("http://localhost:3100/api/__reset");
+    const serverLunchtime = new Date();
+    serverLunchtime.setHours(13, 0, 0, 0);
+    await page.clock.setFixedTime(serverLunchtime);
   });
 
   test("configure settings, calculate a meal, check history", async ({
@@ -23,19 +26,13 @@ test.describe("full user flow", () => {
     await page.locator("textarea").fill("150g rice with chicken");
 
     // Submit the form
-    await page.locator("form").getByRole("button").click();
+    await page.getByRole("button", { name: "Calculate dose" }).click();
 
     // Wait for result
-    await expect(page.locator(".result-dose")).toBeVisible({ timeout: 5000 });
+    await expect(page.locator(".dose")).toBeVisible({ timeout: 5000 });
 
-    // Verify the result table shows items (rice + chicken + total = 3 rows)
-    const rows = page.locator(".result-table tbody tr");
-    const rowCount = await rows.count();
-    expect(rowCount).toBeGreaterThanOrEqual(3);
-
-    // Check that the dose is displayed
-    const doseText = await page.locator(".result-dose").textContent();
-    expect(doseText).toContain("U");
+    await expect(page.locator(".food")).toHaveCount(2);
+    await expect(page.locator(".dose-total")).toContainText("U");
 
     // Go to history
     await page.getByRole("navigation").getByText("History").click();
@@ -80,8 +77,8 @@ test.describe("full user flow", () => {
 
     // Calculate something first
     await page.locator("textarea").fill("a banana");
-    await page.locator("form").getByRole("button").click();
-    await expect(page.locator(".result-dose")).toBeVisible({ timeout: 5000 });
+    await page.getByRole("button", { name: "Calculate dose" }).click();
+    await expect(page.locator(".dose")).toBeVisible({ timeout: 5000 });
 
     // Go to history
     await page.getByRole("navigation").getByText("History").click();
@@ -100,8 +97,8 @@ test.describe("full user flow", () => {
     await page.goto("/");
 
     await page.locator("textarea").fill("100g something exotic");
-    await page.locator("form").getByRole("button").click();
-    await expect(page.locator(".result-dose")).toBeVisible({ timeout: 5000 });
+    await page.getByRole("button", { name: "Calculate dose" }).click();
+    await expect(page.locator(".dose")).toBeVisible({ timeout: 5000 });
 
     await expect(page.locator(".estimated-badge")).toBeVisible();
   });
@@ -127,16 +124,19 @@ test.describe("full user flow", () => {
     // Go to calculator
     await page.getByRole("navigation").getByText("Calculate").click();
 
-    await page.locator("textarea").fill("a banana");
-    await page.locator("#blood-sugar").fill("180");
-    await page.locator("form").getByRole("button").click();
+    await page.getByRole("button", { name: "Current glucose" }).click();
+    await page.getByLabel(/Read it from your meter/).fill("180");
+    await page
+      .getByRole("dialog")
+      .getByRole("button", { name: "Save" })
+      .click();
+    await expect(page.locator(".sensor-correction")).toHaveText("+2 U");
 
-    await expect(page.locator(".result-dose")).toBeVisible({ timeout: 5000 });
-    const doseText = await page.locator(".dose-line").textContent();
-    expect(doseText).toContain("+");
-    expect(doseText).toContain("=");
-    const detailText = await page.locator(".dose-detail").textContent();
-    expect(detailText).toContain("180");
+    await page.locator("textarea").fill("a banana");
+    await page.getByRole("button", { name: "Calculate dose" }).click();
+
+    await expect(page.locator(".dose")).toBeVisible({ timeout: 5000 });
+    await expect(page.locator(".dose-parts")).toContainText("+2 U");
   });
 
   test("meal windows keep the whole day covered while editing", async ({

@@ -23,8 +23,7 @@ import type { Language } from "./i18n.js";
 
 const INITIAL_FORM: CalculatorFormState = {
   foodText: "",
-  bloodSugar: "",
-  preBolus: "",
+  preBolusMinutes: 0,
 };
 
 const IOB_REFRESH_INTERVAL_MS = 30_000;
@@ -123,7 +122,8 @@ function AppShell() {
               settings={settings}
               lang={lang}
               iob={iob}
-              onNewResult={handleDataChanged}
+              timeline={timeline}
+              onDataChanged={handleDataChanged}
               formState={calcForm}
               onFormChange={setCalcForm}
             />

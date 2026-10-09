@@ -8,7 +8,7 @@ import type {
 import { useState } from "react";
 import * as api from "../api.js";
 import { apiErrorText, type Language, t } from "../i18n.js";
-import { ResultTable } from "./ResultTable.js";
+import { MealBreakdown } from "./MealBreakdown.js";
 
 interface TimelineViewProps {
   timeline: TimelineEntry[];
@@ -139,6 +139,7 @@ function EntryCard({
   entry,
   lang,
   glucoseUnit,
+  penIncrement,
   expanded,
   onToggle,
   onDelete,
@@ -148,6 +149,7 @@ function EntryCard({
   entry: TimelineEntry;
   lang: Language;
   glucoseUnit: GlucoseUnit;
+  penIncrement: number;
   expanded: boolean;
   onToggle: () => void;
   onDelete: () => void;
@@ -273,7 +275,7 @@ function EntryCard({
           {entry.type === "meal" && (
             <div className="entry-meal-detail">
               <div className="entry-input-text">{entry.input_text}</div>
-              <ResultTable
+              <MealBreakdown
                 result={{
                   id: entry.id,
                   timestamp: entry.timestamp,
@@ -287,7 +289,7 @@ function EntryCard({
                   fat_protein_adjustment: entry.fat_protein_adjustment,
                 }}
                 lang={lang}
-                glucoseUnit={glucoseUnit}
+                penIncrement={penIncrement}
               />
             </div>
           )}
@@ -398,6 +400,7 @@ export function TimelineView({
           entry={entry}
           lang={lang}
           glucoseUnit={settings.glucose_unit}
+          penIncrement={settings.pen_increment}
           expanded={expandedId === entry.id}
           onToggle={() =>
             onExpand(expandedId === entry.id ? undefined : entry.id)

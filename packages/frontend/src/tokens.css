@@ -99,6 +99,8 @@
   --icon-md: 1.5rem;
   --icon-lg: 1.75rem;
   --control-height: 2.75rem;
+  --dial-size: 8rem;
+  --dial-ring: 0.625rem;
 }
 
 @media (prefers-color-scheme: dark) {
