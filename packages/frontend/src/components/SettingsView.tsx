@@ -1,26 +1,70 @@
 import type {
   BasalInsulinId,
+  BolusInsulinId,
   GlucoseUnit,
   MealWindow,
   Settings,
   SourceRef,
 } from "@pincho/shared";
 import {
+  allowedEndHours,
+  allowedStartHours,
   basalInsulinProfiles,
   bolusInsulinProfiles,
+  extendWindowOverGap,
+  getBasalInsulinProfile,
   getBolusInsulinProfile,
   MAX_DIA_MINUTES,
   MIN_DIA_MINUTES,
+  mergeWindowIntoPrevious,
+  moveWindowEnd,
+  moveWindowStart,
+  sortByStart,
+  splitLongestWindow,
+  uncoveredHours,
+  windowLength,
 } from "@pincho/shared";
 import { useState } from "react";
 import * as api from "../api.js";
 import { apiErrorText, type Language, t } from "../i18n.js";
+import { DayBar } from "./DayBar.js";
 import { IobCurve } from "./IobCurve.js";
+import { Logo } from "./Logo.js";
+import { Button } from "./ui/Button.js";
+import {
+  NumberField,
+  parseDecimal,
+  SelectField,
+  TextField,
+} from "./ui/Field.js";
+import { ListButton, ListGroup, ListRow } from "./ui/List.js";
+import { OptionList } from "./ui/OptionList.js";
+import { Segmented } from "./ui/Segmented.js";
+import { Sheet } from "./ui/Sheet.js";
+import "./SettingsView.css";
 
 interface SettingsViewProps {
   settings: Settings;
   onSave: (s: Settings) => void;
   lang: Language;
+}
+
+type Editing =
+  | { kind: "window"; index: number; draft: MealWindow[] }
+  | { kind: "correction" }
+  | { kind: "target" }
+  | { kind: "fatProtein" }
+  | { kind: "bolus" }
+  | { kind: "basal" };
+
+const SERIES_COUNT = 4;
+
+function formatHour(hour: number): string {
+  return `${String(hour % 24).padStart(2, "0")}:00`;
+}
+
+function formatRange(window: { start_hour: number; end_hour: number }) {
+  return `${formatHour(window.start_hour)}–${formatHour(window.end_hour)}`;
 }
 
 function formatMinutes(minutes: number): string {
@@ -41,379 +85,581 @@ function dedupeSources(sources: SourceRef[]): SourceRef[] {
 }
 
 export function SettingsView({ settings, onSave, lang }: SettingsViewProps) {
-  const [local, setLocal] = useState<Settings>({ ...settings });
-  const [saving, setSaving] = useState(false);
-  const [saved, setSaved] = useState(false);
+  const [editing, setEditing] = useState<Editing | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const number = new Intl.NumberFormat(lang, { maximumFractionDigits: 2 });
+  const unit = settings.glucose_unit;
+  const windows = sortByStart(settings.meal_windows);
+  const gaps = uncoveredHours(windows);
 
-  const bolusProfile = local.bolus_insulin_id
-    ? getBolusInsulinProfile(local.bolus_insulin_id)
-    : null;
-  const bolusSources = bolusProfile
-    ? dedupeSources([bolusProfile.label_source, ...bolusProfile.action.sources])
-    : [];
-  const dia = local.insulin_action_minutes;
-  const diaPlottable =
-    bolusProfile != null &&
-    dia != null &&
-    dia >= MIN_DIA_MINUTES &&
-    dia <= MAX_DIA_MINUTES &&
-    bolusProfile.action.peak_minutes * 2 < dia;
-  const diaOutOfRange = dia != null && !diaPlottable;
-  const diaRangeMessage = t(lang, "insulinActionOutOfRange")
-    .replace("{min}", String(MIN_DIA_MINUTES))
-    .replace("{max}", String(MAX_DIA_MINUTES));
-
-  function updateWindow(
-    index: number,
-    field: keyof MealWindow,
-    value: string | number,
-  ) {
-    const windows = [...local.meal_windows];
-    const window = windows[index];
-    if (!window) return;
-    windows[index] = { ...window, [field]: value };
-    setLocal({ ...local, meal_windows: windows });
+  async function persist(next: Settings) {
+    setError(null);
+    try {
+      onSave(await api.saveSettings(next));
+      setEditing(null);
+    } catch (e) {
+      setError(apiErrorText(lang, e));
+    }
   }
 
   function addWindow() {
-    setLocal({
-      ...local,
-      meal_windows: [
-        ...local.meal_windows,
-        { name: "", start_hour: 0, end_hour: 24, ratio: 10 },
-      ],
-    });
+    const { windows: next, addedIndex } = splitLongestWindow(windows);
+    if (addedIndex === -1) return;
+    setEditing({ kind: "window", index: addedIndex, draft: next });
   }
 
-  function removeWindow(index: number) {
-    const windows = local.meal_windows.filter((_, i) => i !== index);
-    setLocal({ ...local, meal_windows: windows });
-  }
+  const bolus = settings.bolus_insulin_id
+    ? getBolusInsulinProfile(settings.bolus_insulin_id)
+    : null;
+  const basal = settings.basal_insulin_id
+    ? getBasalInsulinProfile(settings.basal_insulin_id)
+    : null;
 
-  function setBolusInsulin(id: string) {
-    if (id === "") {
-      setLocal({ ...local, bolus_insulin_id: null });
-      return;
-    }
-    const profile = getBolusInsulinProfile(id);
-    setLocal({
-      ...local,
-      bolus_insulin_id: profile.id,
-      insulin_action_minutes:
-        local.insulin_action_minutes ?? profile.action.duration_minutes,
-    });
-  }
+  return (
+    <div className="settings">
+      <h2 className="screen-title">{t(lang, "settings")}</h2>
 
-  function setBasalInsulin(id: string) {
-    setLocal({
-      ...local,
-      basal_insulin_id: id === "" ? null : (id as BasalInsulinId),
-    });
-  }
+      {error && !editing && <div className="error-box">{error}</div>}
 
-  async function handleSave() {
-    setSaving(true);
-    setError(null);
-    try {
-      const result = await api.saveSettings(local);
-      onSave(result);
-      setSaved(true);
-      setTimeout(() => setSaved(false), 2000);
-    } catch (e) {
-      setError(apiErrorText(lang, e));
-    } finally {
-      setSaving(false);
+      {gaps.map((gap) => {
+        const before = windows.find(
+          (w) => w.end_hour % 24 === gap.start_hour % 24,
+        );
+        return (
+          <div className="settings-gap" key={gap.start_hour}>
+            <span>
+              {t(lang, "uncoveredHours").replace("{range}", formatRange(gap))}
+            </span>
+            {before && (
+              <Button
+                variant="secondary"
+                onClick={() =>
+                  persist({
+                    ...settings,
+                    meal_windows: extendWindowOverGap(windows, gap),
+                  })
+                }
+              >
+                {t(lang, "extendWindow").replace(
+                  "{name}",
+                  before.name || t(lang, "unnamedWindow"),
+                )}
+              </Button>
+            )}
+          </div>
+        );
+      })}
+
+      <ListGroup
+        title={t(lang, "ratiosByWindow")}
+        footer={t(lang, "windowsTileDay")}
+      >
+        <DayBar windows={windows} />
+        {windows.map((w, i) => (
+          <ListButton
+            key={`${w.start_hour}-${w.name}`}
+            label={
+              <span className="window-label">
+                <span
+                  className={`window-swatch day-bar-series-${(i % SERIES_COUNT) + 1}`}
+                />
+                {w.name || t(lang, "unnamedWindow")}
+              </span>
+            }
+            detail={windowLength(w) === 24 ? t(lang, "allDay") : formatRange(w)}
+            value={`${number.format(w.ratio)} g/U`}
+            onClick={() =>
+              setEditing({ kind: "window", index: i, draft: windows })
+            }
+          />
+        ))}
+        <ListButton
+          tone="accent"
+          label={`+ ${t(lang, "addWindow")}`}
+          onClick={addWindow}
+        />
+      </ListGroup>
+
+      <ListGroup title={t(lang, "dosing")}>
+        <ListButton
+          label={t(lang, "correctionFactor")}
+          detail={t(lang, "correctionFactorDetail")}
+          value={
+            settings.correction_factor === null
+              ? t(lang, "notSet")
+              : `${number.format(settings.correction_factor)} ${unit}`
+          }
+          onClick={() => setEditing({ kind: "correction" })}
+        />
+        <ListButton
+          label={t(lang, "targetBloodSugar")}
+          value={`${number.format(settings.target_blood_sugar)} ${unit}`}
+          onClick={() => setEditing({ kind: "target" })}
+        />
+        <ListButton
+          label={t(lang, "fatProteinMultiplier")}
+          detail={t(lang, "fatProteinDetail")}
+          value={`+${Math.round(settings.fat_protein_multiplier * 100)} %`}
+          onClick={() => setEditing({ kind: "fatProtein" })}
+        />
+        <ListRow label={t(lang, "penIncrement")}>
+          <Segmented
+            label={t(lang, "penIncrement")}
+            value={settings.pen_increment}
+            options={[
+              { value: 0.5, label: `${number.format(0.5)} U` },
+              { value: 1, label: "1 U" },
+            ]}
+            onChange={(pen_increment) =>
+              persist({ ...settings, pen_increment })
+            }
+          />
+        </ListRow>
+      </ListGroup>
+
+      <ListGroup title={t(lang, "insulins")}>
+        <ListButton
+          label={t(lang, "rapidInsulin")}
+          detail={
+            bolus && settings.insulin_action_minutes
+              ? `DIA ${formatMinutes(settings.insulin_action_minutes)}`
+              : undefined
+          }
+          value={bolus?.brand_name ?? t(lang, "notSet")}
+          onClick={() => setEditing({ kind: "bolus" })}
+        />
+        <ListButton
+          label={t(lang, "basalInsulinShort")}
+          value={basal?.brand_name ?? t(lang, "notSet")}
+          onClick={() => setEditing({ kind: "basal" })}
+        />
+      </ListGroup>
+
+      <ListGroup title={t(lang, "general")}>
+        <ListRow label={t(lang, "glucoseUnit")}>
+          <Segmented<GlucoseUnit>
+            label={t(lang, "glucoseUnit")}
+            value={unit}
+            options={[
+              { value: "mg/dL", label: "mg/dL" },
+              { value: "mmol/L", label: "mmol/L" },
+            ]}
+            onChange={(glucose_unit) => persist({ ...settings, glucose_unit })}
+          />
+        </ListRow>
+        <ListRow label={t(lang, "language")}>
+          <Segmented<Language>
+            label={t(lang, "language")}
+            value={settings.language}
+            options={[
+              { value: "es", label: "Español" },
+              { value: "en", label: "English" },
+            ]}
+            onChange={(language) => persist({ ...settings, language })}
+          />
+        </ListRow>
+      </ListGroup>
+
+      <section className="settings-about">
+        <Logo className="settings-about-logo" />
+        <div>
+          <b>{t(lang, "appTitle")}</b>
+          <span>{t(lang, "aboutTagline")}</span>
+        </div>
+      </section>
+
+      <Sheet
+        open={editing?.kind === "window"}
+        title={t(lang, "editWindow")}
+        onClose={() => setEditing(null)}
+      >
+        {editing?.kind === "window" && (
+          <WindowEditor
+            lang={lang}
+            windows={editing.draft}
+            index={editing.index}
+            error={error}
+            onSave={(meal_windows) => persist({ ...settings, meal_windows })}
+          />
+        )}
+      </Sheet>
+
+      <Sheet
+        open={editing?.kind === "correction"}
+        title={t(lang, "correctionFactor")}
+        onClose={() => setEditing(null)}
+      >
+        <NumberEditor
+          lang={lang}
+          label={t(lang, "correctionFactorDetail")}
+          unit={unit}
+          initial={settings.correction_factor}
+          optional
+          error={error}
+          onSave={(correction_factor) =>
+            persist({ ...settings, correction_factor })
+          }
+        />
+      </Sheet>
+
+      <Sheet
+        open={editing?.kind === "target"}
+        title={t(lang, "targetBloodSugar")}
+        onClose={() => setEditing(null)}
+      >
+        <NumberEditor
+          lang={lang}
+          label={t(lang, "targetBloodSugar")}
+          unit={unit}
+          initial={settings.target_blood_sugar}
+          error={error}
+          onSave={(target) =>
+            target !== null &&
+            persist({ ...settings, target_blood_sugar: target })
+          }
+        />
+      </Sheet>
+
+      <Sheet
+        open={editing?.kind === "fatProtein"}
+        title={t(lang, "fatProteinMultiplier")}
+        onClose={() => setEditing(null)}
+      >
+        <NumberEditor
+          lang={lang}
+          label={t(lang, "fatProteinMultiplierHint")}
+          unit="%"
+          initial={Math.round(settings.fat_protein_multiplier * 100)}
+          max={100}
+          allowZero
+          error={error}
+          onSave={(percent) =>
+            percent !== null &&
+            persist({ ...settings, fat_protein_multiplier: percent / 100 })
+          }
+        />
+      </Sheet>
+
+      <Sheet
+        open={editing?.kind === "bolus"}
+        title={t(lang, "bolusInsulin")}
+        onClose={() => setEditing(null)}
+      >
+        <BolusEditor
+          lang={lang}
+          settings={settings}
+          error={error}
+          onSave={persist}
+        />
+      </Sheet>
+
+      <Sheet
+        open={editing?.kind === "basal"}
+        title={t(lang, "basalInsulin")}
+        onClose={() => setEditing(null)}
+      >
+        <BasalEditor
+          lang={lang}
+          initial={settings.basal_insulin_id}
+          error={error}
+          onSave={(basal_insulin_id) =>
+            persist({ ...settings, basal_insulin_id })
+          }
+        />
+      </Sheet>
+    </div>
+  );
+}
+
+function SheetError({ error }: { error: string | null }) {
+  return error ? <div className="error-box">{error}</div> : null;
+}
+
+function WindowEditor({
+  lang,
+  windows: initial,
+  index,
+  error,
+  onSave,
+}: {
+  lang: Language;
+  windows: MealWindow[];
+  index: number;
+  error: string | null;
+  onSave: (windows: MealWindow[]) => void;
+}) {
+  const [windows, setWindows] = useState(initial);
+  const window = windows[index];
+  const [ratioText, setRatioText] = useState(
+    window ? String(window.ratio).replace(".", lang === "es" ? "," : ".") : "",
+  );
+  if (!window) return null;
+
+  const ratio = parseDecimal(ratioText);
+  const valid = ratio !== null && ratio > 0;
+  const hourOptions = (hours: number[], current: number) =>
+    [...new Set([current, ...hours])]
+      .sort((a, b) => a - b)
+      .map((hour) => ({ value: hour, label: formatHour(hour) }));
+  const update = (patch: Partial<MealWindow>) =>
+    setWindows(windows.map((w, i) => (i === index ? { ...w, ...patch } : w)));
+
+  return (
+    <>
+      <TextField
+        label={t(lang, "mealName")}
+        value={window.name}
+        onChange={(name) => update({ name })}
+      />
+      {windows.length > 1 && (
+        <div className="settings-hours">
+          <SelectField
+            label={t(lang, "startsAt")}
+            value={window.start_hour % 24}
+            options={hourOptions(
+              allowedStartHours(windows, index),
+              window.start_hour % 24,
+            )}
+            onChange={(hour) =>
+              setWindows(moveWindowStart(windows, index, hour))
+            }
+          />
+          <SelectField
+            label={t(lang, "endsAt")}
+            value={window.end_hour % 24}
+            options={hourOptions(
+              allowedEndHours(windows, index),
+              window.end_hour % 24,
+            )}
+            onChange={(hour) => setWindows(moveWindowEnd(windows, index, hour))}
+          />
+        </div>
+      )}
+      <NumberField
+        label={t(lang, "ratioUnitHint")}
+        unit="g/U"
+        value={ratioText}
+        onChange={setRatioText}
+      />
+      <SheetError error={error} />
+      <Button
+        disabled={!valid}
+        onClick={() =>
+          ratio !== null &&
+          onSave(
+            windows.map((w, i) =>
+              i === index ? { ...w, ratio, name: w.name.trim() } : w,
+            ),
+          )
+        }
+      >
+        {t(lang, "save")}
+      </Button>
+      {windows.length > 1 && (
+        <Button
+          variant="danger"
+          onClick={() => onSave(mergeWindowIntoPrevious(windows, index))}
+        >
+          {t(lang, "deleteWindow")}
+        </Button>
+      )}
+    </>
+  );
+}
+
+function NumberEditor({
+  lang,
+  label,
+  unit,
+  initial,
+  optional = false,
+  allowZero = false,
+  max,
+  error,
+  onSave,
+}: {
+  lang: Language;
+  label: string;
+  unit: string;
+  initial: number | null;
+  optional?: boolean;
+  allowZero?: boolean;
+  max?: number;
+  error: string | null;
+  onSave: (value: number | null) => void;
+}) {
+  const [text, setText] = useState(
+    initial === null
+      ? ""
+      : String(initial).replace(".", lang === "es" ? "," : "."),
+  );
+  const value = parseDecimal(text);
+  const empty = text.trim() === "";
+  const inRange =
+    value !== null &&
+    (allowZero ? value >= 0 : value > 0) &&
+    (max === undefined || value <= max);
+  const valid = empty ? optional : inRange;
+
+  return (
+    <>
+      <NumberField label={label} unit={unit} value={text} onChange={setText} />
+      <SheetError error={error} />
+      <Button disabled={!valid} onClick={() => onSave(empty ? null : value)}>
+        {t(lang, "save")}
+      </Button>
+    </>
+  );
+}
+
+function BolusEditor({
+  lang,
+  settings,
+  error,
+  onSave,
+}: {
+  lang: Language;
+  settings: Settings;
+  error: string | null;
+  onSave: (settings: Settings) => void;
+}) {
+  const [insulinId, setInsulinId] = useState<BolusInsulinId | null>(
+    settings.bolus_insulin_id,
+  );
+  const [diaText, setDiaText] = useState(
+    settings.insulin_action_minutes?.toString() ?? "",
+  );
+  const profile = insulinId ? getBolusInsulinProfile(insulinId) : null;
+  const dia = parseDecimal(diaText);
+  const diaInRange =
+    dia !== null && dia >= MIN_DIA_MINUTES && dia <= MAX_DIA_MINUTES;
+  const plottable =
+    profile !== null &&
+    dia !== null &&
+    diaInRange &&
+    profile.action.peak_minutes * 2 < dia;
+  const rangeMessage = t(lang, "insulinActionOutOfRange")
+    .replace("{min}", String(MIN_DIA_MINUTES))
+    .replace("{max}", String(MAX_DIA_MINUTES));
+  const sources = profile
+    ? dedupeSources([profile.label_source, ...profile.action.sources])
+    : [];
+
+  function pick(id: BolusInsulinId) {
+    setInsulinId(id);
+    if (!diaText) {
+      setDiaText(String(getBolusInsulinProfile(id).action.duration_minutes));
     }
   }
 
   return (
-    <div className="settings">
-      <div className="settings-section">
-        <h3>{t(lang, "mealWindows")}</h3>
-        {local.meal_windows.map((w, i) => (
-          <div className="meal-window-row" key={`window-${w.name}-${i}`}>
-            <input
-              type="text"
-              value={w.name}
-              placeholder={t(lang, "mealName")}
-              onChange={(e) => updateWindow(i, "name", e.target.value)}
-            />
-            <input
-              type="number"
-              min="0"
-              max="23"
-              value={w.start_hour}
-              onChange={(e) =>
-                updateWindow(
-                  i,
-                  "start_hour",
-                  Number.parseInt(e.target.value, 10),
-                )
-              }
-            />
-            <span>-</span>
-            <input
-              type="number"
-              min="0"
-              max="24"
-              value={w.end_hour}
-              onChange={(e) =>
-                updateWindow(i, "end_hour", Number.parseInt(e.target.value, 10))
-              }
-            />
-            <input
-              type="number"
-              min="1"
-              step="0.5"
-              value={w.ratio}
-              onChange={(e) =>
-                updateWindow(i, "ratio", Number.parseFloat(e.target.value))
-              }
-            />
-            <span>g/U</span>
-            <button
-              type="button"
-              className="btn btn-small btn-danger"
-              onClick={() => removeWindow(i)}
-            >
-              {t(lang, "remove")}
-            </button>
-          </div>
-        ))}
-        <button
-          type="button"
-          className="btn btn-small btn-secondary"
-          onClick={addWindow}
-        >
-          + {t(lang, "addWindow")}
-        </button>
-      </div>
-
-      <div className="settings-section">
-        <h3>
-          {t(lang, "correctionFactor")} ({t(lang, "correctionFactorHint")}{" "}
-          {local.glucose_unit})
-        </h3>
-        <input
-          type="number"
-          step="0.1"
-          min="0"
-          value={local.correction_factor ?? ""}
-          onChange={(e) =>
-            setLocal({
-              ...local,
-              correction_factor: e.target.value
-                ? Number.parseFloat(e.target.value)
-                : null,
-            })
-          }
-        />
-      </div>
-
-      <div className="settings-section">
-        <h3>{t(lang, "fatProteinMultiplier")}</h3>
-        <span className="settings-hint">
-          {t(lang, "fatProteinMultiplierHint")}
-        </span>
-        <input
-          type="number"
-          step="0.05"
-          min="0"
-          max="1"
-          value={local.fat_protein_multiplier}
-          onChange={(e) =>
-            setLocal({
-              ...local,
-              fat_protein_multiplier: Number.parseFloat(e.target.value) || 0,
-            })
-          }
-        />
-      </div>
-
-      <div className="settings-section">
-        <h3>
-          {t(lang, "targetBloodSugar")} ({local.glucose_unit})
-        </h3>
-        <input
-          type="number"
-          step="0.1"
-          min="0"
-          value={local.target_blood_sugar}
-          onChange={(e) =>
-            setLocal({
-              ...local,
-              target_blood_sugar: Number.parseFloat(e.target.value),
-            })
-          }
-        />
-      </div>
-
-      <div className="settings-section">
-        <h3>{t(lang, "penIncrement")}</h3>
-        <select
-          value={local.pen_increment}
-          onChange={(e) =>
-            setLocal({
-              ...local,
-              pen_increment: Number.parseFloat(e.target.value) as 0.5 | 1,
-            })
-          }
-        >
-          <option value="0.5">0.5U</option>
-          <option value="1">1U</option>
-        </select>
-      </div>
-
-      <div className="settings-section">
-        <h3>{t(lang, "insulin")}</h3>
-        <label className="settings-hint" htmlFor="bolus-insulin">
-          {t(lang, "bolusInsulin")}
-        </label>
-        <select
-          id="bolus-insulin"
-          value={local.bolus_insulin_id ?? ""}
-          onChange={(e) => setBolusInsulin(e.target.value)}
-        >
-          <option value="">{t(lang, "selectInsulin")}</option>
-          {bolusInsulinProfiles().map((p) => (
-            <option key={p.id} value={p.id}>
-              {p.brand_name} ({p.generic_name})
-            </option>
-          ))}
-        </select>
-
-        {local.bolus_insulin_id && (
-          <div className="insulin-bolus-group">
-            <label className="settings-hint" htmlFor="insulin-action-minutes">
-              {t(lang, "insulinActionDuration")}
-            </label>
-            <span className="settings-hint">
-              {t(lang, "insulinActionDurationHint")}
-            </span>
-            <input
-              id="insulin-action-minutes"
-              type="number"
-              min={MIN_DIA_MINUTES}
-              max={MAX_DIA_MINUTES}
-              step="15"
-              value={local.insulin_action_minutes ?? ""}
-              onChange={(e) =>
-                setLocal({
-                  ...local,
-                  insulin_action_minutes: e.target.value
-                    ? Number.parseInt(e.target.value, 10)
-                    : null,
-                })
-              }
-            />
-            {diaOutOfRange && (
-              <span className="settings-warning">{diaRangeMessage}</span>
-            )}
-            <figure className="iob-curve-figure">
-              <div className="iob-curve-frame">
-                {diaPlottable && bolusProfile && dia != null ? (
-                  <IobCurve
-                    peakMinutes={bolusProfile.action.peak_minutes}
-                    durationMinutes={dia}
-                    peakLabel={`${t(lang, "insulinPeak")} ${formatMinutes(
-                      bolusProfile.action.peak_minutes,
-                    )}`}
-                  />
-                ) : (
-                  <p className="iob-curve-placeholder">{diaRangeMessage}</p>
-                )}
-              </div>
-              <div className="iob-curve-legend">
-                <span className="iob-legend iob-legend-activity">
-                  {t(lang, "activityLegend")}
-                </span>
-                <span className="iob-legend iob-legend-iob">
-                  {t(lang, "iobLegend")}
-                </span>
-              </div>
-              <figcaption className="iob-curve-caption">
-                {t(lang, "iobCurveCaption")}
-              </figcaption>
-              {bolusSources.length > 0 && (
-                <div className="iob-curve-sources">
-                  <span className="iob-curve-sources-label">
-                    {t(lang, "iobCurveSources")}
-                  </span>
-                  <ul>
-                    {bolusSources.map((source) => (
-                      <li key={source.url}>
-                        <a href={source.url} target="_blank" rel="noreferrer">
-                          {source.label}
-                        </a>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
+    <>
+      <OptionList
+        label={t(lang, "bolusInsulin")}
+        value={insulinId}
+        options={bolusInsulinProfiles().map((p) => ({
+          value: p.id,
+          title: p.brand_name,
+          detail: p.generic_name,
+        }))}
+        onChange={pick}
+      />
+      {profile && (
+        <>
+          <NumberField
+            label={t(lang, "insulinActionDuration")}
+            unit="min"
+            value={diaText}
+            onChange={setDiaText}
+            hint={diaInRange ? undefined : rangeMessage}
+          />
+          <figure className="iob-curve-figure">
+            <div className="iob-curve-frame">
+              {plottable && dia !== null ? (
+                <IobCurve
+                  peakMinutes={profile.action.peak_minutes}
+                  durationMinutes={dia}
+                  peakLabel={`${t(lang, "insulinPeak")} ${formatMinutes(
+                    profile.action.peak_minutes,
+                  )}`}
+                />
+              ) : (
+                <p className="iob-curve-placeholder">{rangeMessage}</p>
               )}
-            </figure>
-          </div>
-        )}
-
-        <label className="settings-hint" htmlFor="basal-insulin">
-          {t(lang, "basalInsulin")}
-        </label>
-        <select
-          id="basal-insulin"
-          value={local.basal_insulin_id ?? ""}
-          onChange={(e) => setBasalInsulin(e.target.value)}
-        >
-          <option value="">{t(lang, "selectInsulin")}</option>
-          {basalInsulinProfiles().map((p) => (
-            <option key={p.id} value={p.id}>
-              {p.brand_name} ({p.generic_name})
-            </option>
-          ))}
-        </select>
-      </div>
-
-      <div className="settings-section">
-        <h3>{t(lang, "glucoseUnit")}</h3>
-        <select
-          value={local.glucose_unit}
-          onChange={(e) =>
-            setLocal({
-              ...local,
-              glucose_unit: e.target.value as GlucoseUnit,
-            })
-          }
-        >
-          <option value="mg/dL">mg/dL</option>
-          <option value="mmol/L">mmol/L</option>
-        </select>
-      </div>
-
-      <div className="settings-section">
-        <h3>{t(lang, "language")}</h3>
-        <select
-          value={local.language}
-          onChange={(e) =>
-            setLocal({
-              ...local,
-              language: e.target.value as "en" | "es",
-            })
-          }
-        >
-          <option value="en">English</option>
-          <option value="es">Español</option>
-        </select>
-      </div>
-
-      {error && <div className="error-box">{error}</div>}
-
-      <button
-        type="button"
-        className="btn btn-primary"
-        onClick={handleSave}
-        disabled={saving}
+            </div>
+            <div className="iob-curve-legend">
+              <span className="iob-legend iob-legend-activity">
+                {t(lang, "activityLegend")}
+              </span>
+              <span className="iob-legend iob-legend-iob">
+                {t(lang, "iobLegend")}
+              </span>
+            </div>
+            <figcaption className="iob-curve-caption">
+              {t(lang, "iobCurveCaption")}
+            </figcaption>
+            {sources.length > 0 && (
+              <div className="iob-curve-sources">
+                <span className="iob-curve-sources-label">
+                  {t(lang, "iobCurveSources")}
+                </span>
+                <ul>
+                  {sources.map((source) => (
+                    <li key={source.url}>
+                      <a href={source.url} target="_blank" rel="noreferrer">
+                        {source.label}
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </figure>
+        </>
+      )}
+      <SheetError error={error} />
+      <Button
+        disabled={profile !== null && !diaInRange}
+        onClick={() =>
+          onSave({
+            ...settings,
+            bolus_insulin_id: insulinId,
+            insulin_action_minutes: profile && dia !== null ? dia : null,
+          })
+        }
       >
-        {saved ? t(lang, "saved") : t(lang, "save")}
-      </button>
-    </div>
+        {t(lang, "save")}
+      </Button>
+    </>
+  );
+}
+
+function BasalEditor({
+  lang,
+  initial,
+  error,
+  onSave,
+}: {
+  lang: Language;
+  initial: BasalInsulinId | null;
+  error: string | null;
+  onSave: (id: BasalInsulinId | null) => void;
+}) {
+  const [insulinId, setInsulinId] = useState(initial);
+  return (
+    <>
+      <OptionList
+        label={t(lang, "basalInsulin")}
+        value={insulinId}
+        options={basalInsulinProfiles().map((p) => ({
+          value: p.id,
+          title: p.brand_name,
+          detail: p.generic_name,
+        }))}
+        onChange={setInsulinId}
+      />
+      <SheetError error={error} />
+      <Button onClick={() => onSave(insulinId)}>{t(lang, "save")}</Button>
+    </>
   );
 }

@@ -1,0 +1,30 @@
+.button {
+  width: 100%;
+  min-height: var(--control-height);
+  padding: var(--space-3-5) var(--space-4);
+  border: none;
+  border-radius: var(--radius-lg);
+  font-size: var(--text-md);
+  font-weight: var(--weight-bold);
+  cursor: pointer;
+}
+
+.button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.button-primary {
+  background: var(--color-accent);
+  color: var(--color-accent-fg);
+}
+
+.button-secondary {
+  background: var(--color-surface-raised);
+  color: var(--color-fg);
+}
+
+.button-danger {
+  background: var(--color-danger-soft);
+  color: var(--color-danger);
+}

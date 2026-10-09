@@ -1,0 +1,55 @@
+.option-list {
+  display: flex;
+  border: none;
+  margin: 0;
+  flex-direction: column;
+  gap: var(--space-1-5);
+}
+
+.option {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2-5);
+  padding: var(--space-2-5) var(--space-3);
+  border: var(--border-width-strong) solid var(--color-line);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+  text-align: left;
+  cursor: pointer;
+}
+
+.option:has(:checked) {
+  border-color: var(--color-accent);
+  background: var(--color-accent-soft);
+}
+
+.option-dot {
+  flex: none;
+  width: var(--space-3-5);
+  height: var(--space-3-5);
+  border-radius: var(--radius-full);
+  border: var(--border-width-heavy) solid var(--color-line);
+}
+
+.option:has(:checked) .option-dot {
+  border: var(--space-1) solid var(--color-accent);
+}
+
+.option-text {
+  display: flex;
+  flex-direction: column;
+}
+
+.option-title {
+  font-weight: var(--weight-bold);
+  font-size: var(--text-sm);
+}
+
+.option-detail {
+  font-size: var(--text-xs);
+  color: var(--color-fg-muted);
+}
+
+.option:has(:focus-visible) {
+  outline: var(--border-width-heavy) solid var(--color-accent);
+}

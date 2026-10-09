@@ -11,15 +11,10 @@ test.describe("full user flow", () => {
     await page.goto("/");
     await expect(page.locator("h1")).toHaveText("Musa");
 
-    // Go to settings
     await page.getByRole("navigation").getByText("Settings").click();
-
-    // Verify default meal windows are present
-    await expect(page.locator(".meal-window-row")).toHaveCount(3);
-
-    // Save settings (keep English for this test)
-    await page.getByRole("button", { name: "Save" }).click();
-    await expect(page.getByRole("button", { name: "Saved" })).toBeVisible();
+    for (const name of ["morning", "lunch", "dinner"]) {
+      await expect(page.getByRole("button", { name })).toBeVisible();
+    }
 
     // Navigate to calculator
     await page.getByRole("navigation").getByText("Calculate").click();
@@ -66,9 +61,7 @@ test.describe("full user flow", () => {
 
     // Go to settings and switch to Spanish
     await page.getByRole("navigation").getByText("Settings").click();
-    const langSelect = page.locator("select").last();
-    await langSelect.selectOption("es");
-    await page.getByRole("button", { name: "Save" }).click();
+    await page.getByText("Español", { exact: true }).click();
 
     // After save, UI should switch to Spanish
     await expect(
@@ -121,15 +114,15 @@ test.describe("full user flow", () => {
     // Configure a correction factor in settings
     await page.getByRole("navigation").getByText("Settings").click();
 
-    // Fill correction factor -- it's the first input in the correction section
-    const correctionInput = page
-      .locator(".settings-section")
-      .filter({ hasText: "Correction factor" })
-      .locator("input");
-    await correctionInput.fill("40");
-
-    await page.getByRole("button", { name: "Save" }).click();
-    await expect(page.getByRole("button", { name: "Saved" })).toBeVisible();
+    await page.getByRole("button", { name: /Correction factor/ }).click();
+    await page.getByLabel("Glucose drop per 1 U").fill("40");
+    await page
+      .getByRole("dialog")
+      .getByRole("button", { name: "Save" })
+      .click();
+    await expect(
+      page.getByRole("button", { name: /Correction factor/ }),
+    ).toContainText("40 mg/dL");
 
     // Go to calculator
     await page.getByRole("navigation").getByText("Calculate").click();
@@ -144,5 +137,26 @@ test.describe("full user flow", () => {
     expect(doseText).toContain("=");
     const detailText = await page.locator(".dose-detail").textContent();
     expect(detailText).toContain("180");
+  });
+
+  test("meal windows keep the whole day covered while editing", async ({
+    page,
+  }) => {
+    await page.goto("/settings");
+
+    await page.getByRole("button", { name: /lunch/ }).click();
+    const sheet = page.getByRole("dialog");
+    await sheet.getByLabel("Ends at").selectOption({ label: "18:00" });
+    await sheet.getByRole("button", { name: "Save" }).click();
+    await expect(page.getByRole("button", { name: /dinner/ })).toContainText(
+      "18:00–06:00",
+    );
+
+    await page.getByRole("button", { name: /lunch/ }).click();
+    await sheet.getByRole("button", { name: "Delete window" }).click();
+    await expect(page.getByRole("button", { name: /morning/ })).toContainText(
+      "06:00–18:00",
+    );
+    await expect(page.getByText(/No window covers/)).toHaveCount(0);
   });
 });

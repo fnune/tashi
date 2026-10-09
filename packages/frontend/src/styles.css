@@ -375,47 +375,6 @@ a.source-link:hover {
   }
 }
 
-/* Settings */
-
-.settings {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-5);
-}
-
-.settings-section {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
-}
-
-.settings-section h3 {
-  font-size: var(--text-sm);
-  font-weight: var(--weight-semibold);
-  color: var(--color-fg-muted);
-}
-
-.meal-window-row {
-  display: flex;
-  gap: var(--space-2);
-  align-items: center;
-}
-
-.meal-window-row input {
-  padding: var(--space-1-5) var(--space-2);
-  border: var(--border-width) solid var(--color-line);
-  border-radius: var(--radius-sm);
-  font-size: var(--text-sm);
-}
-
-.meal-window-row input[type="text"] {
-  width: var(--space-24);
-}
-
-.meal-window-row input[type="number"] {
-  width: var(--space-14);
-}
-
 /* History */
 
 .history-list {
@@ -637,19 +596,6 @@ a.source-link:hover {
   font-size: var(--text-xs);
 }
 
-.settings-hint {
-  display: block;
-  font-size: var(--text-xs);
-  color: var(--color-fg-muted);
-  margin-bottom: var(--space-1-5);
-}
-
-.insulin-bolus-group {
-  margin-bottom: var(--space-4);
-  padding-bottom: var(--space-4);
-  border-bottom: var(--border-width) solid var(--color-line);
-}
-
 .iob-curve-figure {
   margin: 0;
 }
@@ -758,11 +704,6 @@ a.source-link:hover {
   font-family: var(--font-sans);
 }
 
-.settings-warning {
-  font-size: var(--text-xs);
-  color: var(--color-warn);
-}
-
 .iob-curve-peak {
   stroke: var(--color-fg-muted);
   stroke-width: 1;
@@ -813,4 +754,13 @@ a.source-link:hover {
 
 .entry-error {
   margin: 0 var(--space-3);
+}
+
+.visually-hidden {
+  position: absolute;
+  width: var(--space-px);
+  height: var(--space-px);
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
 }
