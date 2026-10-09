@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   calculateDose,
+  correctionComponents,
   evaluateFatProteinThreshold,
   findMealWindow,
   uncoveredHours,
@@ -309,5 +310,33 @@ describe("uncoveredHours", () => {
 
   it("reports the whole day when there are no windows", () => {
     expect(uncoveredHours([])).toEqual([{ start_hour: 0, end_hour: 24 }]);
+  });
+});
+
+describe("correctionComponents", () => {
+  it("lets insulin on board cancel a high-glucose correction", () => {
+    expect(correctionComponents(180, BASE_SETTINGS, 0.5)).toEqual({
+      correctionFactor: 40,
+      iobReduction: 0.5,
+      units: 1.5,
+    });
+  });
+
+  it("never lets insulin on board push the correction below zero", () => {
+    expect(correctionComponents(120, BASE_SETTINGS, 3)?.units).toBe(0);
+  });
+
+  it("keeps a negative correction below target regardless of IOB", () => {
+    expect(correctionComponents(80, BASE_SETTINGS, 1)?.units).toBe(-0.5);
+  });
+
+  it("is null without a correction factor", () => {
+    expect(
+      correctionComponents(
+        180,
+        { ...BASE_SETTINGS, correction_factor: null },
+        0,
+      ),
+    ).toBeNull();
   });
 });

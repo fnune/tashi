@@ -108,6 +108,21 @@ interface FatProteinAdjustmentResult {
   total_dose: number;
 }
 
+export function correctionComponents(
+  currentBloodSugar: number,
+  settings: Settings,
+  iob: number,
+): { correctionFactor: number; iobReduction: number; units: number } | null {
+  const correctionFactor = settings.correction_factor;
+  if (correctionFactor === null) return null;
+  const bgCorrection =
+    (currentBloodSugar - settings.target_blood_sugar) / correctionFactor;
+  // IOB only cancels a positive (high-BG) correction; it never reduces the
+  // meal dose. A low-BG (negative) correction is left untouched.
+  const iobReduction = bgCorrection > 0 ? Math.min(iob, bgCorrection) : 0;
+  return { correctionFactor, iobReduction, units: bgCorrection - iobReduction };
+}
+
 export function calculateDose(
   items: CalculatedItem[],
   ratio: number,
@@ -126,18 +141,17 @@ export function calculateDose(
 
   let rawCorrectionDose = 0;
   let correction: CorrectionResult | undefined;
-  if (currentBloodSugar !== undefined && settings.correction_factor !== null) {
-    const bgCorrection =
-      (currentBloodSugar - settings.target_blood_sugar) /
-      settings.correction_factor;
-    // IOB only cancels a positive (high-BG) correction; it never reduces the
-    // meal dose. A low-BG (negative) correction is left untouched.
-    const iobReduction = bgCorrection > 0 ? Math.min(iob, bgCorrection) : 0;
-    rawCorrectionDose = bgCorrection - iobReduction;
+  const components =
+    currentBloodSugar === undefined
+      ? null
+      : correctionComponents(currentBloodSugar, settings, iob);
+  if (currentBloodSugar !== undefined && components !== null) {
+    const { iobReduction } = components;
+    rawCorrectionDose = components.units;
     correction = {
       current_blood_sugar: currentBloodSugar,
       target_blood_sugar: settings.target_blood_sugar,
-      correction_factor: settings.correction_factor,
+      correction_factor: components.correctionFactor,
       correction_dose: roundDisplay(rawCorrectionDose),
       iob: roundDisplay(iob),
       iob_reduction: roundDisplay(iobReduction),

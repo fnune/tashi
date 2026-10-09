@@ -1,12 +1,19 @@
 export type { HourRange } from "./calculation.js";
 export {
   calculateDose,
+  correctionComponents,
   evaluateFatProteinThreshold,
   findMealWindow,
   roundToIncrement,
   uncoveredHours,
   windowCovers,
 } from "./calculation.js";
+export type { GlucoseRange } from "./glucose.js";
+export {
+  glucoseRange,
+  latestRecentReading,
+  RECENT_READING_MINUTES,
+} from "./glucose.js";
 export type {
   BasalInsulinId,
   BasalInsulinProfile,
