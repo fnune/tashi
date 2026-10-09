@@ -2,7 +2,7 @@ import { ApiError } from "./api.js";
 
 const translations = {
   en: {
-    appTitle: "Pincho",
+    appTitle: "Musa",
     settings: "Settings",
     history: "History",
     calculate: "Calculate",
@@ -100,7 +100,7 @@ const translations = {
     internal_error: "Something went wrong. Please try again.",
   },
   es: {
-    appTitle: "Pincho",
+    appTitle: "Musa",
     settings: "Ajustes",
     history: "Historial",
     calculate: "Calcular",

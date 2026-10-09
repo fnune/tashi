@@ -9,7 +9,7 @@ test.describe("full user flow", () => {
     page,
   }) => {
     await page.goto("/");
-    await expect(page.locator("h1")).toHaveText("Pincho");
+    await expect(page.locator("h1")).toHaveText("Musa");
 
     // Go to settings
     await page.getByRole("navigation").getByText("Settings").click();
