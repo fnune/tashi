@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { calculateDose, evaluateFatProteinThreshold } from "../calculation.js";
+import {
+  calculateDose,
+  evaluateFatProteinThreshold,
+  findMealWindow,
+  uncoveredHours,
+} from "../calculation.js";
 import type { CalculatedItem, Settings } from "../types.js";
 
 const BASE_SETTINGS: Settings = {
@@ -235,5 +240,74 @@ describe("calculateDose fat/protein adjustment", () => {
     const items = [makeItem({ fat_g: 35, net_carbs_g: 50 })];
     const result = calculateDose(items, 10, settings);
     expect(result.fat_protein_adjustment!.adjustment_dose).toBe(2.5);
+  });
+});
+
+describe("findMealWindow", () => {
+  const settings: Settings = {
+    ...BASE_SETTINGS,
+    meal_windows: [
+      { name: "lunch", start_hour: 11, end_hour: 16, ratio: 10 },
+      { name: "dinner", start_hour: 16, end_hour: 24, ratio: 12 },
+      { name: "night", start_hour: 0, end_hour: 6, ratio: 15 },
+    ],
+  };
+  const at = (hour: number) => new Date(2026, 5, 13, hour, 30);
+
+  it("matches the start hour and excludes the end hour", () => {
+    expect(findMealWindow(settings, at(11))?.name).toBe("lunch");
+    expect(findMealWindow(settings, at(16))?.name).toBe("dinner");
+  });
+
+  it("covers the last hour of the day when the window ends at 24", () => {
+    expect(findMealWindow(settings, at(23))?.name).toBe("dinner");
+  });
+
+  it("returns null for uncovered hours", () => {
+    expect(findMealWindow(settings, at(8))).toBeNull();
+  });
+
+  it("matches windows that run past midnight", () => {
+    const overnight: Settings = {
+      ...BASE_SETTINGS,
+      meal_windows: [{ name: "rest", start_hour: 23, end_hour: 6, ratio: 10 }],
+    };
+    expect(findMealWindow(overnight, at(23))?.name).toBe("rest");
+    expect(findMealWindow(overnight, at(2))?.name).toBe("rest");
+    expect(findMealWindow(overnight, at(6))).toBeNull();
+  });
+});
+
+describe("uncoveredHours", () => {
+  const w = (start_hour: number, end_hour: number) => ({
+    name: "w",
+    start_hour,
+    end_hour,
+    ratio: 10,
+  });
+
+  it("is empty when the windows tile the day", () => {
+    expect(uncoveredHours([w(6, 16), w(16, 6)])).toEqual([]);
+  });
+
+  it("treats a window that starts where it ends as the whole day", () => {
+    expect(uncoveredHours([w(0, 0)])).toEqual([]);
+  });
+
+  it("reports a gap that runs past midnight as one range", () => {
+    expect(uncoveredHours([w(6, 11), w(11, 16), w(16, 23)])).toEqual([
+      { start_hour: 23, end_hour: 6 },
+    ]);
+  });
+
+  it("reports every gap", () => {
+    expect(uncoveredHours([w(0, 6), w(8, 20)])).toEqual([
+      { start_hour: 6, end_hour: 8 },
+      { start_hour: 20, end_hour: 0 },
+    ]);
+  });
+
+  it("reports the whole day when there are no windows", () => {
+    expect(uncoveredHours([])).toEqual([{ start_hour: 0, end_hour: 24 }]);
   });
 });

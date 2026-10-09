@@ -163,7 +163,14 @@ describe("API routes", () => {
     parser.setResponse("rice", [carbItem(30)]);
     await storage.saveSettings({
       ...configured(),
-      meal_windows: [{ name: "never", start_hour: 0, end_hour: 0, ratio: 10 }],
+      meal_windows: [
+        {
+          name: "gap",
+          start_hour: (now.getHours() + 1) % 24,
+          end_hour: (now.getHours() + 2) % 24,
+          ratio: 10,
+        },
+      ],
     });
 
     const res = await app.request("/api/calculate", {

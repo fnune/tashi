@@ -5,11 +5,42 @@ export function findMealWindow(
   date: Date = new Date(),
 ): MealWindow | null {
   const hour = date.getHours();
-  return (
-    settings.meal_windows.find(
-      (w) => hour >= w.start_hour && hour < w.end_hour,
-    ) ?? null
+  return settings.meal_windows.find((w) => windowCovers(w, hour)) ?? null;
+}
+
+export function windowCovers(window: MealWindow, hour: number): boolean {
+  const { start_hour: start, end_hour: end } = window;
+  const spansWholeDay = start % 24 === end % 24;
+  const crossesMidnight = start > end;
+  if (spansWholeDay) return true;
+  if (crossesMidnight) return hour >= start || hour < end;
+  return hour >= start && hour < end;
+}
+
+export interface HourRange {
+  start_hour: number;
+  end_hour: number;
+}
+
+export function uncoveredHours(windows: MealWindow[]): HourRange[] {
+  const covered = Array.from({ length: 24 }, (_, hour) =>
+    windows.some((w) => windowCovers(w, hour)),
   );
+  if (covered.every(Boolean)) return [];
+  const firstCovered = covered.indexOf(true);
+  if (firstCovered === -1) return [{ start_hour: 0, end_hour: 24 }];
+
+  const gaps: HourRange[] = [];
+  let gapStart: number | null = null;
+  for (let i = 1; i <= 24; i++) {
+    const hour = (firstCovered + i) % 24;
+    if (!covered[hour] && gapStart === null) gapStart = hour;
+    if (covered[hour] && gapStart !== null) {
+      gaps.push({ start_hour: gapStart, end_hour: hour });
+      gapStart = null;
+    }
+  }
+  return gaps;
 }
 
 export function roundToIncrement(value: number, increment: 0.5 | 1): number {

@@ -236,7 +236,7 @@ export const DEFAULT_SETTINGS: Settings = {
   meal_windows: [
     { name: "morning", start_hour: 6, end_hour: 11, ratio: 8 },
     { name: "lunch", start_hour: 11, end_hour: 16, ratio: 10 },
-    { name: "dinner", start_hour: 16, end_hour: 23, ratio: 12 },
+    { name: "dinner", start_hour: 16, end_hour: 6, ratio: 12 },
   ],
   correction_factor: null,
   target_blood_sugar: 100,
