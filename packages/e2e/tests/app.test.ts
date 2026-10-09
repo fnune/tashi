@@ -206,7 +206,7 @@ test.describe("full user flow", () => {
     await expect(doses).toHaveCount(0);
   });
 
-  test("clicks inside a sheet keep it open, the backdrop closes it", async ({
+  test("sheets span the screen and only the backdrop closes them", async ({
     page,
   }) => {
     await page.setViewportSize({ width: 1280, height: 800 });
@@ -215,10 +215,30 @@ test.describe("full user flow", () => {
     await page.getByRole("button", { name: /Target blood sugar/ }).click();
     await expect(sheet).toBeVisible();
 
-    await sheet.getByRole("heading").click();
+    const box = await sheet.boundingBox();
+    if (!box) throw new Error("sheet not rendered");
+    expect(box.width).toBe(1280);
+
+    await page.mouse.click(20, box.y + box.height - 20);
     await expect(sheet).toBeVisible();
 
-    await page.mouse.click(20, 400);
+    await page.mouse.click(20, box.y - 20);
     await expect(sheet).toBeHidden();
+  });
+
+  test("scrolling inside a sheet leaves the page where it was", async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 390, height: 600 });
+    await page.goto("/settings");
+    await page.getByRole("button", { name: "Rapid" }).click();
+    const sheet = page.getByRole("dialog");
+    await expect(sheet).toBeVisible();
+
+    const pageScroll = await page.evaluate(() => window.scrollY);
+    await sheet.hover();
+    await page.mouse.wheel(0, 5000);
+    await page.mouse.wheel(0, 5000);
+    expect(await page.evaluate(() => window.scrollY)).toBe(pageScroll);
   });
 });

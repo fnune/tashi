@@ -45,6 +45,19 @@ function useDragToDismiss(onDismiss: () => void) {
   };
 }
 
+// A modal dialog receives its ::backdrop's clicks too, so only the pointer
+// position tells a backdrop click from one on the sheet's own padding.
+function isOnBackdrop(e: React.MouseEvent<HTMLDialogElement>): boolean {
+  if (e.target !== e.currentTarget) return false;
+  const rect = e.currentTarget.getBoundingClientRect();
+  return (
+    e.clientX < rect.left ||
+    e.clientX > rect.right ||
+    e.clientY < rect.top ||
+    e.clientY > rect.bottom
+  );
+}
+
 export function Sheet({
   open,
   title,
@@ -78,7 +91,7 @@ export function Sheet({
       style={drag.offset ? { translate: `0 ${drag.offset}px` } : undefined}
       onClose={onClose}
       onClick={(e) => {
-        if (e.target === e.currentTarget) onClose();
+        if (isOnBackdrop(e)) onClose();
       }}
     >
       {open && (

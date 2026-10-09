@@ -1,7 +1,8 @@
 .sheet {
   margin: auto auto 0;
   width: 100%;
-  max-width: var(--layout-max-width);
+  max-width: none;
+  overscroll-behavior: contain;
   max-height: 92dvh;
   padding: 0;
   border: none;
@@ -15,6 +16,8 @@
 }
 
 .sheet-body {
+  max-width: var(--layout-max-width);
+  margin: 0 auto;
   padding: var(--space-2-5) var(--layout-gutter)
     calc(var(--space-5) + env(safe-area-inset-bottom, 0));
   display: flex;
@@ -64,4 +67,8 @@
       transform: translateY(100%);
     }
   }
+}
+
+:root:has(.sheet[open]) {
+  overflow: hidden;
 }
