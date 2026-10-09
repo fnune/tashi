@@ -164,4 +164,27 @@ test.describe("full user flow", () => {
     );
     await expect(page.getByText(/No window covers/)).toHaveCount(0);
   });
+
+  test("sheets close by dragging down or tapping the handle", async ({
+    page,
+  }) => {
+    await page.goto("/settings");
+    const sheet = page.getByRole("dialog");
+
+    await page.getByRole("button", { name: /Target blood sugar/ }).click();
+    await expect(sheet).toBeVisible();
+    const handle = sheet.getByRole("button", { name: "Close" });
+    await handle.hover();
+    const box = await handle.boundingBox();
+    if (!box) throw new Error("handle not rendered");
+    await page.mouse.down();
+    await page.mouse.move(box.x + box.width / 2, box.y + 200, { steps: 10 });
+    await page.mouse.up();
+    await expect(sheet).toBeHidden();
+
+    await page.getByRole("button", { name: /Target blood sugar/ }).click();
+    await expect(sheet).toBeVisible();
+    await sheet.getByRole("button", { name: "Close" }).click();
+    await expect(sheet).toBeHidden();
+  });
 });

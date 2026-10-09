@@ -271,6 +271,7 @@ export function SettingsView({ settings, onSave, lang }: SettingsViewProps) {
       <Sheet
         open={editing?.kind === "window"}
         title={t(lang, "editWindow")}
+        closeLabel={t(lang, "close")}
         onClose={() => setEditing(null)}
       >
         {editing?.kind === "window" && (
@@ -287,6 +288,7 @@ export function SettingsView({ settings, onSave, lang }: SettingsViewProps) {
       <Sheet
         open={editing?.kind === "correction"}
         title={t(lang, "correctionFactor")}
+        closeLabel={t(lang, "close")}
         onClose={() => setEditing(null)}
       >
         <NumberEditor
@@ -305,6 +307,7 @@ export function SettingsView({ settings, onSave, lang }: SettingsViewProps) {
       <Sheet
         open={editing?.kind === "target"}
         title={t(lang, "targetBloodSugar")}
+        closeLabel={t(lang, "close")}
         onClose={() => setEditing(null)}
       >
         <NumberEditor
@@ -323,6 +326,7 @@ export function SettingsView({ settings, onSave, lang }: SettingsViewProps) {
       <Sheet
         open={editing?.kind === "fatProtein"}
         title={t(lang, "fatProteinMultiplier")}
+        closeLabel={t(lang, "close")}
         onClose={() => setEditing(null)}
       >
         <NumberEditor
@@ -343,6 +347,7 @@ export function SettingsView({ settings, onSave, lang }: SettingsViewProps) {
       <Sheet
         open={editing?.kind === "bolus"}
         title={t(lang, "bolusInsulin")}
+        closeLabel={t(lang, "close")}
         onClose={() => setEditing(null)}
       >
         <BolusEditor
@@ -356,6 +361,7 @@ export function SettingsView({ settings, onSave, lang }: SettingsViewProps) {
       <Sheet
         open={editing?.kind === "basal"}
         title={t(lang, "basalInsulin")}
+        closeLabel={t(lang, "close")}
         onClose={() => setEditing(null)}
       >
         <BasalEditor

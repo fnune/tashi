@@ -1,18 +1,65 @@
-import { type ReactNode, useEffect, useRef } from "react";
+import { type ReactNode, useEffect, useRef, useState } from "react";
 import "./Sheet.css";
+
+const DISMISS_DISTANCE_PX = 80;
+const DISMISS_VELOCITY_PX_PER_MS = 0.5;
+const TAP_SLOP_PX = 4;
+
+function useDragToDismiss(onDismiss: () => void) {
+  const start = useRef<{ y: number; time: number } | null>(null);
+  const [offset, setOffset] = useState(0);
+
+  return {
+    offset,
+    handlers: {
+      onPointerDown(e: React.PointerEvent) {
+        start.current = { y: e.clientY, time: e.timeStamp };
+      },
+      onPointerMove(e: React.PointerEvent) {
+        if (!start.current) return;
+        const distance = e.clientY - start.current.y;
+        // Capturing on pointerdown would retarget a plain tap away from the close button.
+        if (distance > TAP_SLOP_PX) {
+          e.currentTarget.setPointerCapture(e.pointerId);
+        }
+        setOffset(Math.max(0, distance));
+      },
+      onPointerUp(e: React.PointerEvent) {
+        if (!start.current) return;
+        const distance = e.clientY - start.current.y;
+        const velocity = distance / (e.timeStamp - start.current.time || 1);
+        start.current = null;
+        setOffset(0);
+        if (
+          distance > DISMISS_DISTANCE_PX ||
+          velocity > DISMISS_VELOCITY_PX_PER_MS
+        ) {
+          onDismiss();
+        }
+      },
+      onPointerCancel() {
+        start.current = null;
+        setOffset(0);
+      },
+    },
+  };
+}
 
 export function Sheet({
   open,
   title,
+  closeLabel,
   onClose,
   children,
 }: {
   open: boolean;
   title: string;
+  closeLabel: string;
   onClose: () => void;
   children: ReactNode;
 }) {
   const dialog = useRef<HTMLDialogElement>(null);
+  const drag = useDragToDismiss(onClose);
 
   useEffect(() => {
     const element = dialog.current;
@@ -27,6 +74,8 @@ export function Sheet({
       ref={dialog}
       className="sheet"
       aria-label={title}
+      data-dragging={drag.offset > 0 ? "" : undefined}
+      style={drag.offset ? { translate: `0 ${drag.offset}px` } : undefined}
       onClose={onClose}
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose();
@@ -34,8 +83,15 @@ export function Sheet({
     >
       {open && (
         <div className="sheet-body">
-          <div className="sheet-grabber" aria-hidden="true" />
-          <h2 className="sheet-title">{title}</h2>
+          <div className="sheet-header" {...drag.handlers}>
+            <button
+              type="button"
+              className="sheet-grabber"
+              aria-label={closeLabel}
+              onClick={onClose}
+            />
+            <h2 className="sheet-title">{title}</h2>
+          </div>
           {children}
         </div>
       )}

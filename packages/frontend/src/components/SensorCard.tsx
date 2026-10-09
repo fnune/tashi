@@ -64,19 +64,31 @@ export function SensorCard({
 
   return (
     <section className="sensor">
-      <button
-        type="button"
-        className="dial"
-        data-range={range ?? "none"}
-        onClick={() => setMeasuring(true)}
-        aria-label={t(lang, "currentGlucose")}
-      >
-        <span className="dial-value">
-          {reading ? decimal.format(reading.value) : "—"}
-        </span>
-        <span className="dial-unit">{unit}</span>
-        <span className="dial-action">✎ {t(lang, "measure")}</span>
-      </button>
+      <div className="sensor-reading">
+        <button
+          type="button"
+          className="dial"
+          data-range={range ?? "none"}
+          onClick={() => setMeasuring(true)}
+          aria-label={t(lang, "currentGlucose")}
+        >
+          <span className="dial-value">
+            {reading ? decimal.format(reading.value) : "—"}
+          </span>
+          <span className="dial-unit">{unit}</span>
+          <span className="dial-action">✎ {t(lang, "measure")}</span>
+        </button>
+        <small className="sensor-age">
+          {minutesAgo === null
+            ? t(lang, "tapToMeasure")
+            : minutesAgo < 1
+              ? t(lang, "readingJustNow")
+              : t(lang, "readingMinutesAgo").replace(
+                  "{min}",
+                  String(minutesAgo),
+                )}
+        </small>
+      </div>
 
       <div className="sensor-meta">
         <span className="sensor-state" data-range={range ?? "none"}>
@@ -93,12 +105,15 @@ export function SensorCard({
               max={1}
               value={hasIob && injectedUnits ? iobUnits / injectedUnits : 0}
             />
+            {runOut && (
+              <small>
+                {t(lang, "runsOutAt").replace(
+                  "{time}",
+                  clockTime(runOut, lang),
+                )}
+              </small>
+            )}
           </div>
-          <small>
-            {runOut
-              ? t(lang, "runsOutAt").replace("{time}", clockTime(runOut, lang))
-              : t(lang, "noActiveInsulin")}
-          </small>
         </div>
 
         <div className="sensor-stat">
@@ -116,22 +131,12 @@ export function SensorCard({
           reading={reading}
           iobUnits={hasIob ? iobUnits : 0}
         />
-
-        <small className="sensor-age">
-          {minutesAgo === null
-            ? t(lang, "tapToMeasure")
-            : minutesAgo < 1
-              ? t(lang, "readingJustNow")
-              : t(lang, "readingMinutesAgo").replace(
-                  "{min}",
-                  String(minutesAgo),
-                )}
-        </small>
       </div>
 
       <Sheet
         open={measuring}
         title={t(lang, "currentGlucose")}
+        closeLabel={t(lang, "close")}
         onClose={() => setMeasuring(false)}
       >
         <ReadingEditor
@@ -181,7 +186,7 @@ function CorrectionPreview({
     value = `${components.units > 0 ? "+" : ""}${decimal.format(components.units)} U`;
     detail = `(${decimal.format(reading.value)} − ${decimal.format(settings.target_blood_sugar)}) ÷ ${decimal.format(components.correctionFactor)}`;
     if (components.iobReduction > 0) {
-      detail += ` − ${decimal.format(components.iobReduction)} ${t(lang, "activeInsulin").toLowerCase()}`;
+      detail += ` − ${decimal.format(components.iobReduction)} ${t(lang, "onBoardShort")}`;
     }
     tone = components.units > 0 ? "accent" : "muted";
   }

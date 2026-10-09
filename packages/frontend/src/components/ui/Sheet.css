@@ -24,12 +24,31 @@
   gap: var(--space-4);
 }
 
+.sheet:not([data-dragging]) {
+  transition: translate var(--duration-fast) var(--ease-standard);
+}
+
+.sheet-header {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin: calc(-1 * var(--space-2-5)) calc(-1 * var(--layout-gutter)) 0;
+  padding: 0 var(--layout-gutter);
+  touch-action: none;
+  cursor: grab;
+}
+
 .sheet-grabber {
-  width: var(--space-10);
-  height: var(--space-1);
+  align-self: center;
+  width: var(--space-14);
+  height: var(--space-6);
+  padding: 0;
+  border: none;
+  background:
+    linear-gradient(var(--color-line), var(--color-line)) center /
+    var(--space-10) var(--space-1) no-repeat;
   border-radius: var(--radius-full);
-  background: var(--color-line);
-  margin: 0 auto;
+  cursor: grab;
 }
 
 .sheet-title {
