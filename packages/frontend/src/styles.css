@@ -55,3 +55,19 @@ textarea {
   font-weight: var(--weight-heavy);
   letter-spacing: var(--tracking-tight);
 }
+
+[data-phase="period"] {
+  --phase-color: var(--color-phase-period);
+}
+
+[data-phase="follicular"] {
+  --phase-color: var(--color-phase-follicular);
+}
+
+[data-phase="ovulation"] {
+  --phase-color: var(--color-phase-ovulation);
+}
+
+[data-phase="luteal"] {
+  --phase-color: var(--color-phase-luteal);
+}

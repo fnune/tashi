@@ -96,6 +96,11 @@ const translations = {
     cycleTrackingDetail:
       "Shows your phase and reminds you when to switch profile.",
     cycleDayOf: "Day {day} of {length}",
+    cycleChart: "Cycle chart",
+    phaseDays: "days {first}–{last}",
+    phaseDay: "day {day}",
+    youAreHere: "You are here · day {day}",
+    lutealNote: "Insulin resistance may be higher",
     cycleHowTo:
       "Musa doesn't change your doses by itself. If you need more insulin in the luteal phase, switch to the Menstruation profile on Calculate, or create your own under Ratio profiles, and switch back when your period starts.",
     phase_period: "Period",
@@ -118,7 +123,6 @@ const translations = {
     addPeriodStart: "Add the first day of your last period",
     progesterone: "Progesterone",
     estradiol: "Estradiol",
-    possibleResistance: "Possibly more insulin resistance",
     cycleNote:
       "Schematic hormone curves. Studies in type 1 diabetes point to lower insulin sensitivity in the luteal phase for some women, linked to progesterone, but the evidence is not conclusive.",
     cycleSource: "Systematic review (2023)",
@@ -284,6 +288,11 @@ const translations = {
     cycleTrackingDetail:
       "Te muestra la fase y te avisa de cuándo cambiar de perfil.",
     cycleDayOf: "Día {day} de {length}",
+    cycleChart: "Gráfica del ciclo",
+    phaseDays: "días {first}–{last}",
+    phaseDay: "día {day}",
+    youAreHere: "Estás aquí · día {day}",
+    lutealNote: "Puede haber más resistencia a la insulina",
     cycleHowTo:
       "Musa no cambia tus dosis por su cuenta. Si en la fase lútea necesitas más insulina, elige el perfil Menstruación en Calcular, o crea uno propio en Perfiles de ratios, y vuelve a Normal cuando te baje la regla.",
     phase_period: "Regla",
@@ -306,7 +315,6 @@ const translations = {
     addPeriodStart: "Añade el primer día de tu última regla",
     progesterone: "Progesterona",
     estradiol: "Estradiol",
-    possibleResistance: "Posible más resistencia",
     cycleNote:
       "Curvas hormonales esquemáticas. Los estudios en diabetes tipo 1 apuntan a peor sensibilidad a la insulina en la fase lútea en parte de las mujeres, ligada a la progesterona, pero la evidencia no es concluyente.",
     cycleSource: "Revisión sistemática (2023)",

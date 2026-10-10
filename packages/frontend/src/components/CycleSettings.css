@@ -31,53 +31,9 @@
   white-space: nowrap;
 }
 
-.cycle-status[data-phase="luteal"] .cycle-phase {
-  background: var(--color-warn-soft);
-  color: var(--color-warn);
-}
-
-.cycle-status[data-phase="period"] .cycle-phase {
-  background: var(--color-danger-soft);
-  color: var(--color-danger);
-}
-
-.cycle-legend {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-1) var(--space-3-5);
-  font-size: var(--text-xs);
-  color: var(--color-fg-muted);
-}
-
-.cycle-legend span {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-1-5);
-}
-
-.cycle-legend span::before {
-  content: "";
-  width: var(--space-2-5);
-  height: var(--space-2-5);
-  border-radius: var(--radius-full);
-}
-
-.cycle-legend [data-series="period"]::before {
-  background: var(--color-cycle-period);
-  border: var(--border-width) solid var(--color-danger);
-}
-
-.cycle-legend [data-series="progesterone"]::before {
-  background: var(--color-hormone-progesterone);
-}
-
-.cycle-legend [data-series="estradiol"]::before {
-  background: var(--color-hormone-estradiol);
-}
-
-.cycle-legend [data-series="luteal"]::before {
-  background: var(--color-cycle-luteal);
-  border: var(--border-width) solid var(--color-warn);
+.cycle-status[data-phase] .cycle-phase {
+  background: color-mix(in srgb, var(--phase-color) 16%, transparent);
+  color: var(--phase-color);
 }
 
 .cycle-how-to {
@@ -88,7 +44,48 @@
   line-height: var(--leading-normal);
 }
 
-.cycle-settings .list-group-footer a {
+.cycle-disclosure {
+  border-top: var(--border-width) solid var(--color-line);
+}
+
+.cycle-disclosure summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: var(--control-height);
+  padding: var(--space-3) var(--space-4);
+  font-weight: var(--weight-semibold);
+  list-style: none;
+  cursor: pointer;
+}
+
+.cycle-disclosure summary::-webkit-details-marker {
+  display: none;
+}
+
+.cycle-disclosure summary .icon {
+  color: var(--color-fg-muted);
+  transition: rotate var(--duration-fast) var(--ease-standard);
+}
+
+.cycle-disclosure[open] summary .icon {
+  rotate: 90deg;
+}
+
+.cycle-disclosure-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: 0 var(--space-4) var(--space-4);
+}
+
+.cycle-note {
+  font-size: var(--text-xs);
+  color: var(--color-fg-muted);
+  line-height: var(--leading-normal);
+}
+
+.cycle-note a {
   color: var(--color-accent);
 }
 

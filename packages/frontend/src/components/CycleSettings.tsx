@@ -7,8 +7,9 @@ import {
 } from "@pincho/shared";
 import { useState } from "react";
 import { type Language, t } from "../i18n.js";
-import { HormoneChart } from "./HormoneChart.js";
+import { CycleChart } from "./CycleChart.js";
 import { Button } from "./ui/Button.js";
+import { Icon } from "./ui/Icon.js";
 import { ListButton, ListGroup, ListRow } from "./ui/List.js";
 import { Segmented } from "./ui/Segmented.js";
 import { Sheet } from "./ui/Sheet.js";
@@ -47,19 +48,7 @@ export function CycleSettings({
 
   return (
     <div id={id} className="cycle-settings">
-      <ListGroup
-        title={t(lang, "cycleTitle")}
-        footer={
-          cycle.enabled ? (
-            <>
-              {t(lang, "cycleNote")}{" "}
-              <a href={EVIDENCE_URL} target="_blank" rel="noreferrer">
-                {t(lang, "cycleSource")}
-              </a>
-            </>
-          ) : undefined
-        }
-      >
+      <ListGroup title={t(lang, "cycleTitle")}>
         <ListRow
           label={t(lang, "cycleTracking")}
           detail={t(lang, "cycleTrackingDetail")}
@@ -91,22 +80,6 @@ export function CycleSettings({
                   </span>
                 )}
               </div>
-              <HormoneChart
-                length={cycle.length_days}
-                today={status?.day ?? null}
-                label={t(lang, "cycleTitle")}
-              />
-              <div className="cycle-legend">
-                <span data-series="period">{t(lang, "phase_period")}</span>
-                <span data-series="progesterone">
-                  {t(lang, "progesterone")}
-                </span>
-                <span data-series="estradiol">{t(lang, "estradiol")}</span>
-                <span data-series="luteal">
-                  {t(lang, "possibleResistance")}
-                </span>
-              </div>
-              <p className="cycle-how-to">{t(lang, "cycleHowTo")}</p>
             </div>
             <ListButton
               label={t(lang, "lastPeriodStart")}
@@ -130,6 +103,27 @@ export function CycleSettings({
               value={`${cycle.length_days} ${t(lang, "daysUnit")}`}
               onClick={() => setEditing("length")}
             />
+            <details className="cycle-disclosure">
+              <summary>
+                {t(lang, "cycleChart")}
+                <Icon name="chevron" size="sm" />
+              </summary>
+              <div className="cycle-disclosure-body">
+                <CycleChart
+                  length={cycle.length_days}
+                  today={status?.day ?? null}
+                  currentPhase={status?.phase ?? null}
+                  lang={lang}
+                />
+                <p className="cycle-how-to">{t(lang, "cycleHowTo")}</p>
+                <p className="cycle-note">
+                  {t(lang, "cycleNote")}{" "}
+                  <a href={EVIDENCE_URL} target="_blank" rel="noreferrer">
+                    {t(lang, "cycleSource")}
+                  </a>
+                </p>
+              </div>
+            </details>
           </>
         )}
       </ListGroup>

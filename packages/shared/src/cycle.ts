@@ -40,6 +40,22 @@ export function cyclePhase(day: number, length: number): CyclePhase {
   return "luteal";
 }
 
+export interface CyclePhaseRange {
+  phase: CyclePhase;
+  firstDay: number;
+  lastDay: number;
+}
+
+export function cyclePhaseRanges(length: number): CyclePhaseRange[] {
+  const ovulation = ovulationDay(length);
+  return [
+    { phase: "period", firstDay: 1, lastDay: PERIOD_DAYS },
+    { phase: "follicular", firstDay: PERIOD_DAYS + 1, lastDay: ovulation - 1 },
+    { phase: "ovulation", firstDay: ovulation, lastDay: ovulation },
+    { phase: "luteal", firstDay: ovulation + 1, lastDay: length },
+  ];
+}
+
 export function cycleStatus(
   cycle: CycleTracking,
   today: Date,

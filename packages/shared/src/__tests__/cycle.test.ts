@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { cyclePhase, cycleStatus } from "../cycle.js";
+import { cyclePhase, cyclePhaseRanges, cycleStatus } from "../cycle.js";
 
 const tracking = (start: string | null, length = 28) => ({
   enabled: true,
@@ -20,6 +20,23 @@ describe("cyclePhase", () => {
   it("keeps a 14-day luteal phase in longer cycles", () => {
     expect(cyclePhase(21, 35)).toBe("ovulation");
     expect(cyclePhase(22, 35)).toBe("luteal");
+  });
+});
+
+describe("cyclePhaseRanges", () => {
+  it("covers every day once and agrees with cyclePhase", () => {
+    for (const length of [21, 28, 35, 45]) {
+      const ranges = cyclePhaseRanges(length);
+      expect(ranges.at(0)?.firstDay).toBe(1);
+      expect(ranges.at(-1)?.lastDay).toBe(length);
+      for (const range of ranges) {
+        for (let day = range.firstDay; day <= range.lastDay; day++) {
+          expect(cyclePhase(day, length)).toBe(range.phase);
+        }
+      }
+      const days = ranges.reduce((n, r) => n + r.lastDay - r.firstDay + 1, 0);
+      expect(days).toBe(length);
+    }
   });
 });
 

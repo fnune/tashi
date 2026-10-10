@@ -300,6 +300,10 @@ test.describe("full user flow", () => {
     await logPeriodStart(page, (sheet) => sheet.getByText("Today").click());
     await expect(page.getByText("Day 1 of 28")).toBeVisible();
     await expect(page.locator(".cycle-phase")).toHaveText("● Period");
+    await page.getByText("Cycle chart").click();
+    await expect(page.locator(".cycle-phases li[data-current]")).toContainText(
+      "You are here · day 1",
+    );
 
     await page.getByRole("navigation").getByText("Calculate").click();
     await expect(page.locator(".cycle-banner")).toContainText(

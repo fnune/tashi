@@ -81,14 +81,18 @@
 }
 
 .event-icon[data-kind="meal"] {
-  background: var(--color-warn-soft);
-  color: var(--color-warn);
-}
-
-.event-icon[data-kind="fast_insulin"],
-.event-icon[data-kind="slow_insulin"] {
   background: var(--color-accent-soft);
   color: var(--color-accent);
+}
+
+.event-icon[data-kind="fast_insulin"] {
+  background: color-mix(in srgb, var(--color-insulin-rapid) 16%, transparent);
+  color: var(--color-insulin-rapid);
+}
+
+.event-icon[data-kind="slow_insulin"] {
+  background: var(--color-surface-raised);
+  color: var(--color-insulin-basal);
 }
 
 .event-icon[data-kind="glucose_reading"] {

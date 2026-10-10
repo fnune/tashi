@@ -33,10 +33,14 @@
   --color-series-3: var(--color-accent);
   --color-series-4: var(--color-fg-muted);
 
-  --color-hormone-progesterone: var(--color-warn);
-  --color-hormone-estradiol: var(--color-accent);
-  --color-cycle-luteal: var(--color-warn-soft);
-  --color-cycle-period: var(--color-danger-soft);
+  --color-insulin-rapid: #e8701a;
+  --color-insulin-basal: var(--color-fg-muted);
+
+  --color-phase-period: var(--color-danger);
+  --color-phase-follicular: var(--color-ok);
+  --color-phase-ovulation: var(--color-accent);
+  --color-phase-luteal: var(--color-warn);
+  --color-hormone-line: var(--color-fg-muted);
 
   --font-sans:
     "Figtree Variable", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
@@ -132,6 +136,7 @@
     --color-warn-soft: #3a2e12;
     --color-danger: #f06a62;
     --color-danger-soft: #3d1a18;
+    --color-insulin-rapid: #f59145;
     --color-glucose-band: rgb(60 196 135 / 0.1);
   }
 }

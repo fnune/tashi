@@ -8,9 +8,10 @@ export {
   uncoveredHours,
   windowCovers,
 } from "./calculation.js";
-export type { CyclePhase, CycleStatus } from "./cycle.js";
+export type { CyclePhase, CyclePhaseRange, CycleStatus } from "./cycle.js";
 export {
   cyclePhase,
+  cyclePhaseRanges,
   cycleStatus,
   MAX_CYCLE_DAYS,
   MIN_CYCLE_DAYS,
