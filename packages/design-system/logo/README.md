@@ -29,7 +29,7 @@ It needs Python and `rsvg-convert`, both in the flake's dev shell. Besides writi
     - `icon-192.png` and `icon-512.png` (rounded tile): the manifest's regular icons.
     - `icon-maskable-512.png` (square): Android launchers that crop icons to their own shape. The mark stays inside the central safe circle.
 
-`packages/frontend/public/manifest.webmanifest` is written by hand: update its colours if the app's background tokens change.
+`packages/frontend/public/manifest.webmanifest` is written by hand: update its colours if the app's background tokens change. `index.html` links it with `crossorigin="use-credentials"`: the deployment sits behind Cloudflare Access, and a manifest fetched without cookies gets the login redirect instead, which makes the app uninstallable.
 
 ## Tweaking
 
