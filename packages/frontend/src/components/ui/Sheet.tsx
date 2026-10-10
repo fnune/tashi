@@ -72,13 +72,25 @@ export function Sheet({
   children: ReactNode;
 }) {
   const dialog = useRef<HTMLDialogElement>(null);
+  const closedByParent = useRef(false);
   const drag = useDragToDismiss(onClose);
+
+  function reportDismissal() {
+    if (closedByParent.current) {
+      closedByParent.current = false;
+      return;
+    }
+    onClose();
+  }
 
   useEffect(() => {
     const element = dialog.current;
     if (!element) return;
     if (open && !element.open) element.showModal();
-    if (!open && element.open) element.close();
+    if (!open && element.open) {
+      closedByParent.current = true;
+      element.close();
+    }
   }, [open]);
 
   return (
@@ -89,7 +101,7 @@ export function Sheet({
       aria-label={title}
       data-dragging={drag.offset > 0 ? "" : undefined}
       style={drag.offset ? { translate: `0 ${drag.offset}px` } : undefined}
-      onClose={onClose}
+      onClose={reportDismissal}
       onClick={(e) => {
         if (isOnBackdrop(e)) onClose();
       }}
