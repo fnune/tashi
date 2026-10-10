@@ -1,18 +1,18 @@
 .explainer {
   display: flex;
   flex-direction: column;
-  gap: var(--space-4);
+  gap: var(--space-section);
 }
 
 .explainer-back {
   align-self: flex-start;
-  padding: var(--space-1-5) var(--space-3);
+  min-height: var(--size-control);
+  padding: 0 var(--space-3-5);
   border: none;
-  border-radius: var(--radius-full);
-  background: var(--color-surface);
-  color: var(--color-accent);
-  font-size: var(--text-sm);
-  font-weight: var(--weight-bold);
+  border-radius: var(--radius-pill);
+  background: var(--color-fill);
+  color: var(--color-fg);
+  font-weight: var(--font-weight-bold);
   cursor: pointer;
 }
 
@@ -32,9 +32,6 @@
   counter-reset: step;
   display: flex;
   flex-direction: column;
-  border-radius: var(--radius-xl);
-  background: var(--color-surface);
-  overflow: hidden;
 }
 
 .explainer-steps li {
@@ -43,7 +40,7 @@
   grid-template-columns: var(--space-8) 1fr;
   column-gap: var(--space-3);
   row-gap: var(--space-1);
-  padding: var(--space-3-5) var(--space-4);
+  padding: var(--space-3-5) 0;
   border-top: var(--border-width) solid var(--color-line);
 }
 
@@ -58,17 +55,17 @@
   place-items: center;
   width: var(--space-8);
   height: var(--space-8);
-  border-radius: var(--radius-full);
-  background: var(--color-accent-soft);
-  color: var(--color-accent);
-  font-weight: var(--weight-heavy);
+  border-radius: var(--radius-pill);
+  background: var(--color-fill);
+  color: var(--color-fg);
+  font-weight: var(--font-weight-bold);
 }
 
 .explainer-steps code {
   justify-self: start;
   padding: var(--space-0-5) var(--space-2);
   border-radius: var(--radius-sm);
-  background: var(--color-surface-raised);
+  background: var(--color-fill);
   font-family: var(--font-mono);
   font-size: var(--text-sm);
 }
@@ -83,16 +80,13 @@
   display: flex;
   flex-direction: column;
   gap: var(--space-2-5);
-  padding: var(--space-4);
-  border-radius: var(--radius-xl);
-  background: var(--color-surface);
   line-height: var(--leading-relaxed);
   scroll-margin-top: var(--space-4);
 }
 
 .explainer-section h3 {
-  font-size: var(--text-lg);
-  font-weight: var(--weight-heavy);
+  font-size: var(--type-heading-size);
+  font-weight: var(--type-heading-weight);
 }
 
 .explainer-section ul {

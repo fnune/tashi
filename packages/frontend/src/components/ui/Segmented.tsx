@@ -6,15 +6,17 @@ export function Segmented<T extends string | number>({
   value,
   options,
   onChange,
+  variant = "track",
 }: {
   label: string;
   value: T;
   options: { value: T; label: string }[];
   onChange: (value: T) => void;
+  variant?: "track" | "pills";
 }) {
   const name = useId();
   return (
-    <fieldset className="segmented">
+    <fieldset className="segmented" data-variant={variant}>
       <legend className="visually-hidden">{label}</legend>
       {options.map((o) => (
         <label key={o.value}>

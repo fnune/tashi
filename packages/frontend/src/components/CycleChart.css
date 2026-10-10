@@ -32,7 +32,7 @@
 .cycle-chart-estradiol,
 .cycle-chart-progesterone {
   fill: none;
-  stroke: var(--color-hormone-line);
+  stroke: var(--color-fg-muted);
   stroke-width: 2;
   stroke-linecap: round;
   stroke-linejoin: round;
@@ -41,13 +41,6 @@
 .cycle-chart-progesterone {
   stroke: var(--color-fg);
   stroke-dasharray: 5 4;
-}
-
-.cycle-chart-track-label {
-  margin-top: var(--space-1-5);
-  font-size: var(--text-2xs);
-  font-weight: var(--weight-bold);
-  color: var(--color-fg-muted);
 }
 
 .cycle-chart-today {
@@ -87,31 +80,11 @@
   content: "";
   grid-row: 1 / span 2;
   align-self: center;
-  border-top: var(--border-width-heavy) solid var(--color-hormone-line);
+  border-top: var(--border-width-heavy) solid var(--color-fg-muted);
 }
 
 .cycle-chart-lines [data-line="resistance"]::before {
-  border-top-color: transparent;
-}
-
-.cycle-chart-scale {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-1);
-  margin-left: var(--space-2);
-  font-weight: var(--weight-medium);
-  color: var(--color-fg-muted);
-}
-
-.cycle-chart-scale i {
-  width: var(--space-8);
-  height: var(--space-1-5);
-  border-radius: var(--radius-full);
-  background: linear-gradient(
-    to right,
-    var(--color-surface-raised),
-    var(--color-resistance)
-  );
+  border-top-color: var(--color-resistance);
 }
 
 .cycle-chart-lines [data-line="progesterone"]::before {
@@ -143,12 +116,11 @@
 }
 
 .cycle-phases li[data-current] {
-  background: var(--color-surface-raised);
-  box-shadow: inset var(--space-1) 0 0 var(--phase-color);
+  background: var(--color-fill);
 }
 
 .cycle-phase-swatch {
-  border-radius: var(--radius-full);
+  border-radius: var(--radius-pill);
   background: var(--phase-color);
   flex: none;
   width: var(--space-3);

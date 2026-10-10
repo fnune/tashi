@@ -86,9 +86,6 @@ export function CycleChart({
             vectorEffect="non-scaling-stroke"
           />
         </svg>
-        <span className="cycle-chart-track-label" aria-hidden="true">
-          {t(lang, "resistanceTrack")}
-        </span>
         <CycleStrips length={length} currentPhase={currentPhase} />
         <span
           className="cycle-chart-curve-label"
@@ -121,14 +118,7 @@ export function CycleChart({
           <dd>{t(lang, "progesteroneMeaning")}</dd>
         </div>
         <div data-line="resistance">
-          <dt>
-            {t(lang, "resistanceTrack")}
-            <span className="cycle-chart-scale">
-              {t(lang, "less")}
-              <i aria-hidden="true" />
-              {t(lang, "more")}
-            </span>
-          </dt>
+          <dt>{t(lang, "resistanceTrack")}</dt>
           <dd>{t(lang, "resistanceMeaning")}</dd>
         </div>
       </dl>

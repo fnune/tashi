@@ -4,20 +4,33 @@ import "./Field.css";
 function Field({
   label,
   hint,
+  error,
+  hideLabel = false,
   children,
 }: {
   label: string;
   hint?: ReactNode;
-  children: (id: string) => ReactNode;
+  error?: ReactNode;
+  hideLabel?: boolean;
+  children: (id: string, describedBy: string | undefined) => ReactNode;
 }) {
   const id = useId();
+  const errorId = `${id}-error`;
   return (
     <div className="field">
-      <label className="field-label" htmlFor={id}>
+      <label
+        className={hideLabel ? "visually-hidden" : "field-label"}
+        htmlFor={id}
+      >
         {label}
       </label>
-      {children(id)}
+      {children(id, error ? errorId : undefined)}
       {hint && <span className="field-hint">{hint}</span>}
+      {error && (
+        <span className="field-error" id={errorId} role="alert">
+          {error}
+        </span>
+      )}
     </div>
   );
 }
@@ -58,29 +71,39 @@ export function parseDecimal(text: string): number | null {
 export function NumberField({
   label,
   hint,
+  error,
+  hideLabel,
   value,
   unit,
   onChange,
 }: {
   label: string;
   hint?: ReactNode;
+  error?: ReactNode;
+  hideLabel?: boolean;
   value: string;
   unit?: string;
   onChange: (value: string) => void;
 }) {
   return (
-    <Field label={label} hint={hint}>
-      {(id) => (
+    <Field label={label} hint={hint} error={error} hideLabel={hideLabel}>
+      {(id, describedBy) => (
         <div className="field-number">
           <input
             id={id}
             className="field-input field-input-number"
             inputMode="decimal"
             autoComplete="off"
+            aria-invalid={error ? true : undefined}
+            aria-describedby={describedBy}
             value={value}
             onChange={(e) => onChange(e.target.value)}
           />
-          {unit && <span className="field-unit">{unit}</span>}
+          {unit && (
+            <span className="field-unit" aria-hidden="true">
+              {unit}
+            </span>
+          )}
         </div>
       )}
     </Field>

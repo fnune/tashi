@@ -39,6 +39,12 @@ export function CycleBanner({
       currentPhase={status.phase}
       today={status.day}
       compact
+      labels={{
+        period: t(lang, "phaseShort_period"),
+        follicular: t(lang, "phaseShort_follicular"),
+        ovulation: t(lang, "phaseShort_ovulation"),
+        luteal: t(lang, "phaseShort_luteal"),
+      }}
     />
   );
   const suggestion = (text: ReactNode, action: string, onAct: () => void) => (
@@ -70,7 +76,7 @@ export function CycleBanner({
     <Link to={`/settings#${CYCLE_CHART_ANCHOR}`} className="cycle-banner">
       <div className="cycle-banner-row">
         {summary}
-        <Icon name="chevron" size="sm" />
+        <Icon name="chevron" />
       </div>
       {strips}
     </Link>

@@ -1,0 +1,211 @@
+.breakdown {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-stack);
+}
+
+.foods {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+}
+
+.food {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  column-gap: var(--space-3);
+  row-gap: var(--space-0-5);
+  padding: var(--space-3) 0;
+  border-top: var(--border-width) solid var(--color-line);
+}
+
+.food:first-child {
+  border-top: none;
+  padding-top: 0;
+}
+
+.food > :not(.food-carbs) {
+  grid-column: 1;
+}
+
+.food-name {
+  font-weight: var(--type-body-strong-weight);
+}
+
+.food-detail,
+.food-note {
+  font-size: var(--type-secondary-size);
+  color: var(--color-fg-muted);
+}
+
+.food-warning {
+  font-size: var(--type-secondary-size);
+  color: var(--color-warning);
+}
+
+.food-carbs {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  align-self: start;
+  text-align: right;
+}
+
+.food-carbs b {
+  display: block;
+}
+
+.food-carbs small {
+  font-size: var(--type-caption-size);
+  color: var(--color-fg-muted);
+}
+
+.breakdown-total {
+  display: flex;
+  justify-content: space-between;
+  padding-top: var(--space-3);
+  border-top: var(--border-width) solid var(--color-line);
+  font-weight: var(--font-weight-bold);
+}
+
+.dose {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+.dose-caption {
+  font-size: var(--type-secondary-size);
+  color: var(--color-fg-muted);
+}
+
+.dose-total {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+}
+
+.dose-total b {
+  font-size: var(--type-dose-size);
+  line-height: var(--type-dose-line);
+  font-weight: var(--type-dose-weight);
+  letter-spacing: var(--type-dose-tracking);
+}
+
+.dose-total span {
+  font-size: var(--type-stat-size);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-fg-muted);
+}
+
+.dose-parts {
+  display: flex;
+  flex-direction: column;
+}
+
+.dose-parts div {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: var(--space-3);
+  padding: var(--space-2-5) 0;
+  border-top: var(--border-width) solid var(--color-line);
+}
+
+.dose-parts div:first-child {
+  border-top: none;
+}
+
+.dose-parts dt {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.dose-parts small {
+  font-size: var(--type-secondary-size);
+  color: var(--color-fg-muted);
+}
+
+.dose-parts dd {
+  font-weight: var(--font-weight-bold);
+  white-space: nowrap;
+}
+
+.dose-disclaimer {
+  font-size: var(--type-secondary-size);
+  color: var(--color-fg-muted);
+}
+
+.dose-why {
+  align-self: flex-start;
+  font-size: var(--type-secondary-size);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-accent-text);
+}
+
+.food-weight {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  color: var(--color-fg);
+}
+
+.food-weight input {
+  width: var(--space-14);
+  min-height: var(--size-control);
+  padding: 0 var(--space-2);
+  border: none;
+  border-radius: var(--radius-sm);
+  background: var(--color-fill);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.source-link {
+  font-size: var(--text-2xs);
+  color: var(--color-fg-muted);
+  margin-left: var(--space-1);
+}
+
+.source-unknown {
+  color: var(--color-warning);
+}
+
+a.source-link {
+  color: var(--color-accent-text);
+  text-decoration: underline;
+  text-decoration-style: dotted;
+}
+
+.estimated-badge,
+.gi-badge {
+  display: inline-block;
+  margin-left: var(--space-1);
+  padding: var(--space-px) var(--space-1-5);
+  border-radius: var(--radius-pill);
+  background: var(--color-fill);
+  font-size: var(--text-2xs);
+  font-weight: var(--font-weight-bold);
+}
+
+.estimated-badge {
+  color: var(--color-warning);
+}
+
+.gi-badge-low {
+  color: var(--color-glucose);
+}
+
+.gi-badge-medium {
+  color: var(--color-fg-muted);
+}
+
+/* High GI is information, not an alarm, so it takes amber rather than red. */
+.gi-badge-high {
+  color: var(--color-warning);
+}
+
+.gi-badge-estimated {
+  outline: var(--border-width) dashed currentColor;
+  outline-offset: calc(-1 * var(--border-width));
+}

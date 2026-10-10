@@ -36,7 +36,7 @@ export function DayBar({ windows }: { windows: MealWindow[] }) {
       </div>
       <div className="day-bar-ticks">
         {TICKS.map((hour) => (
-          <span key={hour}>{String(hour).padStart(2, "0")}</span>
+          <span key={hour}>{`${String(hour).padStart(2, "0")}:00`}</span>
         ))}
       </div>
     </div>

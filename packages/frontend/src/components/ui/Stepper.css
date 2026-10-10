@@ -8,8 +8,8 @@
 .stepper button {
   height: var(--space-14);
   border: none;
-  border-radius: var(--radius-lg);
-  background: var(--color-surface-raised);
+  border-radius: var(--radius-pill);
+  background: var(--color-fill);
   font-size: var(--text-2xl);
   font-weight: var(--weight-bold);
   cursor: pointer;
@@ -22,9 +22,11 @@
 
 .stepper output {
   text-align: center;
-  font-size: var(--text-display);
-  font-weight: var(--weight-heavy);
-  letter-spacing: var(--tracking-tight);
+  font-size: var(--type-dose-size);
+  line-height: var(--type-dose-line);
+  font-weight: var(--type-dose-weight);
+  letter-spacing: var(--type-dose-tracking);
+  font-variant-numeric: tabular-nums lining-nums;
 }
 
 .stepper small {

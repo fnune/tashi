@@ -1,51 +1,48 @@
-.emoji-picker {
+.icon-picker {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--space-1-5);
+  gap: var(--space-2);
   margin: 0;
   padding: 0;
   border: none;
 }
 
-.emoji-picker legend {
+.icon-picker legend {
   margin-bottom: var(--space-1-5);
-  font-size: var(--text-xs);
-  font-weight: var(--weight-semibold);
-  color: var(--color-fg-muted);
+  font-size: var(--type-secondary-size);
+  font-weight: var(--font-weight-semibold);
 }
 
-.emoji-picker label {
+.icon-picker label {
   position: relative;
   display: grid;
   place-items: center;
-  width: var(--space-10);
-  height: var(--space-10);
-  border: var(--border-width-strong) solid var(--color-line);
-  border-radius: var(--radius-md);
-  background: var(--color-surface-raised);
-  font-size: var(--text-lg);
+  width: var(--size-control);
+  height: var(--size-control);
+  border-radius: var(--radius-pill);
+  background: var(--color-fill);
   cursor: pointer;
 }
 
-.emoji-picker label:has(:checked) {
-  border-color: var(--color-accent);
-  background: var(--color-accent-soft);
+.icon-picker label:has(:checked) {
+  background: var(--color-accent);
+  color: var(--color-on-accent);
 }
 
-.emoji-picker label:has(:focus-visible) {
-  outline: var(--border-width-heavy) solid var(--color-accent);
+.icon-picker label:has(:focus-visible) {
+  outline: var(--size-focus-ring) solid var(--color-accent);
+  outline-offset: var(--focus-offset);
 }
 
 .profile-editor-mode {
   display: flex;
   flex-direction: column;
   gap: var(--space-1-5);
-  font-size: var(--text-xs);
-  font-weight: var(--weight-semibold);
-  color: var(--color-fg-muted);
+  font-size: var(--type-secondary-size);
+  font-weight: var(--font-weight-semibold);
 }
 
 .profile-editor-hint {
-  font-size: var(--text-xs);
+  font-size: var(--type-secondary-size);
   color: var(--color-fg-muted);
 }

@@ -1,8 +1,8 @@
 import type { Profile, Settings } from "@pincho/shared";
 import { activeProfile, NORMAL_PROFILE_ID } from "@pincho/shared";
-import { useEffect, useId, useRef } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { type Language, t } from "../i18n.js";
-import { profileName, profileSummary } from "../profileLabels.js";
+import { profileIcon, profileName, profileSummary } from "../profileLabels.js";
 import { Icon } from "./ui/Icon.js";
 import "./ProfileChips.css";
 
@@ -24,22 +24,47 @@ export function ProfileChips({
   const name = useId();
   const active = activeProfile(settings);
   const row = useRef<HTMLDivElement>(null);
+  const [moreChips, setMoreChips] = useState({ start: false, end: false });
 
+  useEffect(() => {
+    const scroller = row.current;
+    if (!scroller) return;
+    const findHiddenChips = () => {
+      const end = scroller.scrollWidth - scroller.clientWidth;
+      setMoreChips({
+        start: scroller.scrollLeft > 1,
+        end: scroller.scrollLeft < end - 1,
+      });
+    };
+    findHiddenChips();
+    scroller.addEventListener("scroll", findHiddenChips, { passive: true });
+    const observer = new ResizeObserver(findHiddenChips);
+    observer.observe(scroller);
+    return () => {
+      scroller.removeEventListener("scroll", findHiddenChips);
+      observer.disconnect();
+    };
+  }, []);
+
+  // Scrolls only the row: scrollIntoView would also move the page.
   useEffect(() => {
     const scroller = row.current;
     const chip = scroller?.querySelector<HTMLElement>(
       `[data-profile-id="${active.id}"]`,
     );
     if (!scroller || !chip) return;
-    const chipEnd = chip.offsetLeft + chip.offsetWidth;
-    const visibleEnd = scroller.scrollLeft + scroller.clientWidth;
-    if (chip.offsetLeft < scroller.scrollLeft || chipEnd > visibleEnd) {
-      const padding = Number.parseFloat(getComputedStyle(scroller).paddingLeft);
-      scroller.scrollTo({
-        left: chip.offsetLeft - scroller.offsetLeft - padding,
-      });
+    const start = chip.offsetLeft - scroller.offsetLeft;
+    const fade = Number.parseFloat(
+      getComputedStyle(scroller).getPropertyValue("--fade"),
+    );
+    const clear = (fade || 0) + 1;
+    const visibleStart = scroller.scrollLeft + clear;
+    const visibleEnd = scroller.scrollLeft + scroller.clientWidth - clear;
+    if (start < visibleStart || start + chip.offsetWidth > visibleEnd) {
+      scroller.scrollTo({ left: Math.max(0, start - clear) });
     }
   }, [active.id]);
+
   return (
     <fieldset
       className={
@@ -47,9 +72,16 @@ export function ProfileChips({
       }
     >
       <legend>{label ?? t(lang, "profilesTitle")}</legend>
-      <div className="profile-chips-row" ref={row}>
+      <div
+        className="profile-chips-row"
+        ref={row}
+        data-more-start={moreChips.start || undefined}
+        data-more-end={moreChips.end || undefined}
+      >
         {settings.profiles.map((profile) => {
           const editable = onEdit && profile.id !== NORMAL_PROFILE_ID;
+          const icon =
+            profile.id === NORMAL_PROFILE_ID ? null : profileIcon(profile);
           return (
             <span
               key={profile.id}
@@ -65,12 +97,10 @@ export function ProfileChips({
                   checked={profile.id === active.id}
                   onChange={() => onSelect(profile.id)}
                 />
-                {profile.id !== NORMAL_PROFILE_ID && (
-                  <span aria-hidden="true">{profile.emoji}</span>
-                )}
+                {icon && <Icon name={icon} />}
                 {profileName(profile, lang)}
                 {profile.id !== NORMAL_PROFILE_ID && (
-                  <small>{profileSummary(profile, lang)}</small>
+                  <small className="num">{profileSummary(profile, lang)}</small>
                 )}
               </label>
               {editable && (
@@ -83,7 +113,7 @@ export function ProfileChips({
                   )}
                   onClick={() => onEdit(profile)}
                 >
-                  <Icon name="edit" size="sm" />
+                  <Icon name="edit" />
                 </button>
               )}
             </span>

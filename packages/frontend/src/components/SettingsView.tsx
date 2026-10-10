@@ -41,6 +41,7 @@ import {
   ratioInputText,
   ratioUnit,
 } from "../ratioLabels.js";
+import { savedTheme, saveTheme, type ThemePreference } from "../theme.js";
 import { RATIOS_ANCHOR } from "./AppHeader.js";
 import { CycleSettings } from "./CycleSettings.js";
 import { DataSources } from "./DataSources.js";
@@ -57,6 +58,7 @@ import {
   SelectField,
   TextField,
 } from "./ui/Field.js";
+import { Icon } from "./ui/Icon.js";
 import { ListButton, ListGroup, ListRow } from "./ui/List.js";
 import { Notice } from "./ui/Notice.js";
 import { OptionList } from "./ui/OptionList.js";
@@ -96,9 +98,9 @@ function formatRange(window: { start_hour: number; end_hour: number }) {
 function formatMinutes(minutes: number): string {
   const hours = Math.floor(minutes / 60);
   const rest = minutes % 60;
-  if (hours && rest) return `${hours}h ${rest}m`;
-  if (hours) return `${hours}h`;
-  return `${rest}m`;
+  if (hours && rest) return `${hours}\u00a0h ${rest}\u00a0min`;
+  if (hours) return `${hours}\u00a0h`;
+  return `${rest}\u00a0min`;
 }
 
 function dedupeSources(sources: SourceRef[]): SourceRef[] {
@@ -112,6 +114,7 @@ function dedupeSources(sources: SourceRef[]): SourceRef[] {
 
 export function SettingsView({ settings, onSave, lang }: SettingsViewProps) {
   const [editing, setEditing] = useState<Editing | null>(null);
+  const [theme, setTheme] = useState(savedTheme);
   const [error, setError] = useState<string | null>(null);
   const { hash } = useLocation();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -217,6 +220,7 @@ export function SettingsView({ settings, onSave, lang }: SettingsViewProps) {
         />
         <ListButton
           label={t(lang, "targetBloodSugar")}
+          detail={t(lang, "targetBloodSugarDetail")}
           value={`${number.format(settings.target_blood_sugar)} ${unit}`}
           onClick={() => setEditing({ kind: "target" })}
         />
@@ -226,7 +230,10 @@ export function SettingsView({ settings, onSave, lang }: SettingsViewProps) {
           value={`+${Math.round(settings.fat_protein_multiplier * 100)} %`}
           onClick={() => setEditing({ kind: "fatProtein" })}
         />
-        <ListRow label={t(lang, "penIncrement")}>
+        <ListRow
+          label={t(lang, "penIncrement")}
+          detail={t(lang, "penIncrementDetail")}
+        >
           <Segmented
             label={t(lang, "penIncrement")}
             value={settings.pen_increment}
@@ -246,14 +253,18 @@ export function SettingsView({ settings, onSave, lang }: SettingsViewProps) {
           label={t(lang, "rapidInsulin")}
           detail={
             bolus && settings.insulin_action_minutes
-              ? `DIA ${formatMinutes(settings.insulin_action_minutes)}`
-              : undefined
+              ? t(lang, "actionDurationShort").replace(
+                  "{duration}",
+                  formatMinutes(settings.insulin_action_minutes),
+                )
+              : t(lang, "rapidInsulinDetail")
           }
           value={bolus?.brand_name ?? t(lang, "notSet")}
           onClick={() => setEditing({ kind: "bolus" })}
         />
         <ListButton
           label={t(lang, "basalInsulinShort")}
+          detail={t(lang, "basalInsulinDetail")}
           value={basal?.brand_name ?? t(lang, "notSet")}
           onClick={() => setEditing({ kind: "basal" })}
         />
@@ -302,13 +313,14 @@ export function SettingsView({ settings, onSave, lang }: SettingsViewProps) {
                 profile: {
                   id: crypto.randomUUID(),
                   name: "",
-                  emoji: "⭐",
+                  emoji: "star",
                   adjustment: { mode: "percent", percent: 0 },
                 },
               })
             }
           >
-            + {t(lang, "addProfile")}
+            <Icon name="plus" size="sm" />
+            {t(lang, "addProfile")}
           </button>
         }
         footer={t(lang, "windowsTileDay")}
@@ -352,13 +364,21 @@ export function SettingsView({ settings, onSave, lang }: SettingsViewProps) {
         ))}
         <ListButton
           tone="accent"
-          label={`+ ${t(lang, "addWindow")}`}
+          label={
+            <span className="list-row-add">
+              <Icon name="plus" size="sm" />
+              {t(lang, "addWindow")}
+            </span>
+          }
           onClick={addWindow}
         />
       </ListGroup>
 
       <ListGroup title={t(lang, "general")}>
-        <ListRow label={t(lang, "glucoseUnit")}>
+        <ListRow
+          label={t(lang, "glucoseUnit")}
+          detail={t(lang, "glucoseUnitDetail")}
+        >
           <Segmented<GlucoseUnit>
             label={t(lang, "glucoseUnit")}
             value={unit}
@@ -369,7 +389,10 @@ export function SettingsView({ settings, onSave, lang }: SettingsViewProps) {
             onChange={(glucose_unit) => persist({ ...settings, glucose_unit })}
           />
         </ListRow>
-        <ListRow label={t(lang, "ratioFormat")}>
+        <ListRow
+          label={t(lang, "ratioFormat")}
+          detail={t(lang, "ratioFormatDetail")}
+        >
           <Segmented<RatioFormat>
             label={t(lang, "ratioFormat")}
             value={settings.ratio_format}
@@ -386,7 +409,7 @@ export function SettingsView({ settings, onSave, lang }: SettingsViewProps) {
             onChange={(ratio_format) => persist({ ...settings, ratio_format })}
           />
         </ListRow>
-        <ListRow label={t(lang, "language")}>
+        <ListRow label={t(lang, "language")} detail={t(lang, "languageDetail")}>
           <Segmented<Language>
             label={t(lang, "language")}
             value={settings.language}
@@ -395,6 +418,21 @@ export function SettingsView({ settings, onSave, lang }: SettingsViewProps) {
               { value: "en", label: "English" },
             ]}
             onChange={(language) => persist({ ...settings, language })}
+          />
+        </ListRow>
+        <ListRow label={t(lang, "theme")} detail={t(lang, "themeDetail")}>
+          <Segmented<ThemePreference>
+            label={t(lang, "theme")}
+            value={theme}
+            options={[
+              { value: "system", label: t(lang, "themeSystem") },
+              { value: "light", label: t(lang, "themeLight") },
+              { value: "dark", label: t(lang, "themeDark") },
+            ]}
+            onChange={(next) => {
+              setTheme(next);
+              saveTheme(next);
+            }}
           />
         </ListRow>
       </ListGroup>
@@ -409,7 +447,7 @@ export function SettingsView({ settings, onSave, lang }: SettingsViewProps) {
       <DataSources lang={lang} />
 
       <section className="settings-about">
-        <Logo className="settings-about-logo" variant="icon" />
+        <Logo className="settings-about-logo" />
         <div>
           <b>{t(lang, "appTitle")}</b>
           <span>{t(lang, "aboutTagline")}</span>

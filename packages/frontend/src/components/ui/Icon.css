@@ -11,3 +11,8 @@
   width: var(--icon-md);
   height: var(--icon-md);
 }
+
+.icon-lg {
+  width: var(--icon-lg);
+  height: var(--icon-lg);
+}

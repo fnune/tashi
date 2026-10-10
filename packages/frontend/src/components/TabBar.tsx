@@ -23,7 +23,7 @@ export function TabBar({
 }) {
   return (
     <div className="tab-bar">
-      <nav>
+      <nav aria-label={t(lang, "mainNavigation")}>
         {TABS.map((tab) => (
           <NavLink
             key={tab.to}
@@ -32,7 +32,7 @@ export function TabBar({
             className="tab-bar-item"
             onClick={() => onNavigate(tab.to)}
           >
-            <Icon name={tab.icon} />
+            <Icon name={tab.icon} size="lg" />
             {t(lang, tab.label)}
           </NavLink>
         ))}

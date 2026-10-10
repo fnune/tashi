@@ -36,7 +36,7 @@ export function ProfileSwitcher({
         value={activeProfile(settings).id}
         options={settings.profiles.map((profile) => ({
           value: profile.id,
-          title: `${profile.emoji} ${profileName(profile, lang)}`,
+          title: profileName(profile, lang),
           detail:
             profile.id === suggestedId
               ? `${profileSummary(profile, lang)} · ${t(lang, "suggested")}`

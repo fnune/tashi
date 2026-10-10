@@ -81,7 +81,8 @@ export function CycleSettings({
                 </b>
                 {status && (
                   <span className="cycle-phase">
-                    ● {t(lang, `phase_${status.phase}`)}
+                    <span className="cycle-phase-dot" aria-hidden="true" />
+                    {t(lang, `phase_${status.phase}`)}
                   </span>
                 )}
               </div>
@@ -105,6 +106,7 @@ export function CycleSettings({
             />
             <ListButton
               label={t(lang, "cycleLength")}
+              detail={t(lang, "cycleLengthDetail")}
               value={`${cycle.length_days} ${t(lang, "daysUnit")}`}
               onClick={() => setEditing("length")}
             />
@@ -115,7 +117,14 @@ export function CycleSettings({
               onToggle={(e) => setChartOpen(e.currentTarget.open)}
             >
               <summary>
-                {t(lang, "cycleChart")}
+                <span className="list-row-text">
+                  <span className="list-row-label">
+                    {t(lang, "cycleChart")}
+                  </span>
+                  <span className="list-row-detail">
+                    {t(lang, "cycleChartDetail")}
+                  </span>
+                </span>
                 <Icon name="chevron" size="sm" />
               </summary>
               <div className="cycle-disclosure-body">

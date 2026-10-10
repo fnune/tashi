@@ -1,32 +1,57 @@
 .segmented {
   display: flex;
+  min-width: 0;
   border: none;
   margin: 0;
-  gap: var(--space-1);
-  padding: var(--space-1);
-  border-radius: var(--radius-md);
-  background: var(--color-surface-raised);
 }
 
 .segmented label {
   position: relative;
-  text-align: center;
-  flex: 1;
-  border-radius: var(--radius-sm);
-  padding: var(--space-1-5) var(--space-3);
-  font-size: var(--text-sm);
-  font-weight: var(--weight-semibold);
+  display: grid;
+  place-items: center;
+  min-height: var(--size-control);
+  padding: 0 var(--space-3);
   color: var(--color-fg-muted);
+  font-variant-numeric: tabular-nums;
   white-space: nowrap;
   cursor: pointer;
 }
 
-.segmented label:has(:checked) {
-  background: var(--color-surface);
-  color: var(--color-fg);
-  box-shadow: var(--shadow-sm);
+.segmented label:has(:focus-visible) {
+  outline: var(--size-focus-ring) solid var(--color-accent);
+  outline-offset: var(--focus-offset);
 }
 
-.segmented label:has(:focus-visible) {
-  outline: var(--border-width-heavy) solid var(--color-accent);
+.segmented[data-variant="track"] {
+  gap: var(--space-hair);
+  padding: var(--space-hair);
+  border-radius: var(--radius-md);
+  background: var(--color-fill);
+}
+
+.segmented[data-variant="track"] label {
+  border-radius: calc(var(--radius-md) - var(--space-hair));
+}
+
+.segmented[data-variant="track"] label:has(:checked) {
+  background: var(--color-bg);
+  color: var(--color-fg);
+  font-weight: var(--font-weight-bold);
+}
+
+.segmented[data-variant="pills"] {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(var(--size-timing-pill), 1fr));
+  gap: var(--space-2);
+}
+
+.segmented[data-variant="pills"] label {
+  border-radius: var(--radius-pill);
+  background: var(--color-fill);
+}
+
+.segmented[data-variant="pills"] label:has(:checked) {
+  background: var(--color-inverse-bg);
+  color: var(--color-inverse-fg);
+  font-weight: var(--font-weight-bold);
 }

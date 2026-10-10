@@ -4,8 +4,8 @@
   width: var(--toggle-width);
   height: var(--toggle-height);
   margin: 0;
-  border-radius: var(--radius-full);
-  background: var(--color-line);
+  border-radius: var(--radius-pill);
+  background: color-mix(in srgb, var(--color-fg-muted) 45%, var(--color-bg));
   appearance: none;
   cursor: pointer;
   transition: background var(--duration-fast) var(--ease-standard);
@@ -14,11 +14,10 @@
 .toggle::after {
   content: "";
   position: absolute;
-  inset: var(--space-0-5) auto var(--space-0-5) var(--space-0-5);
+  inset: var(--space-hair) auto var(--space-hair) var(--space-hair);
   aspect-ratio: 1;
-  border-radius: var(--radius-full);
-  background: var(--color-surface);
-  box-shadow: var(--shadow-sm);
+  border-radius: var(--radius-pill);
+  background: var(--color-bg);
   transition: translate var(--duration-fast) var(--ease-standard);
 }
 

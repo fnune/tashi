@@ -69,7 +69,7 @@ export function ListButton({
       onClick={onClick}
     >
       <RowContent {...props} />
-      {tone === "default" && <Icon name="chevron" size="sm" />}
+      {tone === "default" && <Icon name="chevron" />}
     </button>
   );
 }

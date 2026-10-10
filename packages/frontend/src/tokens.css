@@ -1,69 +1,68 @@
+/* Only what @pincho/design-system lacks; prefer its roles. */
 :root {
-  color-scheme: light;
-
-  --color-bg: #f3f6f8;
-  --color-surface: #ffffff;
-  --color-surface-raised: #eaf0f3;
-  --color-line: #dbe3e8;
-  --color-fg: #12232c;
-  --color-fg-muted: #5d717c;
-
-  --color-accent: #0a7c9c;
-  --color-accent-fg: #ffffff;
-  --color-accent-soft: #d9eff5;
-  --color-on-accent-overlay: rgb(255 255 255 / 0.16);
-
-  --color-ok: #23a26b;
-  --color-ok-soft: #dcf3e8;
-  --color-warn: #e39b12;
-  --color-warn-soft: #fcefd2;
-  --color-warn-fg: #1d1400;
-  --color-warn-line: color-mix(in srgb, var(--color-warn) 45%, transparent);
-  --color-danger: #d9473f;
-  --color-danger-soft: #fbe1df;
-  --color-scrim: rgb(5 15 20 / 0.45);
-
-  --color-glucose-in-range: var(--color-ok);
-  --color-glucose-high: var(--color-warn);
-  --color-glucose-low: var(--color-danger);
-  --color-glucose-band: rgb(35 162 107 / 0.1);
-
-  --color-series-1: var(--color-warn);
-  --color-series-2: var(--color-ok);
-  --color-series-3: var(--color-accent);
-  --color-series-4: var(--color-fg-muted);
-
-  --color-insulin-rapid: #e8701a;
-  --color-insulin-basal: var(--color-fg-muted);
-
-  --color-resistance: #a33ea1;
-
-  --color-phase-period: var(--color-danger);
-  --color-phase-follicular: var(--color-ok);
-  --color-phase-ovulation: var(--color-accent);
-  --color-phase-luteal: var(--color-warn);
-  --color-hormone-line: var(--color-fg-muted);
-
+  /* Fontsource registers the variable font under its own family name. */
   --font-sans:
-    "Figtree Variable", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    "Open Sans Variable", "Open Sans", system-ui, -apple-system, "Segoe UI",
+    Roboto, sans-serif;
   --font-mono: "SF Mono", "Cascadia Code", "Fira Code", monospace;
+
+  --color-scrim: rgb(0 0 0 / 0.45);
+  --color-on-accent-overlay: color-mix(
+    in srgb,
+    var(--color-on-accent) 16%,
+    transparent
+  );
+  --color-glucose-soft: color-mix(
+    in srgb,
+    var(--color-glucose) 14%,
+    var(--color-bg)
+  );
+  --color-warning-soft: color-mix(
+    in srgb,
+    var(--color-warning) 14%,
+    var(--color-bg)
+  );
+  --color-error-soft: color-mix(
+    in srgb,
+    var(--color-error) 14%,
+    var(--color-bg)
+  );
+  --color-accent-tint: color-mix(
+    in srgb,
+    var(--color-accent) 14%,
+    var(--color-bg)
+  );
+  --color-warning-line: color-mix(
+    in srgb,
+    var(--color-warning) 45%,
+    transparent
+  );
+  --color-glucose-band: color-mix(
+    in srgb,
+    var(--color-glucose) 45%,
+    var(--color-fill)
+  );
+  --color-resistance: var(--color-insulin-basal);
+  --color-hover: color-mix(in srgb, var(--color-fg) 6%, transparent);
+  --color-pressed: color-mix(in srgb, var(--color-fg) 8%, transparent);
+
   --text-2xs: 0.6875rem;
-  --text-xs: 0.75rem;
-  --text-sm: 0.8125rem;
-  --text-base: 0.9375rem;
-  --text-md: 1.0625rem;
+  --text-xs: var(--type-caption-size);
+  --text-sm: var(--type-secondary-size);
+  --text-base: var(--type-body-size);
+  --text-md: var(--type-body-lg-size);
   --text-lg: 1.1875rem;
   --text-xl: 1.375rem;
   --text-2xl: 1.5rem;
   --text-3xl: 1.875rem;
   --text-display: 2.75rem;
-  --text-hero: 4rem;
-  --weight-medium: 500;
-  --weight-semibold: 600;
-  --weight-bold: 700;
-  --weight-heavy: 800;
+  --text-hero: var(--type-dose-size);
+  --weight-medium: var(--font-weight-medium);
+  --weight-semibold: var(--font-weight-semibold);
+  --weight-bold: var(--font-weight-bold);
+  --weight-heavy: var(--font-weight-bold);
   --leading-tight: 1.1;
-  --leading-normal: 1.45;
+  --leading-normal: var(--type-body-line);
   --leading-relaxed: 1.6;
   --tracking-tight: -0.02em;
   --tracking-tighter: -0.04em;
@@ -71,18 +70,9 @@
 
   --space-px: 1px;
   --space-0-5: 0.125rem;
-  --space-1: 0.25rem;
   --space-1-5: 0.375rem;
-  --space-2: 0.5rem;
   --space-2-5: 0.625rem;
-  --space-3: 0.75rem;
   --space-3-5: 0.875rem;
-  --space-4: 1rem;
-  --space-5: 1.25rem;
-  --space-6: 1.5rem;
-  --space-8: 2rem;
-  --space-10: 2.5rem;
-  --space-14: 3.5rem;
   --space-20: 5rem;
   --space-24: 6rem;
 
@@ -91,55 +81,37 @@
   --border-width-heavy: 2px;
   --radius-xs: 0.1875rem;
   --radius-sm: 0.5rem;
-  --radius-md: 0.75rem;
-  --radius-lg: 1rem;
-  --radius-xl: 1.25rem;
-  --radius-2xl: 1.5rem;
-  --radius-full: 999px;
+  --radius-2xl: 1.75rem;
 
-  --shadow-sm: 0 1px 3px rgb(0 0 0 / 0.12);
-  --shadow-lg: 0 10px 30px rgb(0 20 30 / 0.25);
-  --focus-ring: 0 0 0 3px var(--color-accent-soft);
-
-  --duration-fast: 0.15s;
-  --duration-normal: 0.25s;
-  --ease-standard: ease;
+  --ease-standard: var(--motion-standard);
+  --duration-fast: var(--motion-fast);
+  --duration-normal: var(--motion-base);
 
   --layout-max-width: 27.5rem;
-  --layout-gutter: var(--space-4);
   --icon-sm: 1rem;
-  --icon-md: 1.5rem;
-  --icon-lg: 1.75rem;
-  --control-height: 2.75rem;
-  --dial-size: 8rem;
-  --toggle-width: 2.875rem;
-  --toggle-height: 1.75rem;
-  --dial-ring: 0.625rem;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    color-scheme: dark;
-
-    --color-bg: #0c161b;
-    --color-surface: #14222a;
-    --color-surface-raised: #1b2c35;
-    --color-line: #24363f;
-    --color-fg: #e7f0f3;
-    --color-fg-muted: #8fa4ae;
-
-    --color-accent: #3cb6d6;
-    --color-accent-fg: #06222b;
-    --color-accent-soft: #123844;
-
-    --color-ok: #3cc487;
-    --color-ok-soft: #123528;
-    --color-warn: #f0b13a;
-    --color-warn-soft: #3a2e12;
-    --color-danger: #f06a62;
-    --color-danger-soft: #3d1a18;
-    --color-resistance: #d77fd5;
-    --color-insulin-rapid: #f59145;
-    --color-glucose-band: rgb(60 196 135 / 0.1);
-  }
+  --icon-md: var(--size-icon);
+  --icon-lg: var(--size-icon-nav);
+  --control-height: var(--size-control);
+  --gauge-size: 11rem;
+  --focus-offset: 2px;
+  --space-hair: 3px;
+  --size-logo: 1.625rem;
+  --size-ratio-pill: 2.5rem;
+  --size-food-input: 6.75rem;
+  --size-cycle-row: 1.75rem;
+  --size-dot: 0.75rem;
+  --size-day-bar: 0.625rem;
+  --size-quick-tile: 4.5rem;
+  --size-text-button: 3rem;
+  --size-time-column: 2.625rem;
+  --size-timing-pill: 4.5rem;
+  --size-notice-text: 12rem;
+  --cycle-marker-overhang: 0.3125rem;
+  --icon-chip: 1.125rem;
+  --icon-state: 0.875rem;
+  --gauge-value-size: 2.25rem;
+  --gauge-tick-size: 10px;
+  --brand-size: 1.375rem;
+  --toggle-width: 3.25rem;
+  --toggle-height: 2rem;
 }

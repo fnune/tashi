@@ -44,11 +44,10 @@ test.describe("full user flow", () => {
 
     await expect(page.locator(".food")).toHaveCount(2);
     const recommended = await page.locator(".dose-total b").textContent();
+    await page.getByRole("button", { name: "Adjust" }).click();
     await page.getByRole("button", { name: "0.5 U more" }).click();
     const injected = String(Number(recommended) + 0.5);
-    await page
-      .getByRole("button", { name: `Log meal and ${injected} U` })
-      .click();
+    await page.getByRole("button", { name: `Log ${injected} U` }).click();
     await expect(page.getByText(`meal and ${injected} U`)).toBeVisible();
 
     await page.getByRole("navigation").getByText("History").click();
@@ -61,10 +60,12 @@ test.describe("full user flow", () => {
     await expect(meals).toContainText("150g rice with chicken");
 
     await meals.click();
-    await page
-      .getByRole("dialog")
-      .getByRole("button", { name: "Delete" })
-      .click();
+    const dialog = page.getByRole("dialog");
+    await dialog.getByRole("button", { name: "Delete" }).click();
+    await expect(dialog.getByRole("alertdialog")).toContainText(
+      "can't be undone",
+    );
+    await dialog.getByRole("button", { name: "Delete" }).click();
     await expect(meals).toHaveCount(0);
   });
 
@@ -87,12 +88,36 @@ test.describe("full user flow", () => {
     ).toBeVisible();
   });
 
+  test("changing a food's grams recalculates the dose", async ({ page }) => {
+    await page.goto("/");
+    await page.locator("textarea").fill("150g rice");
+    await page.getByRole("button", { name: "Calculate dose" }).click();
+    await expect(page.locator(".dose")).toBeVisible({ timeout: 5000 });
+
+    const carbs = async () =>
+      Number(
+        (await page.locator(".breakdown-total .num").textContent())?.replace(
+          /[^\d.]/g,
+          "",
+        ),
+      );
+    const before = await carbs();
+    await page
+      .getByLabel(/^Grams of/)
+      .first()
+      .fill("300");
+    await expect.poll(carbs).toBeCloseTo(before * 2, 0);
+    await expect(page.getByRole("button", { name: /^Log/ })).toContainText(
+      (await page.locator(".dose-total b").textContent()) ?? "",
+    );
+  });
+
   test("reuse a history entry", async ({ page }) => {
     await page.goto("/");
 
     await page.locator("textarea").fill("a banana");
     await page.getByRole("button", { name: "Calculate dose" }).click();
-    await page.getByRole("button", { name: /Log meal/ }).click();
+    await page.getByRole("button", { name: /^Log/ }).click();
 
     await page.getByRole("navigation").getByText("History").click();
     const meals = page.locator('.event[data-entry-type="meal"]');
@@ -137,8 +162,8 @@ test.describe("full user flow", () => {
     // Go to calculator
     await page.getByRole("navigation").getByText("Calculate").click();
 
-    await page.getByRole("button", { name: "Current glucose" }).click();
-    await page.getByLabel(/Read it from your meter/).fill("180");
+    await page.getByRole("button", { name: "Add glucose" }).click();
+    await page.getByRole("dialog").getByLabel("Glucose").fill("180");
     await page
       .getByRole("dialog")
       .getByRole("button", { name: "Save" })
@@ -214,6 +239,10 @@ test.describe("full user flow", () => {
 
     await doses.click();
     await sheet.getByRole("button", { name: "Delete" }).click();
+    await sheet.getByRole("button", { name: "Cancel" }).click();
+    await expect(sheet.getByRole("button", { name: "Save" })).toBeVisible();
+    await sheet.getByRole("button", { name: "Delete" }).click();
+    await sheet.getByRole("button", { name: "Delete" }).click();
     await expect(doses).toHaveCount(0);
   });
 
@@ -268,9 +297,9 @@ test.describe("full user flow", () => {
     await expect(page.getByRole("radio", { name: /Sick day/ })).toBeChecked();
     await page.getByRole("button", { name: "Calculate dose" }).click();
 
-    await expect(page.locator(".dose-caption")).toContainText(
-      "profile Sick day +20 %",
-    );
+    await expect(
+      page.locator('.dose-parts [data-part="profile"]'),
+    ).toContainText("Sick day profile+20 %");
     const sickDose = Number(await page.locator(".dose-total b").textContent());
     expect(sickDose).toBeGreaterThan(normalDose);
   });
@@ -279,7 +308,7 @@ test.describe("full user flow", () => {
     page,
   }) => {
     await page.goto("/settings");
-    await page.getByRole("button", { name: "+ Add profile" }).click();
+    await page.getByRole("button", { name: "Add profile" }).click();
     const sheet = page.getByRole("dialog");
     await sheet.getByLabel("Name").fill("Night shift");
     await sheet.getByText("By time of day").click();
@@ -294,7 +323,7 @@ test.describe("full user flow", () => {
     await expect(lunch.locator("s")).toHaveText("10 g/U");
 
     await page.getByRole("navigation").getByText("Calculate").click();
-    await expect(page.locator(".meal-window-chip")).toContainText("5 g/U");
+    await expect(page.locator(".ratio-pill")).toContainText("5 g/U");
   });
 
   test("a percentage profile shows each window's resulting ratio", async ({
@@ -302,15 +331,15 @@ test.describe("full user flow", () => {
   }) => {
     await page.goto("/settings");
     const lunch = page.getByRole("button", { name: /lunch/ });
-    await expect(lunch).toHaveText(/10 g\/U/);
+    await expect(lunch).toHaveText(/10\sg\/U/);
     await expect(lunch).not.toContainText("%");
 
     await page.getByText("Sick day").click();
     await expect(lunch).toContainText("8.33 g/U");
     await expect(lunch).toContainText("10 g/U · +20 %");
 
-    const chip = page.locator(".meal-window-chip");
-    await expect(chip).toHaveText(/lunch\s*10 →\s*8\.33 g\/U/);
+    const chip = page.locator(".ratio-pill");
+    await expect(chip).toHaveText(/lunch\s*10 →\s*8\.33\sg\/U/);
     await page.getByRole("navigation").getByText("Calculate").click();
     await chip.click();
     await expect(page).toHaveURL(/\/settings#ratios$/);
@@ -324,7 +353,7 @@ test.describe("full user flow", () => {
     await page.getByRole("switch", { name: "Track my cycle" }).check();
     await logPeriodStart(page, (sheet) => sheet.getByText("Today").click());
     await expect(page.getByText("Day 1 of 28")).toBeVisible();
-    await expect(page.locator(".cycle-phase")).toHaveText("● Period");
+    await expect(page.locator(".cycle-phase")).toHaveText("Period");
     await page.getByText("Cycle chart").click();
     await expect(page.locator(".cycle-phases li[data-current]")).toContainText(
       "You are here · day 1",

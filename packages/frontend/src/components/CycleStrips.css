@@ -1,5 +1,5 @@
 .cycle-strips {
-  --heat-height: var(--space-5);
+  --curve-height: var(--space-14);
   --phase-height: var(--space-3);
   position: relative;
   display: flex;
@@ -8,33 +8,75 @@
 }
 
 .cycle-strips-compact {
-  --heat-height: var(--space-2);
-  --phase-height: var(--space-1);
-  gap: var(--space-0-5);
+  --curve-height: var(--space-5);
+  --phase-height: var(--space-2);
 }
 
-.cycle-strips-heat,
+.cycle-strips-compact .cycle-strips-phases {
+  gap: var(--space-hair);
+}
+
+.cycle-strips-compact .cycle-strips-phases span {
+  opacity: 1;
+}
+
+.cycle-strips-track {
+  position: relative;
+}
+
+.cycle-strips-compact .cycle-strips-today {
+  inset: calc(-1 * var(--cycle-marker-overhang)) auto
+    calc(-1 * var(--cycle-marker-overhang))
+    calc((var(--today) - 0.5) / var(--days) * 100%);
+  width: var(--space-hair);
+  border: none;
+  border-radius: var(--radius-xs);
+  background: var(--color-fg);
+  box-shadow: 0 0 0 var(--border-width-heavy) var(--color-bg);
+  translate: -50% 0;
+}
+
+.cycle-strips-resistance {
+  display: block;
+  width: 100%;
+  height: var(--curve-height);
+}
+
+.cycle-strips-resistance-area {
+  fill: color-mix(in srgb, var(--color-resistance) 22%, transparent);
+}
+
+.cycle-strips-resistance-line {
+  fill: none;
+  stroke: var(--color-resistance);
+  stroke-width: var(--border-width-strong);
+  vector-effect: non-scaling-stroke;
+}
+
+.cycle-strips-labels {
+  display: grid;
+  grid-template-columns: repeat(var(--days), minmax(0, 1fr));
+  margin-top: var(--space-1);
+  font-size: var(--type-caption-size);
+  color: var(--color-fg-muted);
+}
+
+.cycle-strips-labels span {
+  justify-self: start;
+  white-space: nowrap;
+}
+
+.cycle-strips-labels span[data-phase="ovulation"] {
+  justify-self: center;
+}
+
+.cycle-strips-labels span:last-child {
+  justify-self: end;
+}
+
 .cycle-strips-phases {
   display: grid;
   grid-template-columns: repeat(var(--days), 1fr);
-}
-
-.cycle-strips-heat {
-  height: var(--heat-height);
-  overflow: hidden;
-  border-radius: var(--radius-sm);
-}
-
-.cycle-strips-compact .cycle-strips-heat {
-  border-radius: var(--radius-full);
-}
-
-.cycle-strips-heat span {
-  background: color-mix(
-    in srgb,
-    var(--color-resistance) calc(var(--level) * 100%),
-    var(--color-surface-raised)
-  );
 }
 
 .cycle-strips-phases {
@@ -43,7 +85,7 @@
 }
 
 .cycle-strips-phases span {
-  border-radius: var(--radius-full);
+  border-radius: var(--radius-pill);
   background: var(--phase-color);
   opacity: 0.35;
 }

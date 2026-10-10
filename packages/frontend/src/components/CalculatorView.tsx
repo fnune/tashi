@@ -8,12 +8,14 @@ import type {
 import {
   cycleStatus,
   latestRecentReading,
+  recalculateResult,
   toLocalDateString,
+  withWeight,
 } from "@pincho/shared";
 import { type Dispatch, type SetStateAction, useState } from "react";
 import * as api from "../api.js";
 import { apiErrorText, type Language, t } from "../i18n.js";
-import { MealBreakdown, totalDose } from "./MealBreakdown.js";
+import { DoseSummary, FoodList, totalDose } from "./DoseResult.js";
 import { ProfileChips } from "./ProfileChips.js";
 import { ProfileSwitcher } from "./ProfileSwitcher.js";
 import { SensorCard } from "./SensorCard.js";
@@ -21,6 +23,7 @@ import { Button } from "./ui/Button.js";
 import { Notice } from "./ui/Notice.js";
 import { Segmented } from "./ui/Segmented.js";
 import { Sheet } from "./ui/Sheet.js";
+import { Stepper } from "./ui/Stepper.js";
 import "./CalculatorView.css";
 
 export interface CalculatorFormState {
@@ -72,6 +75,7 @@ export function CalculatorView({
   const [logging, setLogging] = useState(false);
   const [logged, setLogged] = useState<string | null>(null);
   const [switchingProfile, setSwitchingProfile] = useState(false);
+  const [adjusting, setAdjusting] = useState(false);
   const cycle = cycleStatus(settings.cycle, new Date());
   const reading = latestRecentReading(timeline, new Date());
 
@@ -99,7 +103,7 @@ export function CalculatorView({
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!foodText.trim()) return;
+    if (!foodText.trim() || loading) return;
 
     setLoading(true);
     setError(null);
@@ -151,6 +155,7 @@ export function CalculatorView({
             )
           : t(lang, "loggedMealOnly"),
       );
+      setAdjusting(false);
       update({ result: null, foodText: "" });
       onDataChanged();
     } catch (err) {
@@ -185,57 +190,103 @@ export function CalculatorView({
 
       <ProfileChips settings={settings} lang={lang} onSelect={selectProfile} />
 
-      {logged && <Notice tone="ok">✓ {logged}</Notice>}
+      {logged && <Notice tone="ok">{logged}</Notice>}
 
       {result ? (
         <>
-          <section className="meal-summary">
-            <p>{result.input_text}</p>
-            <button
-              type="button"
-              className="meal-summary-change"
-              onClick={() => update({ result: null })}
-            >
-              {t(lang, "changeMeal")}
-            </button>
-          </section>
-          <MealBreakdown
+          <DoseSummary
             result={result}
             lang={lang}
+            ratioFormat={settings.ratio_format}
             penIncrement={settings.pen_increment}
-            injection={{ units, onChange: (next) => update({ units: next }) }}
           />
-          <Button disabled={logging} onClick={() => logMeal(result)}>
-            {units > 0
-              ? t(lang, "logMealAndUnits").replace(
-                  "{units}",
-                  decimal.format(units),
-                )
-              : t(lang, "logMealOnly")}
-          </Button>
+          <div className="dose-actions">
+            {adjusting && (
+              <Stepper
+                value={units}
+                step={settings.pen_increment}
+                unit="U"
+                format={(v) => decimal.format(v)}
+                decreaseLabel={t(lang, "lessInsulin").replace(
+                  "{step}",
+                  decimal.format(settings.pen_increment),
+                )}
+                increaseLabel={t(lang, "moreInsulin").replace(
+                  "{step}",
+                  decimal.format(settings.pen_increment),
+                )}
+                onChange={(next) => update({ units: next })}
+              />
+            )}
+            <div className="dose-buttons">
+              <Button disabled={logging} onClick={() => logMeal(result)}>
+                {units > 0
+                  ? t(lang, "logUnits").replace(
+                      "{units}",
+                      decimal.format(units),
+                    )
+                  : t(lang, "logMealOnly")}
+              </Button>
+              <Button
+                variant="secondary"
+                aria-expanded={adjusting}
+                onClick={() => setAdjusting(!adjusting)}
+              >
+                {t(lang, adjusting ? "doneAdjusting" : "adjustDose")}
+              </Button>
+            </div>
+          </div>
+          <FoodList
+            result={result}
+            lang={lang}
+            onWeightChange={(index, weight) => {
+              const items = result.items.map((item, i) =>
+                i === index ? withWeight(item, weight) : item,
+              );
+              const next = recalculateResult(result, items, settings);
+              update({ result: next, units: totalDose(next) ?? 0 });
+            }}
+          />
+          <section className="meal-summary">
+            <p>{result.input_text}</p>
+            <Button
+              variant="text"
+              onClick={() => {
+                setAdjusting(false);
+                update({ result: null });
+              }}
+            >
+              {t(lang, "changeMeal")}
+            </Button>
+          </section>
         </>
       ) : (
         <form className="meal-form" onSubmit={handleSubmit}>
-          <label className="meal-form-label" htmlFor="meal-text">
-            {t(lang, "whatAreYouEating")}
-          </label>
-          <textarea
-            id="meal-text"
-            className="meal-form-text"
-            value={foodText}
-            onChange={(e) => update({ foodText: e.target.value })}
-            placeholder={t(lang, "foodPlaceholder")}
-          />
-          {clarification && (
-            <Notice
-              tone={clarification.kind === "rejected" ? "danger" : "warn"}
-            >
-              {clarification.message}
-            </Notice>
-          )}
-          <div className="meal-form-field">
-            <span className="meal-form-label">{t(lang, "eatingIn")}</span>
+          <div className="section">
+            <label className="section-heading" htmlFor="meal-text">
+              {t(lang, "whatAreYouEating")}
+            </label>
+            <textarea
+              id="meal-text"
+              className="meal-form-text"
+              value={foodText}
+              onChange={(e) => update({ foodText: e.target.value })}
+              placeholder={t(lang, "foodPlaceholder")}
+            />
+            {clarification && (
+              <Notice
+                tone={clarification.kind === "rejected" ? "danger" : "warn"}
+              >
+                {clarification.message}
+              </Notice>
+            )}
+          </div>
+          <div className="section">
+            <span className="section-heading" aria-hidden="true">
+              {t(lang, "eatingIn")}
+            </span>
             <Segmented
+              variant="pills"
               label={t(lang, "eatingIn")}
               value={preBolusMinutes}
               options={PRE_BOLUS_OPTIONS.map((minutes) => ({
@@ -245,9 +296,21 @@ export function CalculatorView({
               onChange={(minutes) => update({ preBolusMinutes: minutes })}
             />
           </div>
-          <Button type="submit" disabled={loading || !foodText.trim()}>
-            {loading ? t(lang, "calculating") : t(lang, "calculateDose")}
-          </Button>
+          <div className="meal-form-submit">
+            <Button
+              type="submit"
+              disabled={!foodText.trim()}
+              aria-busy={loading || undefined}
+            >
+              {loading ? t(lang, "calculating") : t(lang, "calculateDose")}
+            </Button>
+            <p
+              className="meal-form-why"
+              data-hidden={foodText.trim() !== "" || loading || undefined}
+            >
+              {t(lang, "calculateNeedsFood")}
+            </p>
+          </div>
         </form>
       )}
 
@@ -262,16 +325,6 @@ export function CalculatorView({
         </Notice>
       )}
 
-      {loading && (
-        <div className="calculator-loading" role="status">
-          <span className="calculator-loading-dots" aria-hidden="true">
-            <span />
-            <span />
-            <span />
-          </span>
-          {t(lang, "calculating")}
-        </div>
-      )}
       <Sheet
         open={switchingProfile}
         title={t(lang, "switchProfile")}

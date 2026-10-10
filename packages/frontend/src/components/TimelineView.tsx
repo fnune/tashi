@@ -6,17 +6,15 @@ import type {
   SlowInsulinEntry,
   TimelineEntry,
 } from "@pincho/shared";
-import {
-  getBasalInsulinProfile,
-  getBolusInsulinProfile,
-  glucoseRange,
-} from "@pincho/shared";
+import { getBasalInsulinProfile, getBolusInsulinProfile } from "@pincho/shared";
 import { useState } from "react";
 import * as api from "../api.js";
+import { parseGlucoseInput } from "../glucoseLabels.js";
 import { apiErrorText, type Language, t } from "../i18n.js";
-import { MealBreakdown } from "./MealBreakdown.js";
+import { DoseSummary, FoodList } from "./DoseResult.js";
 import { Button } from "./ui/Button.js";
-import { DateTimeField, NumberField, parseDecimal } from "./ui/Field.js";
+import { ConfirmDelete } from "./ui/ConfirmDelete.js";
+import { DateTimeField, NumberField } from "./ui/Field.js";
 import { Icon, type IconName } from "./ui/Icon.js";
 import { Notice } from "./ui/Notice.js";
 import { Sheet } from "./ui/Sheet.js";
@@ -110,12 +108,12 @@ function EntryRow({
   const time = new Date(entry.timestamp).toLocaleTimeString(lang, {
     hour: "2-digit",
     minute: "2-digit",
+    hourCycle: "h23",
   });
 
   let title: string;
   let detail: string;
   let value: string;
-  let range: string | undefined;
   switch (entry.type) {
     case "meal":
       title = entry.meal_window.name;
@@ -143,7 +141,6 @@ function EntryRow({
       title = t(lang, "glucoseLabel");
       detail = t(lang, "manualReading");
       value = `${decimal.format(entry.value)} ${entry.unit}`;
-      range = glucoseRange(entry.value, entry.unit);
       break;
   }
 
@@ -156,16 +153,14 @@ function EntryRow({
     >
       <time dateTime={entry.timestamp}>{time}</time>
       <span className="event-icon" data-kind={entry.type}>
-        <Icon name={ICONS[entry.type]} size="sm" />
+        <Icon name={ICONS[entry.type]} />
       </span>
       <span className="event-text">
         <b>{title}</b>
         <span>{detail}</span>
       </span>
-      <span className="event-value" data-range={range}>
-        {value}
-        <Icon name="chevron" size="sm" />
-      </span>
+      <span className="event-value num">{value}</span>
+      <Icon name="chevron" size="sm" />
     </button>
   );
 }
@@ -194,9 +189,14 @@ function EntryEditor({
     entry?.type === "glucose_reading" ? decimal.format(entry.value) : "",
   );
   const [error, setError] = useState<string | null>(null);
-  const reading = parseDecimal(readingText);
+  const [confirming, setConfirming] = useState(false);
+  const { value: reading, error: readingError } = parseGlucoseInput(
+    readingText,
+    entry?.type === "glucose_reading" ? entry.unit : settings.glucose_unit,
+    lang,
+  );
   const isReading = type === "glucose_reading";
-  const valid = isReading ? reading !== null && reading > 0 : units > 0;
+  const valid = isReading ? reading !== null : units > 0;
 
   async function save() {
     setError(null);
@@ -235,13 +235,27 @@ function EntryEditor({
     }
   }
 
+  if (confirming) {
+    return (
+      <ConfirmDelete
+        message={t(lang, "confirmDeleteEntry")}
+        confirmLabel={t(lang, "deleteEntry")}
+        cancelLabel={t(lang, "cancel")}
+        onConfirm={remove}
+        onCancel={() => setConfirming(false)}
+      />
+    );
+  }
+
   return (
     <>
       {isReading ? (
         <NumberField
           label={t(lang, "glucoseLabel")}
+          hideLabel
           unit={settings.glucose_unit}
           value={readingText}
+          error={readingError}
           onChange={setReadingText}
         />
       ) : (
@@ -271,7 +285,7 @@ function EntryEditor({
         {t(lang, "save")}
       </Button>
       {entry && (
-        <Button variant="danger" onClick={remove}>
+        <Button variant="danger" onClick={() => setConfirming(true)}>
           {t(lang, "deleteEntry")}
         </Button>
       )}
@@ -294,6 +308,7 @@ function MealDetails({
 }) {
   const [when, setWhen] = useState(toLocalDatetime(new Date(entry.timestamp)));
   const [error, setError] = useState<string | null>(null);
+  const [confirming, setConfirming] = useState(false);
   const moved = when !== toLocalDatetime(new Date(entry.timestamp));
 
   async function run(action: () => Promise<unknown>) {
@@ -306,15 +321,29 @@ function MealDetails({
     }
   }
 
+  if (confirming) {
+    return (
+      <ConfirmDelete
+        message={t(lang, "confirmDeleteEntry")}
+        confirmLabel={t(lang, "deleteEntry")}
+        cancelLabel={t(lang, "cancel")}
+        onConfirm={() => run(() => api.deleteTimelineEntry(entry.id))}
+        onCancel={() => setConfirming(false)}
+      />
+    );
+  }
+
   return (
     <>
       <p className="meal-details-text">{entry.input_text}</p>
-      <MealBreakdown
+      <DoseSummary
         result={entry}
         lang={lang}
+        ratioFormat={settings.ratio_format}
         penIncrement={settings.pen_increment}
-        flush
+        showDisclaimer={false}
       />
+      <FoodList result={entry} lang={lang} />
       <DateTimeField
         label={t(lang, "dateTime")}
         value={when}
@@ -340,10 +369,7 @@ function MealDetails({
           {t(lang, "reuseEntry")}
         </Button>
       )}
-      <Button
-        variant="danger"
-        onClick={() => run(() => api.deleteTimelineEntry(entry.id))}
-      >
+      <Button variant="danger" onClick={() => setConfirming(true)}>
         {t(lang, "deleteEntry")}
       </Button>
     </>
@@ -360,6 +386,7 @@ export function TimelineView({
   onReuse,
 }: TimelineViewProps) {
   const [adding, setAdding] = useState<NewEntryType | null>(null);
+  const [clearing, setClearing] = useState(false);
   const sorted = [...timeline].sort(
     (a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime(),
   );
@@ -376,9 +403,9 @@ export function TimelineView({
   }
 
   async function handleClear() {
-    if (!window.confirm(t(lang, "confirmClearTimeline"))) return;
     await api.clearTimeline();
-    done();
+    setClearing(false);
+    onRefresh();
   }
 
   const editorType: NewEntryType | null =
@@ -398,19 +425,20 @@ export function TimelineView({
     <div className="timeline">
       <h2 className="screen-title">{t(lang, "timeline")}</h2>
 
-      <section className="timeline-add">
-        <h3>{t(lang, "addTitle")}</h3>
-        <div className="timeline-add-options">
+      <section className="section">
+        <h3 className="section-heading">{t(lang, "addTitle")}</h3>
+        <div className="quick-add">
           {ADDABLE.map(({ type, label }) => (
-            <Button
+            <button
               key={type}
-              variant="secondary"
+              type="button"
+              className="quick-add-tile"
               data-kind={type}
               onClick={() => setAdding(type)}
             >
-              <Icon name={ICONS[type]} size="sm" />
+              <Icon name={ICONS[type]} />
               {t(lang, label)}
-            </Button>
+            </button>
           ))}
         </div>
       </section>
@@ -420,8 +448,8 @@ export function TimelineView({
       )}
 
       {groupByDay(sorted, lang).map((group) => (
-        <section className="timeline-day" key={group.label}>
-          <h3>{group.label}</h3>
+        <section className="section" key={group.label}>
+          <h3 className="section-heading">{group.label}</h3>
           <div className="timeline-events">
             {group.entries.map((entry) => (
               <EntryRow
@@ -437,10 +465,29 @@ export function TimelineView({
       ))}
 
       {sorted.length > 0 && (
-        <button type="button" className="timeline-clear" onClick={handleClear}>
+        <Button
+          variant="danger"
+          className="timeline-clear"
+          onClick={handleClear}
+        >
           {t(lang, "clearTimeline")}
-        </button>
+        </Button>
       )}
+
+      <Sheet
+        open={clearing}
+        title={t(lang, "confirmClearTimeline")}
+        closeLabel={t(lang, "close")}
+        onClose={() => setClearing(false)}
+      >
+        <ConfirmDelete
+          message={t(lang, "confirmClearTimelineBody")}
+          confirmLabel={t(lang, "clearTimeline")}
+          cancelLabel={t(lang, "cancel")}
+          onConfirm={handleClear}
+          onCancel={() => setClearing(false)}
+        />
+      </Sheet>
 
       <Sheet
         open={editorType !== null}

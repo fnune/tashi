@@ -32,7 +32,7 @@ export function formatRatio(
   format: RatioFormat,
   lang: Language,
 ): string {
-  return `${decimals(lang).format(toDisplayRatio(gramsPerUnit, format))} ${ratioUnit(format, lang)}`;
+  return `${decimals(lang).format(toDisplayRatio(gramsPerUnit, format))}\u00a0${ratioUnit(format, lang)}`;
 }
 
 export function formatRatioNumber(

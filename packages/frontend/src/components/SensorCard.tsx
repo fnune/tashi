@@ -2,17 +2,24 @@ import type {
   CycleStatus,
   GlucoseEntry,
   GlucoseRange,
+  GlucoseUnit,
   InsulinOnBoard,
   Settings,
 } from "@pincho/shared";
-import { correctionComponents, glucoseRange } from "@pincho/shared";
+import {
+  correctionComponents,
+  GLUCOSE_RANGE_LIMITS,
+  glucoseRange,
+} from "@pincho/shared";
 import { useState } from "react";
+import { parseGlucoseInput } from "../glucoseLabels.js";
 import type { Language, TranslationKey } from "../i18n.js";
 import { t } from "../i18n.js";
 import { CycleBanner } from "./CycleBanner.js";
+import { GlucoseGauge } from "./GlucoseGauge.js";
 import { Button } from "./ui/Button.js";
-import { NumberField, parseDecimal } from "./ui/Field.js";
-import { Icon } from "./ui/Icon.js";
+import { NumberField } from "./ui/Field.js";
+import { Icon, type IconName } from "./ui/Icon.js";
 import { Sheet } from "./ui/Sheet.js";
 import "./SensorCard.css";
 
@@ -22,10 +29,20 @@ const RANGE_LABEL: Record<GlucoseRange, TranslationKey> = {
   high: "glucoseHigh",
 };
 
+const RANGE_ICON: Record<GlucoseRange, IconName> = {
+  low: "down",
+  in_range: "check",
+  high: "up",
+};
+
 const VISIBLE_IOB_UNITS = 0.05;
 
 function clockTime(date: Date, lang: Language): string {
-  return date.toLocaleTimeString(lang, { hour: "2-digit", minute: "2-digit" });
+  return date.toLocaleTimeString(lang, {
+    hour: "2-digit",
+    minute: "2-digit",
+    hourCycle: "h23",
+  });
 }
 
 function iobRunOut(iob: InsulinOnBoard, actionMinutes: number): Date | null {
@@ -71,45 +88,72 @@ export function SensorCard({
       ? iobRunOut(iob, settings.insulin_action_minutes)
       : null;
 
-  const caption =
+  const age =
     minutesAgo === null
       ? null
-      : `${range ? t(lang, RANGE_LABEL[range]) : ""} · ${
-          minutesAgo < 1
-            ? t(lang, "readingJustNow")
-            : t(lang, "readingMinutesAgo").replace("{min}", String(minutesAgo))
-        }`;
+      : minutesAgo < 1
+        ? t(lang, "readingJustNow")
+        : t(lang, "readingMinutesAgo").replace("{min}", String(minutesAgo));
+
+  const limits = GLUCOSE_RANGE_LIMITS[unit];
+  const gaugeLabel = reading
+    ? t(lang, "gaugeLabel")
+        .replace("{value}", decimal.format(reading.value))
+        .replace("{unit}", unit)
+        .replace(
+          "{state}",
+          range ? t(lang, RANGE_LABEL[range]).toLowerCase() : "",
+        )
+        .replace("{low}", decimal.format(limits.low))
+        .replace("{high}", decimal.format(limits.high))
+        .concat(age ? ` ${age}.` : "")
+    : t(lang, "gaugeEmptyLabel");
 
   return (
-    <section className="sensor">
+    <section className="sensor" aria-label={t(lang, "currentGlucose")}>
       <div className="sensor-main">
-        <div className="sensor-reading">
+        <div className="gauge">
+          <div className="gauge-figure" role="img" aria-label={gaugeLabel}>
+            <GlucoseGauge
+              value={reading?.value ?? null}
+              unit={unit}
+              range={range}
+            />
+            <div className="gauge-centre" aria-hidden="true">
+              {reading ? (
+                <>
+                  <span className="gauge-value num">
+                    {decimal.format(reading.value)}
+                  </span>
+                  <span className="gauge-unit">{unit}</span>
+                </>
+              ) : (
+                <span className="gauge-empty">{t(lang, "noReading")}</span>
+              )}
+              {range && (
+                <span className="gauge-state" data-range={range}>
+                  <Icon name={RANGE_ICON[range]} size="sm" />
+                  {t(lang, RANGE_LABEL[range])}
+                </span>
+              )}
+            </div>
+          </div>
           <button
             type="button"
-            className="dial"
-            data-range={range ?? "none"}
+            className="gauge-edit"
+            title={age ?? undefined}
+            aria-label={t(lang, reading ? "editGlucose" : "addGlucoseReading")}
             onClick={() => setMeasuring(true)}
-            aria-label={t(lang, "currentGlucose")}
           >
-            <span className="dial-value">
-              {reading ? decimal.format(reading.value) : "—"}
-            </span>
-            <span className="dial-unit">{unit}</span>
-            <span className="dial-edit" aria-hidden="true">
-              <Icon name="edit" size="sm" />
-            </span>
+            <Icon name={reading ? "edit" : "plus"} size="sm" />
+            {t(lang, reading ? "editGlucoseShort" : "addGlucoseShort")}
           </button>
-          {caption && (
-            <span className="sensor-caption" data-range={range ?? "none"}>
-              {caption}
-            </span>
-          )}
         </div>
 
         <dl className="sensor-stats">
           <div className="sensor-stat">
             <dt>{t(lang, "activeInsulin")}</dt>
-            <dd>{decimal.format(hasIob ? iobUnits : 0)} U</dd>
+            <dd className="num">{decimal.format(hasIob ? iobUnits : 0)} U</dd>
             {hasIob && (
               <div className="sensor-stat-extra sensor-bar">
                 <progress
@@ -129,7 +173,7 @@ export function SensorCard({
           </div>
           <div className="sensor-stat">
             <dt>{t(lang, "target")}</dt>
-            <dd>
+            <dd className="num">
               {decimal.format(settings.target_blood_sugar)} {unit}
             </dd>
           </div>
@@ -190,7 +234,7 @@ function CorrectionPreview({
     return (
       <div className="sensor-stat" data-tone="muted">
         <dt>{t(lang, "correction")}</dt>
-        <dd className="sensor-correction">—</dd>
+        <dd className="sensor-correction num">—</dd>
       </div>
     );
   }
@@ -208,7 +252,7 @@ function CorrectionPreview({
     value = `${decimal.format(components.units)} U`;
     detail = t(lang, "atOrBelowTarget");
   } else {
-    value = `${components.units > 0 ? "+" : ""}${decimal.format(components.units)} U`;
+    value = `${components.units > 0 ? "+" : components.units < 0 ? "−" : ""}${decimal.format(Math.abs(components.units))} U`;
     detail = `(${decimal.format(reading.value)} − ${decimal.format(settings.target_blood_sugar)}) ÷ ${decimal.format(components.correctionFactor)}`;
     if (components.iobReduction > 0) {
       detail += ` − ${decimal.format(components.iobReduction)} ${t(lang, "onBoardShort")}`;
@@ -219,7 +263,7 @@ function CorrectionPreview({
   return (
     <div className="sensor-stat" data-tone={tone}>
       <dt>{t(lang, "correction")}</dt>
-      <dd className="sensor-correction">{value}</dd>
+      <dd className="sensor-correction num">{value}</dd>
       <div className="sensor-stat-extra">{detail}</div>
     </div>
   );
@@ -231,24 +275,25 @@ function ReadingEditor({
   onSave,
 }: {
   lang: Language;
-  unit: string;
+  unit: GlucoseUnit;
   onSave: (value: number) => Promise<void>;
 }) {
   const [text, setText] = useState("");
   const [saving, setSaving] = useState(false);
-  const value = parseDecimal(text);
-  const valid = value !== null && value > 0;
+  const { value, error } = parseGlucoseInput(text, unit, lang);
 
   return (
     <>
       <NumberField
-        label={t(lang, "currentGlucoseHint")}
+        label={t(lang, "glucoseLabel")}
+        hideLabel
         unit={unit}
         value={text}
+        error={error}
         onChange={setText}
       />
       <Button
-        disabled={!valid || saving}
+        disabled={value === null || saving}
         onClick={async () => {
           if (value === null) return;
           setSaving(true);

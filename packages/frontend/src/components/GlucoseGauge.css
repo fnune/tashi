@@ -1,0 +1,53 @@
+.gauge-arc {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.gauge-track {
+  fill: none;
+  stroke: var(--color-fill);
+  stroke-width: 10;
+  stroke-linecap: round;
+}
+
+.gauge-band-gap {
+  fill: none;
+  stroke: var(--color-bg);
+  stroke-linecap: round;
+}
+
+.gauge-band {
+  fill: none;
+  stroke: var(--color-glucose-band);
+  stroke-linecap: round;
+}
+
+.gauge-tick {
+  font-size: var(--gauge-tick-size);
+  fill: var(--color-fg-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.gauge-dot {
+  stroke: var(--color-bg);
+  stroke-width: 4;
+  fill: var(--color-glucose);
+}
+
+.gauge-dot[data-range="high"] {
+  fill: var(--color-warning);
+}
+
+.gauge-dot[data-range="low"] {
+  fill: var(--color-error);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .gauge-dot {
+    transition:
+      cx var(--motion-base) var(--motion-standard),
+      cy var(--motion-base) var(--motion-standard);
+  }
+}

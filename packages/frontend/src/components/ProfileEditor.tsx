@@ -1,7 +1,12 @@
 import type { MealWindow, Profile, RatioFormat } from "@pincho/shared";
 import { useId, useState } from "react";
 import { type Language, t } from "../i18n.js";
-import { profileName, signedPercent } from "../profileLabels.js";
+import {
+  PROFILE_ICONS,
+  profileIcon,
+  profileName,
+  signedPercent,
+} from "../profileLabels.js";
 import {
   formatRatio,
   parseRatioInput,
@@ -10,12 +15,12 @@ import {
 } from "../ratioLabels.js";
 import { Button } from "./ui/Button.js";
 import { NumberField, TextField } from "./ui/Field.js";
+import { Icon } from "./ui/Icon.js";
 import { Notice } from "./ui/Notice.js";
 import { Segmented } from "./ui/Segmented.js";
 import { Stepper } from "./ui/Stepper.js";
 import "./ProfileEditor.css";
 
-const EMOJIS = ["🏃", "🤒", "🩸", "🏖️", "✈️", "😴", "🍕", "💊", "🌙", "⭐"];
 const PERCENT_STEP = 5;
 const MIN_PERCENT = -90;
 
@@ -46,11 +51,11 @@ export function ProfileEditor({
   onSave: (profile: Profile) => void;
   onDelete?: () => void;
 }) {
-  const emojiGroup = useId();
+  const iconGroup = useId();
   const [name, setName] = useState(
     profile.name || (isNew ? "" : profileName(profile, lang)),
   );
-  const [emoji, setEmoji] = useState(profile.emoji);
+  const [icon, setIcon] = useState(profileIcon(profile) ?? "");
   const [mode, setMode] = useState<Mode>(profile.adjustment.mode);
   const [percent, setPercent] = useState(
     profile.adjustment.mode === "percent" ? profile.adjustment.percent : 0,
@@ -84,7 +89,7 @@ export function ProfileEditor({
     onSave({
       ...profile,
       name: name.trim(),
-      emoji,
+      emoji: icon,
       adjustment:
         mode === "percent"
           ? { mode, percent }
@@ -100,21 +105,19 @@ export function ProfileEditor({
   return (
     <>
       <TextField label={t(lang, "mealName")} value={name} onChange={setName} />
-      <fieldset className="emoji-picker">
+      <fieldset className="icon-picker">
         <legend>{t(lang, "profileIcon")}</legend>
-        {(EMOJIS.includes(profile.emoji)
-          ? EMOJIS
-          : [profile.emoji, ...EMOJIS]
-        ).map((option) => (
-          <label key={option}>
+        {PROFILE_ICONS.map((option) => (
+          <label key={option} title={t(lang, `profileIcon_${option}`)}>
             <input
               type="radio"
               className="visually-hidden"
-              name={emojiGroup}
-              checked={option === emoji}
-              onChange={() => setEmoji(option)}
+              name={iconGroup}
+              checked={option === icon}
+              aria-label={t(lang, `profileIcon_${option}`)}
+              onChange={() => setIcon(option)}
             />
-            {option}
+            <Icon name={option} />
           </label>
         ))}
       </fieldset>
