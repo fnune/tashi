@@ -1,0 +1,161 @@
+/* Generated from tokens.json by scripts/build-css.mjs. Do not edit by hand. */
+
+:root {
+  --color-bg: #FFFFFF;
+  --color-fg: #121212;
+  --color-fg-muted: #5C5C5C;
+  --color-line: #E6E6E6;
+  --color-fill: #F2F2F2;
+  --color-inverse-bg: #121212;
+  --color-inverse-fg: #FFFFFF;
+  --color-accent: #1E6CAF;
+  --color-on-accent: #FFFFFF;
+  --color-accent-text: #1E6CAF;
+  --color-accent-soft: #1E6CAF26;
+  --color-glucose: #1D7A4E;
+  --color-insulin-rapid: #B4560F;
+  --color-insulin-basal: #6A4C9C;
+  --color-meal: #1E6CAF;
+  --color-warning: #935700;
+  --color-error: #B3261E;
+  --color-cycle-menstrual: #C2413A;
+  --color-cycle-follicular: #2F8F5B;
+  --color-cycle-ovulation: #1F8A8A;
+  --color-cycle-luteal: #B07800;
+  --color-day-night: #B9B9B3;
+  --color-day-breakfast: #B07800;
+  --color-day-lunch: #2F8F5B;
+  --color-day-dinner: #1E6CAF;
+  --font-sans: "Open Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-weight-regular: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+  --type-glucose-size: 4.25rem;
+  --type-glucose-line: 1;
+  --type-glucose-weight: 700;
+  --type-glucose-tracking: -0.02em;
+  --type-dose-size: 3.5rem;
+  --type-dose-line: 1;
+  --type-dose-weight: 700;
+  --type-dose-tracking: -0.02em;
+  --type-title-size: 1.75rem;
+  --type-title-line: 1.2;
+  --type-title-weight: 700;
+  --type-heading-size: 1.0625rem;
+  --type-heading-line: 1.35;
+  --type-heading-weight: 700;
+  --type-stat-size: 1.25rem;
+  --type-stat-line: 1.2;
+  --type-stat-weight: 700;
+  --type-body-lg-size: 1.0625rem;
+  --type-body-lg-line: 1.5;
+  --type-body-lg-weight: 400;
+  --type-body-size: 1rem;
+  --type-body-line: 1.4;
+  --type-body-weight: 400;
+  --type-body-strong-size: 1rem;
+  --type-body-strong-line: 1.4;
+  --type-body-strong-weight: 700;
+  --type-secondary-size: 0.875rem;
+  --type-secondary-line: 1.35;
+  --type-secondary-weight: 400;
+  --type-caption-size: 0.8125rem;
+  --type-caption-line: 1.3;
+  --type-caption-weight: 500;
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-14: 56px;
+  --space-gutter: 20px;
+  --space-section: 40px;
+  --space-stack: 16px;
+  --radius-md: 14px;
+  --radius-lg: 20px;
+  --radius-xl: 22px;
+  --radius-pill: 999px;
+  --radius-phone-icon: 22.5%;
+  --size-touch-min: 44px;
+  --size-control: 44px;
+  --size-primary: 60px;
+  --size-row: 64px;
+  --size-entry: 60px;
+  --size-nav-item: 58px;
+  --size-icon: 20px;
+  --size-icon-nav: 24px;
+  --size-icon-stroke: 1.8px;
+  --size-focus-ring: 3px;
+  --motion-fast: 150ms;
+  --motion-base: 250ms;
+  --motion-standard: cubic-bezier(0.2, 0, 0, 1);
+  color-scheme: light;
+}
+
+/* Dark: follows the OS unless the app forces a theme with data-theme on <html>. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --color-bg: #000000;
+    --color-fg: #F0F0F0;
+    --color-fg-muted: #9E9E9E;
+    --color-line: #262626;
+    --color-fill: #141414;
+    --color-inverse-bg: #F0F0F0;
+    --color-inverse-fg: #000000;
+    --color-accent: #88BCF6;
+    --color-on-accent: #0B1E36;
+    --color-accent-text: #88BCF6;
+    --color-accent-soft: #88BCF626;
+    --color-glucose: #62CC9E;
+    --color-insulin-rapid: #F2A35E;
+    --color-insulin-basal: #B9A2F0;
+    --color-meal: #88BCF6;
+    --color-warning: #F2B65E;
+    --color-error: #FF8F85;
+    --color-cycle-menstrual: #F08A80;
+    --color-cycle-follicular: #62CC9E;
+    --color-cycle-ovulation: #5FD0D0;
+    --color-cycle-luteal: #F2B65E;
+    --color-day-night: #4A4A46;
+    --color-day-breakfast: #F2B65E;
+    --color-day-lunch: #62CC9E;
+    --color-day-dinner: #88BCF6;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --color-bg: #000000;
+  --color-fg: #F0F0F0;
+  --color-fg-muted: #9E9E9E;
+  --color-line: #262626;
+  --color-fill: #141414;
+  --color-inverse-bg: #F0F0F0;
+  --color-inverse-fg: #000000;
+  --color-accent: #88BCF6;
+  --color-on-accent: #0B1E36;
+  --color-accent-text: #88BCF6;
+  --color-accent-soft: #88BCF626;
+  --color-glucose: #62CC9E;
+  --color-insulin-rapid: #F2A35E;
+  --color-insulin-basal: #B9A2F0;
+  --color-meal: #88BCF6;
+  --color-warning: #F2B65E;
+  --color-error: #FF8F85;
+  --color-cycle-menstrual: #F08A80;
+  --color-cycle-follicular: #62CC9E;
+  --color-cycle-ovulation: #5FD0D0;
+  --color-cycle-luteal: #F2B65E;
+  --color-day-night: #4A4A46;
+  --color-day-breakfast: #F2B65E;
+  --color-day-lunch: #62CC9E;
+  --color-day-dinner: #88BCF6;
+  color-scheme: dark;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root { --motion-fast: 0ms; --motion-base: 0ms; }
+}

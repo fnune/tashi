@@ -32,7 +32,9 @@
       "!!**/dist",
       "!!**/node_modules",
       "!!**/.direnv",
-      "!!**/data"
+      "!!**/data",
+      "!packages/design-system/reference",
+      "!packages/design-system/tokens/tokens.css"
     ]
   },
   "overrides": [

@@ -1,0 +1,567 @@
+<title>Tashi Air reference</title>
+<!-- Canonical: variant B2, Open Sans, Sora accent. Other variants and fonts are kept for comparison. Fonts load from Google Fonts. -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;500;600;700&family=Google+Sans+Flex:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=DM+Sans:wght@400;500;600;700&family=Noto+Sans:wght@400;500;600;700&family=Public+Sans:wght@400;500;600;700&family=Work+Sans:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Figtree:wght@400;500;600;700&family=Nunito+Sans:wght@400;500;600;700&family=Hanken+Grotesk:wght@400;500;600;700&family=Open+Sans:wght@400;500;600;700&display=swap">
+<style>
+/* Layout: page column; sticky control bar (screen, accent, type); each iteration = notes + light and dark phone of the chosen screen */
+:root {
+  --bg: #F3F3F2; --panel: #FFFFFF; --line: #DDDDD9; --fg: #161616; --fg-2: #55554F; --accent: #1E5F99;
+  --display: system-ui, -apple-system, "Segoe UI", sans-serif;
+  --body: system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #0E0E0E; --panel: #171717; --line: #2E2E2E; --fg: #EDEDEA; --fg-2: #A8A8A2; --accent: #8CC8EE; color-scheme: dark } }
+:root[data-theme="dark"] { --bg: #0E0E0E; --panel: #171717; --line: #2E2E2E; --fg: #EDEDEA; --fg-2: #A8A8A2; --accent: #8CC8EE; color-scheme: dark }
+
+* { box-sizing: border-box }
+body { background: var(--bg); color: var(--fg); font: 16px/1.55 var(--body); padding: 40px 16px 72px }
+.wrap { max-width: 1180px; margin: 0 auto; display: grid; gap: 56px }
+h1, h2 { font-family: var(--display); font-weight: 700; margin: 0; text-wrap: balance }
+h1 { font-size: clamp(2rem, 5vw, 2.8rem); line-height: 1.1 }
+h2 { font-size: 1.6rem; line-height: 1.2 }
+p { margin: 0 }
+:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; border-radius: 4px }
+.eyebrow { font: 500 .75rem/1 var(--mono); letter-spacing: .1em; text-transform: uppercase; color: var(--fg-2) }
+header { display: grid; gap: 12px; max-width: 70ch }
+header p { color: var(--fg-2) }
+
+.ctl { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; background: color-mix(in srgb, var(--bg) 92%, transparent); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); margin: -24px -16px 0; padding: 12px 16px; border-bottom: 1px solid var(--line); display: grid; gap: 8px }
+.bars { display: flex; gap: 20px; flex-wrap: wrap; min-width: 0 }
+.bars fieldset { border: 0; margin: 0; padding: 0; min-width: 0; flex: 0 1 auto }
+.bars fieldset.grow { flex: 1 1 320px }
+.bars legend { font: 500 .72rem var(--mono); letter-spacing: .1em; text-transform: uppercase; color: var(--fg-2); padding: 0; margin-bottom: 8px }
+.opts { display: flex; gap: 6px; overflow-x: auto; padding: 2px 2px 4px; scrollbar-width: thin }
+.opt { flex: none; position: relative }
+.opt input { position: absolute; opacity: 0; inset: 0; margin: 0; cursor: pointer }
+.opt label { display: flex; align-items: center; gap: 8px; padding: 0 14px; min-height: 44px; border: 1px solid var(--line); border-radius: 999px; background: var(--panel); cursor: pointer; white-space: nowrap; font-size: .92rem }
+.opt input:checked + label { border-color: var(--fg); box-shadow: 0 0 0 1px var(--fg); font-weight: 700 }
+.opt input:focus-visible + label { outline: 3px solid var(--accent); outline-offset: 2px }
+.dots { display: inline-flex } .dots i { width: 14px; height: 14px; border-radius: 50%; border: 1px solid var(--line); display: block } .dots i + i { margin-left: -4px }
+.tnote { font-size: .88rem; color: var(--fg-2); max-width: 100ch }
+
+.iter { display: grid; grid-template-columns: minmax(0, 290px) minmax(0, 1fr); gap: 40px; align-items: start; padding-top: 40px; border-top: 1px solid var(--line) }
+@media (max-width: 900px) { .iter { grid-template-columns: 1fr; gap: 20px } }
+.iter-notes { display: grid; gap: 14px; position: sticky; top: calc(env(safe-area-inset-top, 0px) + 190px) }
+@media (max-width: 900px) { .iter-notes { position: static } }
+.iter-notes p { color: var(--fg-2) }
+.iter-notes ul { margin: 0; padding-left: 1.1em; display: grid; gap: 6px; color: var(--fg-2); font-size: .95rem }
+.iter-notes ul b { color: var(--fg); font-weight: 500 }
+.sw { display: flex; gap: 5px; flex-wrap: wrap } .sw i { width: 20px; height: 20px; border-radius: 50%; border: 1px solid var(--line); display: block }
+.swl { font: .72rem var(--mono); color: var(--fg-2) }
+.phones { display: flex; gap: 24px; flex-wrap: wrap; min-width: 0 }
+.phone-wrap { display: grid; gap: 8px; flex: 1 1 330px; max-width: 400px; min-width: 0 }
+.phone-wrap > span { font: 500 .72rem var(--mono); letter-spacing: .1em; text-transform: uppercase; color: var(--fg-2) }
+
+/* ================= phone: shared ================= */
+.phone {
+  --accent-soft: color-mix(in srgb, var(--accent-s) 15%, transparent);
+  background: var(--bg-s); color: var(--fg-s); border-radius: 34px; border: 1px solid var(--line); overflow: hidden; font-family: var(--body); min-width: 0; font-size: 16px; line-height: 1.4;
+}
+.phone :where(button, input, textarea) { font: inherit; color: inherit }
+.phone :focus-visible { outline: 3px solid var(--accent-s); outline-offset: 2px }
+.phone svg { flex: none }
+.m { color: var(--muted-s) }
+.num { font-variant-numeric: tabular-nums lining-nums }
+.app { display: grid; gap: var(--gap, 16px); padding: 18px 16px 0 }
+.top { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 0 4px }
+.brand { display: flex; align-items: center; gap: 8px; font: 700 1.3rem/1 var(--display) }
+.brand img { width: 30px; height: 30px; border-radius: 22.5%; display: block }
+.ratio { display: inline-flex; align-items: center; gap: 6px; min-height: 40px; padding: 0 12px; border-radius: 999px; border: 1px solid var(--line-s); background: none; font-size: .875rem; cursor: pointer; white-space: nowrap }
+.ratio svg { color: var(--warn-s) }
+.ratio b { color: var(--accent-text) }
+.ptitle { font: 700 1.75rem/1.2 var(--display); margin: 4px 4px 0 }
+.group { display: grid; gap: 14px; min-width: 0 }
+.group.bare { padding: 0 4px }
+.glabel { margin: 0; font-size: .78rem; font-weight: 700; letter-spacing: .07em; text-transform: uppercase; color: var(--muted-s) }
+.gh { display: flex; justify-content: space-between; align-items: center; gap: 8px }
+
+.status { display: grid; grid-template-columns: 128px minmax(0, 1fr); gap: 18px; align-items: center }
+.ring { position: relative; width: 128px; height: 128px }
+.ring svg { width: 100%; height: 100%; transform: rotate(-90deg); display: block }
+.ring circle { fill: none; stroke-width: var(--rw, 9) }
+.ring .trk { stroke: var(--line-s) }
+.ring .arc { stroke: var(--glu-s); stroke-linecap: round }
+.ring-val { position: absolute; inset: 0; display: grid; place-content: center; text-align: center }
+.ring-val .num { font: 700 2.25rem/1 var(--display) }
+.ring-val .m { font-size: .8rem }
+.ring-edit { position: absolute; right: -4px; bottom: 0; width: 44px; height: 44px; border-radius: 50%; border: 0; background: var(--fg-s); color: var(--bg-s); display: grid; place-items: center; cursor: pointer }
+.stats { margin: 0; display: grid }
+.stats div { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; padding: 11px 0; border-bottom: 1px solid var(--line-s) }
+.stats div:last-child { border-bottom: 0 }
+.stats dt { color: var(--muted-s); font-size: .93rem }
+.stats dd { margin: 0; font-weight: 700; white-space: nowrap; font-variant-numeric: tabular-nums }
+.cycle { display: grid; gap: 10px; background: none; border: 0; padding: 0; text-align: left; cursor: pointer; width: 100% }
+.cyc-h { display: flex; align-items: center; gap: 10px; font-weight: 700; min-height: 28px }
+.cyc-h .chev { margin-left: auto; color: var(--muted-s) }
+.dot { width: 12px; height: 12px; border-radius: 50%; flex: none; display: inline-block }
+.cyc-bar { position: relative; display: flex; gap: 3px; height: 8px }
+.cyc-bar i { display: block; border-radius: 999px }
+.cyc-mark { position: absolute; top: -5px; bottom: -5px; width: 3px; border-radius: 2px; background: var(--fg-s) }
+.cyc-leg { display: flex; justify-content: space-between; gap: 6px; font-size: .72rem; color: var(--muted-s); flex-wrap: wrap }
+
+.chips { display: flex; gap: 8px; flex-wrap: wrap }
+.chip { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 14px; border-radius: 999px; border: 1px solid var(--line-s); background: none; cursor: pointer; font-weight: 500; white-space: nowrap }
+.chip .pct { color: var(--muted-s); font-weight: 400; font-variant-numeric: tabular-nums }
+.chip svg { color: var(--muted-s) }
+.chip[aria-pressed="true"] { border-color: var(--accent-s); background: var(--accent-soft) }
+.chip[aria-pressed="true"] .pct, .chip[aria-pressed="true"] svg { color: var(--fg-s) }
+.food { width: 100%; min-height: 108px; resize: vertical; border: 1px solid var(--line-s); border-radius: 16px; background: var(--field-s); padding: 14px 16px; font-size: 1.05rem; line-height: 1.5; display: block }
+.seg { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 4px; padding: 4px; border-radius: 14px; background: var(--fill-s) }
+.seg button { min-height: 44px; border: 0; background: none; border-radius: 10px; cursor: pointer; color: var(--muted-s); font-variant-numeric: tabular-nums; white-space: nowrap }
+.seg button[aria-pressed="true"] { background: var(--bg-s); color: var(--fg-s); font-weight: 700; box-shadow: 0 0 0 1px var(--line-s) }
+.primary { min-height: 56px; border: 0; border-radius: 16px; background: var(--accent-s); color: var(--on-accent-s); font-weight: 700; font-size: 1.05rem; cursor: pointer; width: 100% }
+
+.rows { display: grid }
+.row { display: flex; align-items: center; gap: 12px; min-height: 60px; padding: 10px 0; border: 0; border-bottom: 1px solid var(--line-s); background: none; text-align: left; width: 100%; cursor: pointer }
+.rows > :last-child { border-bottom: 0 }
+.row .rt { flex: 1; display: grid; min-width: 0 }
+.row .rt span { color: var(--muted-s); font-size: .86rem }
+.row .rv { font-weight: 700; color: var(--accent-text); font-variant-numeric: tabular-nums; white-space: nowrap }
+.row .chev { color: var(--muted-s) }
+div.row { cursor: default }
+.mseg { display: inline-grid; grid-template-columns: 1fr 1fr; padding: 3px; gap: 3px; border-radius: 12px; background: var(--fill-s) }
+.mseg button { min-height: 44px; padding: 0 12px; border: 0; background: none; border-radius: 9px; color: var(--muted-s); cursor: pointer; font-variant-numeric: tabular-nums; white-space: nowrap }
+.mseg button[aria-pressed="true"] { background: var(--bg-s); color: var(--fg-s); font-weight: 700; box-shadow: 0 0 0 1px var(--line-s) }
+
+.quick { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px }
+.qbtn { display: flex; flex-direction: column; align-items: flex-start; justify-content: center; gap: 6px; min-height: 72px; padding: 10px 12px; border-radius: 16px; border: 1px solid var(--line-s); background: none; cursor: pointer; font-weight: 700; font-size: .86rem; text-align: left; line-height: 1.2 }
+.qbtn svg { color: var(--c) }
+.entry { display: grid; grid-template-columns: 42px 40px minmax(0, 1fr) auto 16px; gap: 10px; align-items: center; min-height: 68px; padding: 10px 0; border: 0; border-bottom: 1px solid var(--line-s); background: none; width: 100%; text-align: left; cursor: pointer }
+.entry .time { font-variant-numeric: tabular-nums; color: var(--muted-s); font-size: .86rem }
+.ico { width: 40px; height: 40px; border-radius: 12px; display: grid; place-items: center; color: var(--c); background: color-mix(in srgb, var(--c) 16%, transparent) }
+.entry .et { display: grid; min-width: 0 }
+.entry .et span { color: var(--muted-s); font-size: .86rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis }
+.entry .ev { font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap }
+.entry .chev { color: var(--muted-s) }
+.c-glu { --c: var(--glu-s) } .c-fast { --c: var(--fast-s) } .c-slow { --c: var(--slow-s) } .c-meal { --c: var(--meal-s) }
+
+.addp { min-height: 44px; padding: 0 14px; border-radius: 999px; border: 0; background: var(--accent-soft); color: var(--accent-text); font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; white-space: nowrap }
+.day { display: grid; gap: 6px }
+.day-bar { display: flex; gap: 3px; height: 10px }
+.day-bar i { display: block; border-radius: 999px }
+.day-ticks { display: flex; justify-content: space-between; font-size: .72rem; color: var(--muted-s); font-variant-numeric: tabular-nums }
+
+.nav { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 12px -16px 0; padding: 8px 12px 14px; border-top: 1px solid var(--line-s) }
+.nav button { display: grid; justify-items: center; gap: 4px; min-height: 58px; padding: 8px 0; border: 0; background: none; border-radius: 16px; color: var(--muted-s); cursor: pointer; font-size: .8rem; font-weight: 500 }
+.nav button[aria-current="page"] { color: var(--accent-text); background: var(--accent-soft) }
+
+/* ================= A · Ledger: no containers, hairlines ================= */
+.va { --gap: 30px; --rw: 5 }
+.va .glabel { text-transform: none; letter-spacing: 0; font-size: .9rem; font-weight: 500 }
+.va .ring { width: 112px; height: 112px } .va .status { grid-template-columns: 112px minmax(0, 1fr) }
+.va .ring-edit { width: 44px; height: 44px; background: var(--bg-s); color: var(--fg-s); box-shadow: 0 0 0 1px var(--line-s) }
+.va .chip { border-radius: 10px }
+.va .food { border-width: 0 0 1px; border-radius: 0; background: none; padding: 6px 0 12px; min-height: 92px }
+.va .seg { background: none; padding: 0; gap: 0; border-radius: 0; border-bottom: 1px solid var(--line-s) }
+.va .seg button { border-radius: 0 }
+.va .seg button[aria-pressed="true"] { background: none; box-shadow: inset 0 -3px 0 var(--accent-s) }
+.va .mseg { background: none; padding: 0; gap: 14px }
+.va .mseg button { padding: 0 2px; border-radius: 0 } .va .mseg button[aria-pressed="true"] { background: none; box-shadow: inset 0 -3px 0 var(--accent-s) }
+.va .primary { border-radius: 12px }
+.va .qbtn { border: 0; padding: 0; min-height: 52px; flex-direction: row; align-items: center; gap: 8px; font-weight: 500 }
+.va .ico { background: none; width: 24px } .va .entry { grid-template-columns: 42px 24px minmax(0, 1fr) auto 16px }
+.va .nav button[aria-current="page"] { background: none; border-radius: 0; box-shadow: inset 0 3px 0 var(--accent-s) }
+.va .addp { background: none; padding: 0 }
+
+/* ================= B · Air: whitespace and big numbers ================= */
+.vb { --gap: 40px }
+.vb .glabel { text-transform: none; letter-spacing: 0; font-size: 1.05rem; color: var(--fg-s) }
+.vb .status { grid-template-columns: 176px minmax(0, 1fr); gap: 20px; align-items: center }
+.gauge { position: relative; width: 176px; height: 176px }
+.gauge svg { transform: none }
+.gauge > svg { width: 100%; height: 100%; display: block; overflow: visible }
+.gauge .g-trk { fill: none; stroke: var(--fill-s); stroke-width: 10; stroke-linecap: round }
+.gauge .g-band { fill: none; stroke: color-mix(in srgb, var(--glu-s) 45%, var(--fill-s)); stroke-width: 10 }
+.gauge .g-dot { stroke: var(--bg-s); stroke-width: 4 }
+.gauge .g-tick { font-size: 11px; fill: var(--muted-s); font-family: var(--body) }
+.g-val { position: absolute; inset: 0 0 18px; display: grid; place-content: center; justify-items: center; gap: 2px; text-align: center }
+.g-val .num { font: 700 2.75rem/1 var(--display); letter-spacing: -.02em }
+.g-val .u { font-size: .8rem; color: var(--muted-s) }
+.g-val .state { font-size: .8rem; font-weight: 700; display: inline-flex; align-items: center; gap: 4px; margin-top: 4px; white-space: nowrap }
+.g-val .state svg { width: 15px; height: 15px }
+.gauge .ring-edit svg { width: 18px; height: 18px }
+.gauge .ring-edit { position: absolute; left: 50%; bottom: -6px; transform: translateX(-50%); right: auto; background: var(--fill-s); color: var(--fg-s) }
+.vb .stats { grid-template-columns: 1fr; gap: 18px }
+.vb .stats div { flex-direction: column-reverse; align-items: flex-start; gap: 2px; padding: 0; border: 0 }
+.vb .stats dd { font-size: 1.25rem }
+.vb .stats dt { font-size: .82rem }
+.vb .chip { border: 0; background: var(--fill-s) }
+.vb .chip[aria-pressed="true"] { background: var(--accent-s); color: var(--on-accent-s) }
+.vb .chip[aria-pressed="true"] .pct, .vb .chip[aria-pressed="true"] svg { color: var(--on-accent-s) }
+.vb .food { border: 0; background: var(--fill-s); border-radius: 22px }
+.vb .seg { background: none; padding: 0; gap: 8px }
+.vb .seg button { background: var(--fill-s); border-radius: 999px }
+.vb .seg button[aria-pressed="true"] { background: var(--fg-s); color: var(--bg-s); box-shadow: none }
+.vb .primary { border-radius: 999px; min-height: 60px }
+.vb .row, .vb .entry { border-bottom: 0 } .vb .row { min-height: 64px }
+.vb .qbtn { border: 0; background: var(--fill-s); border-radius: 20px }
+.vb .ico { background: none; width: 24px } .vb .entry { grid-template-columns: 42px 24px minmax(0, 1fr) auto 16px; min-height: 60px }
+.vb .nav { border-top: 0 } .vb .nav button[aria-current="page"] { background: none; font-weight: 700 }
+.vb .mseg button[aria-pressed="true"] { box-shadow: none }
+
+/* ================= C · Tonal: today's structure, softened ================= */
+.vc { --gap: 12px; --rw: 9 }
+.vc .group:not(.bare) { background: var(--fill-s); border-radius: 26px; padding: 20px }
+.vc .stats div, .vc .row, .vc .entry { border-bottom-color: color-mix(in srgb, var(--line-s) 70%, transparent) }
+.vc .cycle { padding-top: 16px; border-top: 1px solid color-mix(in srgb, var(--line-s) 70%, transparent) }
+.vc .food { border: 0; background: var(--bg-s) }
+.vc .seg, .vc .mseg { background: var(--bg-s) }
+.vc .seg button[aria-pressed="true"], .vc .mseg button[aria-pressed="true"] { background: var(--accent-soft); box-shadow: none }
+.vc .chip { border-color: transparent; background: var(--bg-s) }
+.vc .chip[aria-pressed="true"] { border-color: var(--accent-s) }
+.vc .primary { border-radius: 999px }
+.vc .qbtn { border: 0; background: var(--fill-s); border-radius: 20px }
+.vc .ring .trk { stroke: color-mix(in srgb, var(--line-s) 80%, var(--bg-s)) }
+
+/* ================= D · Paper: outlines, small radii, ink selections ================= */
+.vd { --gap: 14px; --rw: 7 }
+.vd .group:not(.bare) { border: 1px solid var(--line-s); border-radius: 12px; padding: 16px }
+.vd .glabel { font-size: .72rem; letter-spacing: .14em }
+.vd .chip, .vd .qbtn, .vd .food, .vd .primary, .vd .addp { border-radius: 8px }
+.vd .chip[aria-pressed="true"] { background: var(--fg-s); color: var(--bg-s); border-color: var(--fg-s) }
+.vd .chip[aria-pressed="true"] .pct, .vd .chip[aria-pressed="true"] svg { color: var(--bg-s) }
+.vd .seg, .vd .mseg { background: none; border: 1px solid var(--line-s); padding: 0; gap: 0; border-radius: 8px; overflow: hidden }
+.vd .seg button, .vd .mseg button { border-radius: 0 }
+.vd .seg button + button, .vd .mseg button + button { border-left: 1px solid var(--line-s) }
+.vd .seg button[aria-pressed="true"], .vd .mseg button[aria-pressed="true"] { background: var(--fg-s); color: var(--bg-s); box-shadow: none }
+.vd .ico { border-radius: 8px; background: none; box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--c) 45%, var(--line-s)) }
+.vd .ring .arc { stroke-linecap: butt }
+.vd .ring-edit { border-radius: 10px }
+.vd .ratio { border-radius: 8px }
+.vd .nav button { border-radius: 8px }
+.vd .nav button[aria-current="page"] { background: none; color: var(--fg-s); font-weight: 700; box-shadow: inset 0 -3px 0 var(--accent-s); border-radius: 0 }
+
+/* Air sub-variants */
+.vb.b2 .row, .vb.b2 .entry { border-bottom: 1px solid var(--line-s) }
+.vb.b2 .rows > :last-child { border-bottom: 0 }
+.vb.b2 .row { min-height: 60px }
+.phone.b3 { font-size: 18px }
+.vb.b3 .status { grid-template-columns: 1fr; justify-items: center } .vb.b3 .gauge { width: 210px; height: 210px } .vb.b3 .g-val .num { font-size: 3.6rem } .vb.b3 .stats { grid-template-columns: repeat(3, minmax(0, 1fr)); width: 100% }
+.vb.b3 .ptitle { font-size: 2.1rem }
+.vb.b3 .glabel { font-size: 1.2rem }
+.vb.b3 .stats dd { font-size: 1.45rem } .vb.b3 .stats dt { font-size: .95rem }
+.vb.b3 .entry .et span, .vb.b3 .row .rt span, .vb.b3 .entry .time { font-size: 1rem }
+.vb.b3 .quick { grid-template-columns: 1fr }
+.vb.b3 .qbtn { flex-direction: row; align-items: center; min-height: 56px; font-size: 1.05rem }
+.vb.b3 .food { font-size: 1.2rem }
+.vb.b3 .seg { grid-template-columns: repeat(2, minmax(0, 1fr)) }
+.vb.b3 .ratio { font-size: 1rem }
+.vb.b3 .nav button { font-size: .95rem }
+.vb.b4 .primary { border-radius: 18px }
+.vb.b4 .seg button { border-radius: 14px }
+.vb.b4 .chip { border-radius: 14px }
+.vb.b4 .qbtn { border-radius: 18px }
+
+/* font lineup */
+.lineup-sec { display: grid; gap: 20px; padding-top: 40px; border-top: 1px solid var(--line) }
+.sec-head { display: grid; gap: 8px; max-width: 70ch } .sec-head p { color: var(--fg-2) }
+.lineup { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr)); gap: 12px }
+.fcard { display: grid; gap: 14px; text-align: left; background: var(--panel); color: var(--fg); border: 1px solid var(--line); border-radius: 20px; padding: 20px; cursor: pointer; font-size: 16px; line-height: 1.4 }
+.fcard[aria-pressed="true"] { border-color: var(--fg); box-shadow: 0 0 0 1px var(--fg) }
+.fcard .fname { font: 500 .72rem var(--mono); letter-spacing: .1em; text-transform: uppercase; color: var(--fg-2) }
+.fcard .big { font-size: 3.4rem; font-weight: 700; line-height: 1; letter-spacing: -.02em; font-variant-numeric: tabular-nums lining-nums }
+.fcard .big small { font-size: 1rem; font-weight: 400; color: var(--fg-2); letter-spacing: 0; margin-left: 6px }
+.fcard .lrow { display: flex; justify-content: space-between; gap: 12px; align-items: baseline }
+.fcard .lrow span { color: var(--fg-2); font-size: .9rem }
+.fcard .lrow b { font-variant-numeric: tabular-nums }
+.fcard .food-s { font-size: 1.05rem; color: var(--fg) }
+.fcard .pairs { font-size: 1.3rem; letter-spacing: .02em; color: var(--fg-2) }
+.fcard .fnote { font-family: var(--mono); font-size: .78rem; color: var(--fg-2); line-height: 1.5 }
+footer { color: var(--fg-2); font-size: .9rem; max-width: 72ch }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important } }
+</style>
+
+<div class="wrap">
+  <header>
+    <span class="eyebrow">Tashi · Air</span>
+    <h1>Air, explored</h1>
+    <p>Four takes on direction B with Open Sans and the Sora accent: the original, Air with quiet lines, Air at a larger text size, and a dimmer dark mode. Below the phones, twelve typefaces between Google Sans Flex and Source Sans 3 set the same Tashi content side by side. Tap one to apply it to the phones.</p>
+  </header>
+
+  <div class="ctl">
+    <div class="bars">
+      <fieldset><legend>Pantalla</legend><div class="opts" id="o-scr"></div></fieldset>
+      <fieldset><legend>Glucemia</legend><div class="opts" id="o-glu"></div></fieldset>
+      <fieldset><legend>Accent</legend><div class="opts" id="o-acc"></div></fieldset>
+      <fieldset class="grow"><legend>Typography</legend><div class="opts" id="o-type"></div></fieldset>
+    </div>
+    <p class="tnote" id="tnote" aria-live="polite"></p>
+  </div>
+
+  <div id="iters"></div>
+  <section class="lineup-sec" aria-labelledby="h-lineup">
+    <div class="sec-head"><h2 id="h-lineup">Font lineup</h2><p>The same content in each face. Check the dose number, the units, and the Il1 / O0 / rn–m pairs. Tap a card to use it above.</p></div>
+    <div class="lineup" id="lineup"></div>
+  </section>
+  <footer>Content is copied from your current screens, with an example glucose of 142 mg/dL. Font notes describe each family’s published intent; judge them on the phones. All text colour pairs meet WCAG AA (4.5:1) in both modes.</footer>
+</div>
+
+<script>
+const ICON = { light: "../logo/tashi-mark-light.svg", dark: "../logo/tashi-mark-dark.svg" };
+
+/* ---------- palettes ---------- */
+const PAL = {
+  neutral: { light:{bg:"#F7F7F6",fg:"#161616",muted:"#5A5A55",line:"#E0E0DC",fill:"#EDEDEA",field:"#FFFFFF",ink:"#1C1C1C",onInk:"#FFFFFF"},
+             dark:{bg:"#121212",fg:"#EDEDEA",muted:"#A3A39D",line:"#2C2C2C",fill:"#1E1E1E",field:"#181818",ink:"#EDEDEA",onInk:"#141414"} },
+  paper:   { light:{bg:"#FFFFFF",fg:"#121212",muted:"#5C5C5C",line:"#E6E6E6",fill:"#F2F2F2",field:"#F2F2F2",ink:"#121212",onInk:"#FFFFFF"},
+             dark:{bg:"#000000",fg:"#F0F0F0",muted:"#9E9E9E",line:"#262626",fill:"#141414",field:"#141414",ink:"#F0F0F0",onInk:"#000000"} },
+  dim:     { light:{bg:"#FAFAF9",fg:"#151515",muted:"#5C5C58",line:"#E7E7E4",fill:"#F0F0EE",field:"#F0F0EE",ink:"#151515",onInk:"#FFFFFF"},
+             dark:{bg:"#131416",fg:"#ECEDEE",muted:"#9FA3A8",line:"#26282B",fill:"#1D1F22",field:"#1D1F22",ink:"#ECEDEE",onInk:"#131416"} },
+  cool:    { light:{bg:"#FFFFFF",fg:"#14171A",muted:"#565C63",line:"#DFE2E6",fill:"#F1F3F5",field:"#FFFFFF",ink:"#16191D",onInk:"#FFFFFF"},
+             dark:{bg:"#0F1113",fg:"#E9ECEF",muted:"#9DA4AC",line:"#2A2E33",fill:"#1A1D21",field:"#0F1113",ink:"#E9ECEF",onInk:"#121417"} },
+  warm:    { light:{bg:"#F6F5F2",fg:"#1B1A18",muted:"#5E5B55",line:"#DCD9D1",fill:"#ECEAE4",field:"#FFFFFF",ink:"#1F1E1B",onInk:"#FAF9F6"},
+             dark:{bg:"#151412",fg:"#ECEAE5",muted:"#A9A59D",line:"#33312C",fill:"#201E1B",field:"#1B1A17",ink:"#ECEAE5",onInk:"#171614"} },
+};
+const SEM = {
+  light:{ err:"#B3261E", glu:"#1D7A4E", fast:"#B4560F", slow:"#6A4C9C", warn:"#935700", men:"#C2413A", fol:"#2F8F5B", ovu:"#1F8A8A", lut:"#B07800", night:"#B9B9B3", t1:"#B07800", t2:"#2F8F5B" },
+  dark: { err:"#FF8F85", glu:"#62CC9E", fast:"#F2A35E", slow:"#B9A2F0", warn:"#F2B65E", men:"#F08A80", fol:"#62CC9E", ovu:"#5FD0D0", lut:"#F2B65E", night:"#4A4A46", t1:"#F2B65E", t2:"#62CC9E" },
+};
+const ACC = [
+  { id:"sora",  name:"Sora 空",    l:"#1E6CAF", lo:"#FFFFFF", d:"#88BCF6", dn:"#0B1E36" },
+  { id:"ai",    name:"Ai 藍",      l:"#2E3F8F", lo:"#FFFFFF", d:"#A5B4FF", dn:"#101633" },
+  { id:"asagi", name:"Asagi 浅葱", l:"#00727B", lo:"#FFFFFF", d:"#4CCFD6", dn:"#032427" },
+  { id:"ink",   name:"Ink only",   l:null },
+];
+const FB = { sans:'system-ui, -apple-system, "Segoe UI", sans-serif', jp:'"Hiragino Sans", "Yu Gothic", system-ui, sans-serif' };
+const TYPE = [
+  { id:"source", name:"Source Sans 3", f:`"Source Sans 3", ${FB.sans}`, d:`"Source Sans 3", ${FB.sans}`, note:"Adobe’s humanist sans, designed with interfaces in mind. Calm, compact, open shapes. Your pick so far." },
+  { id:"gsf", name:"Google Sans Flex", f:`"Google Sans Flex", ${FB.sans}`, d:`"Google Sans Flex", ${FB.sans}`, note:"Google’s UI face, open-sourced in 2025. Variable with optical sizing; rounder and friendlier than Source Sans." },
+  { id:"inter", name:"Inter", f:`"Inter", ${FB.sans}`, d:`"Inter", ${FB.sans}`, note:"Designed for screens, tall x-height, many OpenType options. Extremely common, so it looks like everything else." },
+  { id:"dm", name:"DM Sans", f:`"DM Sans", ${FB.sans}`, d:`"DM Sans", ${FB.sans}`, note:"Low-contrast geometric sans with a friendly, modern feel. Rounder than Source Sans, slightly wide." },
+  { id:"noto", name:"Noto Sans", f:`"Noto Sans", ${FB.sans}`, d:`"Noto Sans", ${FB.sans}`, note:"Google’s pan-script family. Plain and sturdy, with matching Noto Sans JP if you ever need Japanese." },
+  { id:"public", name:"Public Sans", f:`"Public Sans", ${FB.sans}`, d:`"Public Sans", ${FB.sans}`, note:"Made for the US Web Design System and tested for public services. Neutral, slightly wide, very clear." },
+  { id:"work", name:"Work Sans", f:`"Work Sans", ${FB.sans}`, d:`"Work Sans", ${FB.sans}`, note:"A grotesque tuned for medium sizes on screen. A bit more character than Public Sans, wide at small sizes." },
+  { id:"jakarta", name:"Plus Jakarta Sans", f:`"Plus Jakarta Sans", ${FB.sans}`, d:`"Plus Jakarta Sans", ${FB.sans}`, note:"Geometric-modern family drawn for Jakarta’s city branding. Crisp and contemporary, tighter than DM Sans." },
+  { id:"figtree", name:"Figtree", f:`"Figtree", ${FB.sans}`, d:`"Figtree", ${FB.sans}`, note:"A clean geometric sans that aims to be friendly but not childish. Sits between Google Sans Flex and DM Sans." },
+  { id:"nunito", name:"Nunito Sans", f:`"Nunito Sans", ${FB.sans}`, d:`"Nunito Sans", ${FB.sans}`, note:"The non-rounded sibling of Nunito. Soft, warm and open, close in mood to Google Sans Flex." },
+  { id:"hanken", name:"Hanken Grotesk", f:`"Hanken Grotesk", ${FB.sans}`, d:`"Hanken Grotesk", ${FB.sans}`, note:"A neutral grotesque with warm details. Compact like Source Sans, a little more geometric." },
+  { id:"open", name:"Open Sans", f:`"Open Sans", ${FB.sans}`, d:`"Open Sans", ${FB.sans}`, note:"Humanist and highly legible, long Android’s web face. Close cousin of Source Sans with slightly wider shapes." },
+];
+const SCR = [ { id:"calc", name:"Calcular" }, { id:"hist", name:"Historial" }, { id:"ajus", name:"Ajustes" } ];
+
+const st = { scr:"calc", acc:"sora", type:"open", glu:"142" };
+try { const s = JSON.parse(localStorage.getItem("tashi-ref") || "{}"); Object.assign(st, s); } catch(e){}
+const save = () => { try { localStorage.setItem("tashi-ref", JSON.stringify(st)) } catch(e){} };
+
+/* ---------- icons ---------- */
+const IP = {
+  drop:'<path d="M10 2.6c3 3.6 5 6.3 5 9a5 5 0 0 1-10 0c0-2.7 2-5.4 5-9z"/>',
+  pen:'<path d="M4 16l1-3.5 8.5-8.5 2.5 2.5L7.5 15z"/><path d="M12 5.5l2.5 2.5"/>',
+  meal:'<path d="M5.5 2.5v4.5a2 2 0 0 0 4 0V2.5M7.5 2.5v15"/><path d="M14.5 17.5V2.5c-1.6.8-2.5 3-2.5 6h2.5"/>',
+  chev:'<path d="M7.5 4.5l5.5 5.5-5.5 5.5"/>',
+  edit:'<path d="M4 16l1-3.5 8.5-8.5 2.5 2.5L7.5 15z"/>',
+  thermo:'<path d="M8 4a2 2 0 0 1 4 0v7.3a3.6 3.6 0 1 1-4 0z"/><path d="M10 9v4.5"/>',
+  run:'<circle cx="12.5" cy="3.6" r="1.5"/><path d="M6 9l2.8-2.6h3.4l1.8 3.3 2.5.9M10.4 6.6L9.2 12l3.2 2.2-.6 3.6M9.2 12l-2.6 5.5"/>',
+  plus:'<path d="M10 4.5v11M4.5 10h11"/>',
+  calc:'<path d="M10 18s6-5.2 6-10a6 6 0 0 0-12 0c0 4.8 6 10 6 10z"/><path d="M10 5.5v5M7.5 8h5"/>',
+  chart:'<path d="M3 16.5h14"/><path d="M3.5 12.5l4-4 3 3 5.5-6"/>',
+  sliders:'<path d="M3 6.5h7M15 6.5h2M3 13.5h2M10 13.5h7"/><circle cx="12.5" cy="6.5" r="2"/><circle cx="7.5" cy="13.5" r="2"/>',
+};
+const ic = (n, s=20) => `<svg width="${s}" height="${s}" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${IP[n]}</svg>`;
+
+/* ---------- shared pieces ---------- */
+const pressGroup = (items, sel, label, cls) => `<div class="${cls}" role="group" aria-label="${label}" data-press>${items.map(x=>`<button type="button" aria-pressed="${x===sel}">${x}</button>`).join("")}</div>`;
+const topBar = (mode) => `<div class="top"><span class="brand"><img src="${ICON[mode]}" alt="">Tashi</span><button type="button" class="ratio" aria-label="Ratio activo: Cena, 4,27 gramos por unidad, perfil Enfermedad">${ic("thermo",16)}Cena <span class="m num">5,12 →</span> <b class="num">4,27 g/U</b></button></div>`;
+const nav = (cur) => `<nav class="nav" aria-label="Principal">${[["calc","Calcular","calc"],["hist","Historial","chart"],["ajus","Ajustes","sliders"]].map(([id,n,i])=>`<button type="button"${id===cur?' aria-current="page"':''}>${ic(i,24)}${n}</button>`).join("")}</nav>`;
+const profiles = (edit) => `<div class="chips" role="group" aria-label="Perfil de ratios" data-press>
+  <button type="button" class="chip" aria-pressed="false">Normal</button>
+  <button type="button" class="chip" aria-pressed="false">${ic("run",18)}Deporte <span class="pct">−20 %</span></button>
+  <button type="button" class="chip" aria-pressed="true">${ic("thermo",18)}Enfermedad <span class="pct">+20 %</span></button></div>`;
+
+const GMIN = 40, GMAX = 400, RLO = 70, RHI = 180;
+const gAng = v => 135 + (Math.min(Math.max(v, GMIN), GMAX) - GMIN) / (GMAX - GMIN) * 270;
+const gPt = (a, r) => [80 + r * Math.cos(a * Math.PI / 180), 80 + r * Math.sin(a * Math.PI / 180)];
+const gArc = (a0, a1, r) => { const [x0,y0] = gPt(a0, r), [x1,y1] = gPt(a1, r); return `M${x0.toFixed(2)} ${y0.toFixed(2)} A${r} ${r} 0 ${a1 - a0 > 180 ? 1 : 0} 1 ${x1.toFixed(2)} ${y1.toFixed(2)}`; };
+const gState = v => v == null ? null : v < RLO ? ["err","Baja","var(--err-s)"] : v > RHI ? ["warn","Alta","var(--warn-s)"] : ["ok","En rango","var(--glu-s)"];
+const corr = v => { if (v == null) return "—"; const u = Math.round((v - 100) / 40 * 2) / 2; return (u > 0 ? "+" : u < 0 ? "−" : "") + Math.abs(u).toFixed(1).replace(".", ",") + " U"; };
+function gauge(v){
+  const s = gState(v), r = 68;
+  const [tx0,ty0] = gPt(gAng(RLO), r + 16), [tx1,ty1] = gPt(gAng(RHI), r + 16);
+  const dot = v == null ? "" : (() => { const [x,y] = gPt(gAng(v), r); return `<circle class="g-dot" cx="${x.toFixed(2)}" cy="${y.toFixed(2)}" r="10" style="fill:${s[2]}"/>`; })();
+  const icon = !s ? "" : s[0] === "ok" ? '<path d="M4 10.5l4 4 8-9"/>' : s[0] === "warn" ? '<path d="M10 15V5M5.5 9.5L10 5l4.5 4.5"/>' : '<path d="M10 5v10M5.5 10.5L10 15l4.5-4.5"/>';
+  const label = v == null ? "Sin lectura de glucemia" : `Glucemia ${v} miligramos por decilitro, ${s[1].toLowerCase()}. Rango objetivo ${RLO} a ${RHI}.`;
+  return `<div class="gauge ring" role="img" aria-label="${label}">
+    <svg viewBox="-14 -14 188 188" aria-hidden="true">
+      <path class="g-trk" d="${gArc(135, 405, r)}"/>
+      <path class="g-band" d="${gArc(gAng(RLO), gAng(RHI), r)}"/>
+      <text class="g-tick" x="${tx0.toFixed(1)}" y="${ty0.toFixed(1)}" text-anchor="middle" dominant-baseline="middle">${RLO}</text>
+      <text class="g-tick" x="${tx1.toFixed(1)}" y="${ty1.toFixed(1)}" text-anchor="middle" dominant-baseline="middle">${RHI}</text>
+      ${dot}
+    </svg>
+    <div class="g-val"><span class="num">${v == null ? "—" : v}</span><span class="u">mg/dL</span>${s ? `<span class="state" style="color:${s[2]}"><svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${icon}</svg>${s[1]}</span>` : ""}</div>
+    <button type="button" class="ring-edit" aria-label="${v == null ? "Añadir glucemia" : "Editar glucemia"}">${ic(v == null ? "plus" : "edit", 18)}</button>
+  </div>`;
+}
+function calc(mode, uid){
+  const v = st.glu === "none" ? null : +st.glu;
+  return `
+  <section class="group" aria-label="Estado">
+    <div class="status">
+      ${gauge(v)}
+      <dl class="stats">
+        <div><dt>Insulina activa</dt><dd>0 U</dd></div>
+        <div><dt>Objetivo</dt><dd>100 mg/dL</dd></div>
+        <div><dt>Corrección</dt><dd>${corr(v)}</dd></div>
+      </dl>
+    </div>
+    <button type="button" class="cycle" aria-label="Ciclo: día 16 de 28, fase lútea. Ver detalles">
+      <span class="cyc-h"><span class="dot" style="background:var(--lut-s)"></span>Día 16 de 28 · Fase lútea<span class="chev">${ic("chev",18)}</span></span>
+      <span class="cyc-bar" aria-hidden="true"><i style="flex:5;background:var(--men-s)"></i><i style="flex:8;background:var(--fol-s)"></i><i style="flex:2;background:var(--ovu-s)"></i><i style="flex:13;background:var(--lut-s)"></i><span class="cyc-mark" style="left:56.5%"></span></span>
+      <span class="cyc-leg" aria-hidden="true"><span>Menstrual</span><span>Folicular</span><span>Ovulación</span><span>Lútea</span></span>
+    </button>
+  </section>
+  <section class="group">
+    <h4 class="glabel">Perfiles de ratios</h4>
+    ${profiles()}
+  </section>
+  <section class="group">
+    <label class="glabel" for="food-${uid}">¿Qué vas a comer?</label>
+    <textarea class="food" id="food-${uid}">150 g arroz blanco cocido, 120 g pechuga de pollo a la plancha, 80 g ensalada mixta con 15 ml aceite de oliva</textarea>
+    <span class="glabel" id="when-${uid}">Voy a comer en</span>
+    ${pressGroup(["Ahora","10 min","20 min","30 min"],"Ahora","Voy a comer en","seg")}
+    <button type="button" class="primary">Calcular dosis</button>
+  </section>`;
+}
+const ENTRIES = [
+  ["18:41","glu","drop","Glucemia","Medida manual","168 mg/dL"],
+  ["17:57","glu","drop","Glucemia","Medida manual","147 mg/dL"],
+  ["16:36","fast","pen","Rápida · NovoRapid","Para Cena","2,5 U"],
+  ["16:36","meal","meal","Cena","1,5 muslos de pollo al horno, 1/4 calabacín","9,2 g"],
+  ["16:32","glu","drop","Glucemia","Medida manual","114 mg/dL"],
+  ["08:35","fast","pen","Rápida · NovoRapid","Para Desayuno","8 U"],
+  ["08:35","meal","meal","Desayuno","2 tostadas de pan integral (60 g), aceite y tomate","36,6 g"],
+  ["08:32","glu","drop","Glucemia","Medida manual","132 mg/dL"],
+];
+function hist(){
+  return `
+  <h2 class="ptitle">Historial</h2>
+  <section class="group bare">
+    <h4 class="glabel">Añadir</h4>
+    <div class="quick">
+      <button type="button" class="qbtn c-fast">${ic("pen")}Insulina rápida</button>
+      <button type="button" class="qbtn c-slow">${ic("pen")}Insulina lenta</button>
+      <button type="button" class="qbtn c-glu">${ic("drop")}Glucemia</button>
+    </div>
+  </section>
+  <section class="group">
+    <h4 class="glabel">Ayer</h4>
+    <div class="rows">${ENTRIES.map(([t,c,i,a,b,v])=>`<button type="button" class="entry"><span class="time">${t}</span><span class="ico c-${c}">${ic(i)}</span><span class="et"><b>${a}</b><span>${b}</span></span><span class="ev">${v}</span><span class="chev">${ic("chev",16)}</span></button>`).join("")}</div>
+  </section>`;
+}
+function ajus(){
+  const row = (t,s,v) => `<button type="button" class="row"><span class="rt"><b>${t}</b>${s?`<span>${s}</span>`:""}</span><span class="rv">${v}</span><span class="chev">${ic("chev",18)}</span></button>`;
+  return `
+  <h2 class="ptitle">Ajustes</h2>
+  <section class="group">
+    <h4 class="glabel">Dosis</h4>
+    <div class="rows">
+      ${row("Factor de corrección","Bajada de glucosa por 1 U","40 mg/dL")}
+      ${row("Glucemia objetivo","","100 mg/dL")}
+      ${row("Multiplicador grasa/proteína","Para comidas con mucha grasa o proteína","+20 %")}
+      <div class="row"><span class="rt"><b>Incremento del bolígrafo</b></span>${pressGroup(["0,5 U","1 U"],"0,5 U","Incremento del bolígrafo","mseg")}</div>
+    </div>
+  </section>
+  <section class="group">
+    <h4 class="glabel">Insulinas</h4>
+    <div class="rows">${row("Rápida","Duración 4 h","NovoRapid")}${row("Basal","","Lantus")}</div>
+  </section>
+  <section class="group">
+    <div class="gh"><h4 class="glabel">Ratios</h4><button type="button" class="addp">${ic("plus",16)}Añadir perfil</button></div>
+    ${profiles(true)}
+    <div class="day" aria-hidden="true">
+      <div class="day-bar"><i style="flex:6;background:var(--night-s)"></i><i style="flex:5;background:var(--t1-s)"></i><i style="flex:5;background:var(--t2-s)"></i><i style="flex:7;background:var(--accent-s)"></i><i style="flex:1;background:var(--night-s)"></i></div>
+      <div class="day-ticks"><span>00</span><span>06</span><span>12</span><span>18</span><span>24</span></div>
+    </div>
+    <div class="rows">
+      ${row(`<span class="dot" style="background:var(--t1-s);margin-right:8px"></span>Desayuno`,"06:00–11:00","6,0 → 5,0 g/U")}
+      ${row(`<span class="dot" style="background:var(--t2-s);margin-right:8px"></span>Comida`,"11:00–16:00","5,5 → 4,58 g/U")}
+      ${row(`<span class="dot" style="background:var(--accent-s);margin-right:8px"></span>Cena`,"16:00–23:00","5,12 → 4,27 g/U")}
+    </div>
+  </section>`;
+}
+const SCREENS = { calc, hist, ajus };
+
+/* ---------- iterations ---------- */
+const ITERS = [
+  { id:"b2", cls:"vb b2", name:"B2 · Air, quiet lines · chosen", pal:"paper", palName:"Paper white · true black",
+    lede:"Same as Air, but long lists get faint dividers. Helps scanning in Historial and Ajustes without bringing back boxes.",
+    notes:["Hairlines only between list rows.","Section labels as small caps-free headings.","Everything else identical to B1."] },
+  { id:"b1", cls:"vb", name:"B1 · Air, no lines", pal:"paper", palName:"Paper white · true black",
+    lede:"The version you picked: no lines, no boxes, big numbers, solid fills for selected states.",
+    notes:["<b>40 px</b> between sections.","Glucose gauge: open ring, target band, one dot for now.","Stats in three columns, value above label.","True black in dark mode."] },
+  { id:"b3", cls:"vb b3", name:"B3 · Air, large text", pal:"paper", palName:"Paper white · true black",
+    lede:"Air at roughly 112 % text size, the way it looks with a larger system text setting. Shows whether the layout holds up.",
+    notes:["Body 18 px, glucose 80 px.","Quick-add buttons stack into full-width rows.","Profile chips wrap instead of overflowing."] },
+  { id:"b4", cls:"vb b4", name:"B4 · Air, dim", pal:"dim", palName:"Off-white · dim grey",
+    lede:"Air with a softer ground: off-white in light mode and dark grey instead of pure black, which avoids smearing on some OLED screens when scrolling.",
+    notes:["Light #FAFAF9, dark #131416.","Rounded rectangles instead of pills for the main action and segments.","Otherwise identical to B1."] },
+];
+
+function vars(p, mode){
+  const a = ACC.find(x => x.id === st.acc), L = mode === "light", s = SEM[mode];
+  const acc = a.l ? (L ? a.l : a.d) : p.ink, on = a.l ? (L ? a.lo : a.dn) : p.onInk, txt = a.l ? acc : p.fg;
+  const v = { "bg-s":p.bg, "fg-s":p.fg, "muted-s":p.muted, "line-s":p.line, "fill-s":p.fill, "field-s":p.field, "accent-s":acc, "on-accent-s":on, "accent-text":txt,
+    "glu-s":s.glu, "fast-s":s.fast, "slow-s":s.slow, "meal-s":acc, "warn-s":s.warn, "err-s":s.err, "men-s":s.men, "fol-s":s.fol, "ovu-s":s.ovu, "lut-s":s.lut, "night-s":s.night, "t1-s":s.t1, "t2-s":s.t2 };
+  return Object.entries(v).map(([k,x])=>`--${k}:${x}`).join(";");
+}
+function sw(p, mode){
+  const a = ACC.find(x => x.id === st.acc), s = SEM[mode], acc = a.l ? (mode==="light" ? a.l : a.d) : p.ink;
+  return [p.bg,p.fill,p.line,p.muted,p.fg,acc,s.glu,s.fast].map(c=>`<i style="background:${c}" title="${c}"></i>`).join("");
+}
+
+function render(){
+  document.getElementById("iters").innerHTML = ITERS.map(it => {
+    const P = PAL[it.pal];
+    const phone = (mode) => `<div class="phone ${it.cls}" lang="es" style="${vars(P[mode],mode)};color-scheme:${mode}"><div class="app">${topBar(mode)}${SCREENS[st.scr](mode, it.id+mode)}${nav(st.scr)}</div></div>`;
+    return `<section class="iter" aria-labelledby="h-${it.id}">
+      <div class="iter-notes">
+        <h2 id="h-${it.id}">${it.name}</h2>
+        <p>${it.lede}</p>
+        <ul>${it.notes.map(n=>`<li>${n}</li>`).join("")}</ul>
+        <div class="sw">${sw(P.light,"light")}</div>
+        <div class="sw">${sw(P.dark,"dark")}</div>
+        <span class="swl">${it.palName} · ${ACC.find(x=>x.id===st.acc).name}</span>
+      </div>
+      <div class="phones">
+        <div class="phone-wrap"><span>Claro</span>${phone("light")}</div>
+        <div class="phone-wrap"><span>Oscuro</span>${phone("dark")}</div>
+      </div>
+    </section>`;
+  }).join("");
+  document.querySelectorAll("#iters [data-press]").forEach(g => g.addEventListener("click", e => {
+    const b = e.target.closest("button"); if (!b) return;
+    g.querySelectorAll("button").forEach(x => x.setAttribute("aria-pressed", x === b));
+  }));
+}
+
+var applyType = function(){
+  const t = TYPE.find(x => x.id === st.type) || TYPE[0], r = document.documentElement.style;
+  r.setProperty("--body", t.f); r.setProperty("--display", t.d);
+  document.getElementById("tnote").textContent = t.note;
+}
+function opts(el, key, list, labelFn){
+  document.getElementById(el).innerHTML = list.map(o => `<div class="opt"><input type="radio" name="${key}" id="${key}-${o.id}" value="${o.id}"${o.id===st[key]?" checked":""}><label for="${key}-${o.id}">${labelFn(o)}</label></div>`).join("");
+  document.getElementById(el).addEventListener("change", e => { st[key] = e.target.value; save(); if (key === "type") applyType(); else render(); });
+}
+opts("o-scr", "scr", SCR, o => o.name);
+opts("o-glu", "glu", [{id:"62",name:"62 · baja"},{id:"142",name:"142 · en rango"},{id:"236",name:"236 · alta"},{id:"none",name:"Sin lectura"}], o => o.name);
+opts("o-acc", "acc", ACC, a => `<span class="dots" aria-hidden="true"><i style="background:${a.l||"#1C1C1C"}"></i><i style="background:${a.d||"#EDEDEA"}"></i></span>${a.name}`);
+opts("o-type", "type", TYPE, t => `<span style="font-family:${t.f.replace(/"/g,"&quot;")}">${t.name}</span>`);
+function lineup(){
+  const el = document.getElementById("lineup");
+  el.innerHTML = TYPE.map(t => `<button type="button" class="fcard" data-id="${t.id}" aria-pressed="${t.id===st.type}" style="font-family:${t.f.replace(/"/g,"&quot;")}">
+    <span class="fname">${t.name}</span>
+    <span class="big">142<small>mg/dL</small></span>
+    <span class="lrow"><b>Cena 5,12 → 4,27 g/U</b><span>+20 %</span></span>
+    <span class="lrow"><span><b style="color:var(--fg)">Glucemia</b> · Medida manual</span><b>168 mg/dL</b></span>
+    <span class="food-s">150 g arroz blanco cocido, 120 g pechuga de pollo a la plancha</span>
+    <span class="pairs">Il1 O0 rn m · 0,5 U · 18:41</span>
+    <span class="fnote">${t.note}</span>
+  </button>`).join("");
+  el.onclick = e => { const b = e.target.closest(".fcard"); if (!b) return; st.type = b.dataset.id; save(); const r = document.getElementById("type-"+st.type); if (r) r.checked = true; applyType(); lineup(); };
+}
+const _applyType = applyType;
+applyType = function(){ _applyType(); document.querySelectorAll(".fcard").forEach(c => c.setAttribute("aria-pressed", c.dataset.id === st.type)); };
+applyType(); render(); lineup();
+</script>
