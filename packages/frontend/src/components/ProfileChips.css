@@ -80,13 +80,14 @@
 }
 
 .profile-chip-edit {
+  --inset: var(--space-1);
   display: grid;
   place-items: center;
   width: var(--space-8);
   height: var(--space-8);
-  margin: var(--space-0-5) var(--space-1) var(--space-0-5) 0;
+  margin: var(--inset) var(--inset) var(--inset) 0;
   border: none;
-  border-radius: var(--radius-full);
+  border-radius: calc(var(--radius-lg) - var(--inset));
   background: var(--color-surface-raised);
   color: var(--color-fg-muted);
   cursor: pointer;

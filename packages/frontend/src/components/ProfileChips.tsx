@@ -83,7 +83,7 @@ export function ProfileChips({
                   )}
                   onClick={() => onEdit(profile)}
                 >
-                  <Icon name="pen" size="sm" />
+                  <Icon name="edit" size="sm" />
                 </button>
               )}
             </span>

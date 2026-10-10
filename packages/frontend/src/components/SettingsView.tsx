@@ -307,7 +307,7 @@ export function SettingsView({ settings, onSave, lang }: SettingsViewProps) {
               })
             }
           >
-            {t(lang, "addProfile")}
+            + {t(lang, "addProfile")}
           </button>
         }
         footer={t(lang, "windowsTileDay")}

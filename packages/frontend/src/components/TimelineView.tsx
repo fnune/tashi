@@ -18,6 +18,7 @@ import { MealBreakdown } from "./MealBreakdown.js";
 import { Button } from "./ui/Button.js";
 import { DateTimeField, NumberField, parseDecimal } from "./ui/Field.js";
 import { Icon, type IconName } from "./ui/Icon.js";
+import { ListButton, ListGroup } from "./ui/List.js";
 import { Notice } from "./ui/Notice.js";
 import { Sheet } from "./ui/Sheet.js";
 import { Stepper } from "./ui/Stepper.js";
@@ -392,20 +393,23 @@ export function TimelineView({
     <div className="timeline">
       <h2 className="screen-title">{t(lang, "timeline")}</h2>
 
-      <div className="timeline-add">
-        <Button variant="secondary" onClick={() => setAdding("fast_insulin")}>
-          {t(lang, "addRapid")}
-        </Button>
-        <Button variant="secondary" onClick={() => setAdding("slow_insulin")}>
-          {t(lang, "addBasal")}
-        </Button>
-        <Button
-          variant="secondary"
+      <ListGroup>
+        <ListButton
+          tone="accent"
+          label={`+ ${t(lang, "addRapid")}`}
+          onClick={() => setAdding("fast_insulin")}
+        />
+        <ListButton
+          tone="accent"
+          label={`+ ${t(lang, "addBasal")}`}
+          onClick={() => setAdding("slow_insulin")}
+        />
+        <ListButton
+          tone="accent"
+          label={`+ ${t(lang, "addGlucose")}`}
           onClick={() => setAdding("glucose_reading")}
-        >
-          {t(lang, "addGlucose")}
-        </Button>
-      </div>
+        />
+      </ListGroup>
 
       {sorted.length === 0 && (
         <p className="timeline-empty">{t(lang, "noTimeline")}</p>

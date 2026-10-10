@@ -201,7 +201,7 @@ test.describe("full user flow", () => {
     const doses = page.locator('.event[data-entry-type="slow_insulin"]');
     const sheet = page.getByRole("dialog");
 
-    await page.getByRole("button", { name: "+ Basal" }).click();
+    await page.getByRole("button", { name: "+ Add basal insulin" }).click();
     await sheet.getByRole("button", { name: "0.5 U more" }).click();
     await sheet.getByRole("button", { name: "Save" }).click();
     await expect(doses).toContainText("10.5 U");
@@ -279,7 +279,7 @@ test.describe("full user flow", () => {
     page,
   }) => {
     await page.goto("/settings");
-    await page.getByRole("button", { name: "+ Profile" }).click();
+    await page.getByRole("button", { name: "+ Add profile" }).click();
     const sheet = page.getByRole("dialog");
     await sheet.getByLabel("Name").fill("Night shift");
     await sheet.getByText("By time of day").click();

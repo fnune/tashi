@@ -96,7 +96,7 @@ export function SensorCard({
             </span>
             <span className="dial-unit">{unit}</span>
             <span className="dial-edit" aria-hidden="true">
-              <Icon name="pen" size="sm" />
+              <Icon name="edit" size="sm" />
             </span>
           </button>
           {caption && (
