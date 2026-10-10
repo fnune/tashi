@@ -73,7 +73,7 @@ export function SensorCard({
 
   const caption =
     minutesAgo === null
-      ? t(lang, "tapToMeasure")
+      ? null
       : `${range ? t(lang, RANGE_LABEL[range]) : ""} · ${
           minutesAgo < 1
             ? t(lang, "readingJustNow")
@@ -99,29 +99,33 @@ export function SensorCard({
               <Icon name="pen" size="sm" />
             </span>
           </button>
-          <span className="sensor-caption" data-range={range ?? "none"}>
-            {caption}
-          </span>
+          {caption && (
+            <span className="sensor-caption" data-range={range ?? "none"}>
+              {caption}
+            </span>
+          )}
         </div>
 
         <dl className="sensor-stats">
           <div className="sensor-stat">
             <dt>{t(lang, "activeInsulin")}</dt>
             <dd>{decimal.format(hasIob ? iobUnits : 0)} U</dd>
-            <div className="sensor-stat-extra sensor-bar">
-              <progress
-                max={1}
-                value={hasIob && injectedUnits ? iobUnits / injectedUnits : 0}
-              />
-              {runOut && (
-                <span>
-                  {t(lang, "runsOutAt").replace(
-                    "{time}",
-                    clockTime(runOut, lang),
-                  )}
-                </span>
-              )}
-            </div>
+            {hasIob && (
+              <div className="sensor-stat-extra sensor-bar">
+                <progress
+                  max={1}
+                  value={injectedUnits ? iobUnits / injectedUnits : 0}
+                />
+                {runOut && (
+                  <span>
+                    {t(lang, "runsOutAt").replace(
+                      "{time}",
+                      clockTime(runOut, lang),
+                    )}
+                  </span>
+                )}
+              </div>
+            )}
           </div>
           <div className="sensor-stat">
             <dt>{t(lang, "target")}</dt>
@@ -182,12 +186,19 @@ function CorrectionPreview({
     ? correctionComponents(reading.value, settings, iobUnits)
     : null;
 
+  if (!reading) {
+    return (
+      <div className="sensor-stat" data-tone="muted">
+        <dt>{t(lang, "correction")}</dt>
+        <dd className="sensor-correction">—</dd>
+      </div>
+    );
+  }
+
   let value = "—";
   let detail: string;
   let tone: "accent" | "muted" | "low" = "muted";
-  if (!reading) {
-    detail = t(lang, "addReadingForCorrection");
-  } else if (!components) {
+  if (!components) {
     detail = t(lang, "setCorrectionFactor");
   } else if (glucoseRange(reading.value, settings.glucose_unit) === "low") {
     value = `${decimal.format(components.units)} U`;
