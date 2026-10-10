@@ -5,10 +5,22 @@
   margin: 0;
 }
 
+.cycle-chart-curve-label {
+  position: absolute;
+  top: 0;
+  left: calc((var(--day) - 0.5) / var(--days) * 100%);
+  translate: -50% -100%;
+  font-size: var(--text-2xs);
+  font-weight: var(--weight-bold);
+  color: var(--color-fg-muted);
+  white-space: nowrap;
+}
+
 .cycle-chart-plot {
   position: relative;
   display: grid;
   grid-template-rows: var(--space-24) var(--space-3);
+  margin-top: var(--space-5);
   gap: var(--space-1);
 }
 
@@ -59,7 +71,7 @@
 
 .cycle-chart-today span {
   position: absolute;
-  top: 0;
+  bottom: calc(var(--space-3) + var(--space-1));
   left: var(--space-1);
   padding: 0 var(--space-1-5);
   border-radius: var(--radius-sm);
@@ -72,26 +84,36 @@
 
 .cycle-chart-lines {
   display: flex;
-  gap: var(--space-4);
-  font-size: var(--text-xs);
-  color: var(--color-fg-muted);
-}
-
-.cycle-chart-lines span {
-  display: inline-flex;
-  align-items: center;
+  flex-direction: column;
   gap: var(--space-1-5);
+  font-size: var(--text-xs);
 }
 
-.cycle-chart-lines span::before {
+.cycle-chart-lines div {
+  display: grid;
+  grid-template-columns: var(--space-5) 1fr;
+  column-gap: var(--space-2);
+  align-items: baseline;
+}
+
+.cycle-chart-lines div::before {
   content: "";
-  width: var(--space-5);
+  grid-row: 1 / span 2;
+  align-self: center;
   border-top: var(--border-width-heavy) solid var(--color-hormone-line);
 }
 
 .cycle-chart-lines [data-line="progesterone"]::before {
   border-top-style: dashed;
   border-top-color: var(--color-fg);
+}
+
+.cycle-chart-lines dt {
+  font-weight: var(--weight-bold);
+}
+
+.cycle-chart-lines dd {
+  color: var(--color-fg-muted);
 }
 
 .cycle-phases {

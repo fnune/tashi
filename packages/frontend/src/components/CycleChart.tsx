@@ -58,10 +58,12 @@ export function CycleChart({
   lang: Language;
 }) {
   const ranges = cyclePhaseRanges(length);
+  const ovulation = ovulationDay(length);
   const plotStyle = {
     "--days": length,
     "--today": today ?? 0,
   } as CSSProperties;
+  const atDay = (day: number) => ({ "--day": day }) as CSSProperties;
 
   return (
     <figure className="cycle-chart">
@@ -93,6 +95,20 @@ export function CycleChart({
             />
           ))}
         </div>
+        <span
+          className="cycle-chart-curve-label"
+          style={atDay(ovulation - 1)}
+          aria-hidden="true"
+        >
+          {t(lang, "estradiol")}
+        </span>
+        <span
+          className="cycle-chart-curve-label"
+          style={atDay(ovulation + 7)}
+          aria-hidden="true"
+        >
+          {t(lang, "progesterone")}
+        </span>
         {today !== null && (
           <div className="cycle-chart-today">
             <span>{t(lang, "today")}</span>
@@ -100,10 +116,16 @@ export function CycleChart({
         )}
       </div>
 
-      <div className="cycle-chart-lines">
-        <span data-line="estradiol">{t(lang, "estradiol")}</span>
-        <span data-line="progesterone">{t(lang, "progesterone")}</span>
-      </div>
+      <dl className="cycle-chart-lines">
+        <div data-line="estradiol">
+          <dt>{t(lang, "estradiol")}</dt>
+          <dd>{t(lang, "estradiolMeaning")}</dd>
+        </div>
+        <div data-line="progesterone">
+          <dt>{t(lang, "progesterone")}</dt>
+          <dd>{t(lang, "progesteroneMeaning")}</dd>
+        </div>
+      </dl>
 
       <ol className="cycle-phases">
         {ranges.map((range) => {

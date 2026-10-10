@@ -101,6 +101,10 @@ const translations = {
     phaseDay: "day {day}",
     youAreHere: "You are here · day {day}",
     lutealNote: "Insulin resistance may be higher",
+    estradiolMeaning:
+      "Rises before ovulation. Linked to better insulin sensitivity.",
+    progesteroneMeaning:
+      "Dominates the luteal phase. Linked to more insulin resistance.",
     cycleHowTo:
       "Musa doesn't change your doses by itself. If you need more insulin in the luteal phase, switch to the Menstruation profile on Calculate, or create your own under Ratio profiles, and switch back when your period starts.",
     phase_period: "Period",
@@ -293,6 +297,10 @@ const translations = {
     phaseDay: "día {day}",
     youAreHere: "Estás aquí · día {day}",
     lutealNote: "Puede haber más resistencia a la insulina",
+    estradiolMeaning:
+      "Sube antes de la ovulación. Se asocia a mejor sensibilidad a la insulina.",
+    progesteroneMeaning:
+      "Domina la fase lútea. Se asocia a más resistencia a la insulina.",
     cycleHowTo:
       "Musa no cambia tus dosis por su cuenta. Si en la fase lútea necesitas más insulina, elige el perfil Menstruación en Calcular, o crea uno propio en Perfiles de ratios, y vuelve a Normal cuando te baje la regla.",
     phase_period: "Regla",

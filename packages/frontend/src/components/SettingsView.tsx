@@ -205,6 +205,61 @@ export function SettingsView({ settings, onSave, lang }: SettingsViewProps) {
 
       {error && !editing && <Notice tone="danger">{error}</Notice>}
 
+      <ListGroup title={t(lang, "dosing")}>
+        <ListButton
+          label={t(lang, "correctionFactor")}
+          detail={t(lang, "correctionFactorDetail")}
+          value={
+            settings.correction_factor === null
+              ? t(lang, "notSet")
+              : `${number.format(settings.correction_factor)} ${unit}`
+          }
+          onClick={() => setEditing({ kind: "correction" })}
+        />
+        <ListButton
+          label={t(lang, "targetBloodSugar")}
+          value={`${number.format(settings.target_blood_sugar)} ${unit}`}
+          onClick={() => setEditing({ kind: "target" })}
+        />
+        <ListButton
+          label={t(lang, "fatProteinMultiplier")}
+          detail={t(lang, "fatProteinDetail")}
+          value={`+${Math.round(settings.fat_protein_multiplier * 100)} %`}
+          onClick={() => setEditing({ kind: "fatProtein" })}
+        />
+        <ListRow label={t(lang, "penIncrement")}>
+          <Segmented
+            label={t(lang, "penIncrement")}
+            value={settings.pen_increment}
+            options={[
+              { value: 0.5, label: `${number.format(0.5)} U` },
+              { value: 1, label: "1 U" },
+            ]}
+            onChange={(pen_increment) =>
+              persist({ ...settings, pen_increment })
+            }
+          />
+        </ListRow>
+      </ListGroup>
+
+      <ListGroup title={t(lang, "insulins")}>
+        <ListButton
+          label={t(lang, "rapidInsulin")}
+          detail={
+            bolus && settings.insulin_action_minutes
+              ? `DIA ${formatMinutes(settings.insulin_action_minutes)}`
+              : undefined
+          }
+          value={bolus?.brand_name ?? t(lang, "notSet")}
+          onClick={() => setEditing({ kind: "bolus" })}
+        />
+        <ListButton
+          label={t(lang, "basalInsulinShort")}
+          value={basal?.brand_name ?? t(lang, "notSet")}
+          onClick={() => setEditing({ kind: "basal" })}
+        />
+      </ListGroup>
+
       {gaps.map((gap) => {
         const before = windows.find(
           (w) => w.end_hour % 24 === gap.start_hour % 24,
@@ -261,61 +316,6 @@ export function SettingsView({ settings, onSave, lang }: SettingsViewProps) {
           tone="accent"
           label={`+ ${t(lang, "addWindow")}`}
           onClick={addWindow}
-        />
-      </ListGroup>
-
-      <ListGroup title={t(lang, "dosing")}>
-        <ListButton
-          label={t(lang, "correctionFactor")}
-          detail={t(lang, "correctionFactorDetail")}
-          value={
-            settings.correction_factor === null
-              ? t(lang, "notSet")
-              : `${number.format(settings.correction_factor)} ${unit}`
-          }
-          onClick={() => setEditing({ kind: "correction" })}
-        />
-        <ListButton
-          label={t(lang, "targetBloodSugar")}
-          value={`${number.format(settings.target_blood_sugar)} ${unit}`}
-          onClick={() => setEditing({ kind: "target" })}
-        />
-        <ListButton
-          label={t(lang, "fatProteinMultiplier")}
-          detail={t(lang, "fatProteinDetail")}
-          value={`+${Math.round(settings.fat_protein_multiplier * 100)} %`}
-          onClick={() => setEditing({ kind: "fatProtein" })}
-        />
-        <ListRow label={t(lang, "penIncrement")}>
-          <Segmented
-            label={t(lang, "penIncrement")}
-            value={settings.pen_increment}
-            options={[
-              { value: 0.5, label: `${number.format(0.5)} U` },
-              { value: 1, label: "1 U" },
-            ]}
-            onChange={(pen_increment) =>
-              persist({ ...settings, pen_increment })
-            }
-          />
-        </ListRow>
-      </ListGroup>
-
-      <ListGroup title={t(lang, "insulins")}>
-        <ListButton
-          label={t(lang, "rapidInsulin")}
-          detail={
-            bolus && settings.insulin_action_minutes
-              ? `DIA ${formatMinutes(settings.insulin_action_minutes)}`
-              : undefined
-          }
-          value={bolus?.brand_name ?? t(lang, "notSet")}
-          onClick={() => setEditing({ kind: "bolus" })}
-        />
-        <ListButton
-          label={t(lang, "basalInsulinShort")}
-          value={basal?.brand_name ?? t(lang, "notSet")}
-          onClick={() => setEditing({ kind: "basal" })}
         />
       </ListGroup>
 
