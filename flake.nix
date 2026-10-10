@@ -17,6 +17,9 @@
             nodejs_22
             pnpm
             prek
+            # brand/generate.py
+            python3
+            librsvg
           ];
         };
       });
