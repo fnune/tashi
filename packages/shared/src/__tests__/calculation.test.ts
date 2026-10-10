@@ -4,9 +4,11 @@ import {
   correctionComponents,
   evaluateFatProteinThreshold,
   findMealWindow,
+  recalculateResult,
   uncoveredHours,
+  withWeight,
 } from "../calculation.js";
-import type { CalculatedItem, Settings } from "../types.js";
+import type { CalculatedItem, CalculationResult, Settings } from "../types.js";
 
 const BASE_SETTINGS: Settings = {
   meal_windows: [{ name: "lunch", start_hour: 11, end_hour: 16, ratio: 10 }],
@@ -342,5 +344,58 @@ describe("correctionComponents", () => {
         0,
       ),
     ).toBeNull();
+  });
+});
+
+describe("recalculateResult", () => {
+  const original: CalculationResult = {
+    id: "meal",
+    timestamp: "2026-10-10T13:00:00Z",
+    input_text: "100 g rice",
+    language: "en",
+    meal_window: { name: "lunch", start_hour: 11, end_hour: 16, ratio: 10 },
+    items: [makeItem()],
+    total_net_carbs_g: 30,
+    recommended_dose: 3,
+    total_dose: 3.5,
+    profile: { id: "sick", name: "", percent: 20 },
+  };
+
+  it("scales a food's macros with its new weight", () => {
+    const heavier = withWeight(makeItem({ fat_per_100g: 10 }), 200);
+    expect(heavier.net_carbs_g).toBe(60);
+    expect(heavier.fat_g).toBe(20);
+  });
+
+  it("recomputes the dose with the result's ratio and profile", () => {
+    const result = recalculateResult(
+      original,
+      [withWeight(makeItem(), 200)],
+      BASE_SETTINGS,
+    );
+    expect(result.total_net_carbs_g).toBe(60);
+    expect(result.recommended_dose).toBe(6);
+    expect(result.total_dose).toBe(7);
+  });
+
+  it("keeps the glucose reading the result was made with", () => {
+    const corrected = recalculateResult(
+      {
+        ...original,
+        correction: {
+          current_blood_sugar: 180,
+          target_blood_sugar: 100,
+          correction_factor: 40,
+          correction_dose: 2,
+          iob: 0,
+          iob_reduction: 0,
+          total_dose: 5,
+        },
+      },
+      original.items,
+      BASE_SETTINGS,
+    );
+    expect(corrected.correction?.correction_dose).toBe(2);
+    expect(corrected.total_dose).toBe(6);
   });
 });

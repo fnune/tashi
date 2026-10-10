@@ -19,6 +19,7 @@ import {
   bolusInsulinProfiles,
   findMealWindow,
   insulinOnBoard,
+  isPlausibleGlucose,
   MAX_CYCLE_DAYS,
   MAX_DIA_MINUTES,
   MIN_CYCLE_DAYS,
@@ -134,21 +135,27 @@ const logMealSchema = z.object({
   pre_bolus_minutes: z.number().int().min(0).max(60).default(0),
 });
 
-const timelineEntrySchema = z.discriminatedUnion("type", [
-  z.object({
-    type: z.literal("fast_insulin"),
-    units: z.number().positive(),
-  }),
-  z.object({
-    type: z.literal("slow_insulin"),
-    units: z.number().positive(),
-  }),
-  z.object({
-    type: z.literal("glucose_reading"),
-    value: z.number().positive(),
-    unit: z.union([z.literal("mg/dL"), z.literal("mmol/L")]),
-  }),
-]);
+const timelineEntrySchema = z
+  .discriminatedUnion("type", [
+    z.object({
+      type: z.literal("fast_insulin"),
+      units: z.number().positive(),
+    }),
+    z.object({
+      type: z.literal("slow_insulin"),
+      units: z.number().positive(),
+    }),
+    z.object({
+      type: z.literal("glucose_reading"),
+      value: z.number().positive(),
+      unit: z.union([z.literal("mg/dL"), z.literal("mmol/L")]),
+    }),
+  ])
+  .refine(
+    (entry) =>
+      entry.type !== "glucose_reading" ||
+      isPlausibleGlucose(entry.value, entry.unit),
+  );
 
 export function createRoutes(
   calculator: Calculator,
@@ -361,6 +368,15 @@ export function createRoutes(
   api.put("/api/timeline/:id", async (c) => {
     const id = c.req.param("id");
     const body = await c.req.json<UpdateTimelineRequest>();
+    if (body.type === "glucose_reading" && body.value !== undefined) {
+      const existing = (await storage.getTimeline()).find((e) => e.id === id);
+      if (
+        existing?.type === "glucose_reading" &&
+        !isPlausibleGlucose(body.value, existing.unit)
+      ) {
+        return apiError(c, "validation_failed", 400);
+      }
+    }
     const updated = await storage.updateTimelineEntry(id, body);
     if (!updated) {
       return apiError(c, "not_found", 404);

@@ -1,4 +1,9 @@
-import type { CalculatedItem, MealWindow, Settings } from "./types.js";
+import type {
+  CalculatedItem,
+  CalculationResult,
+  MealWindow,
+  Settings,
+} from "./types.js";
 
 export function findMealWindow(
   settings: Settings,
@@ -208,4 +213,47 @@ export function calculateDose(
   if (fat_protein_adjustment)
     result.fat_protein_adjustment = fat_protein_adjustment;
   return result;
+}
+
+export function withWeight(
+  item: CalculatedItem,
+  weight_g: number,
+): CalculatedItem {
+  const per100 = weight_g / 100;
+  return {
+    ...item,
+    weight_g,
+    net_carbs_g: item.net_carbs_per_100g * per100,
+    fat_g: item.fat_per_100g * per100,
+    protein_g: item.protein_per_100g * per100,
+  };
+}
+
+// Keeps the ratio, profile and glucose reading the result was made with, even if settings changed since.
+export function recalculateResult(
+  result: CalculationResult,
+  items: CalculatedItem[],
+  settings: Settings,
+): CalculationResult {
+  const dose = calculateDose(
+    items,
+    result.meal_window.ratio,
+    settings,
+    result.correction?.current_blood_sugar,
+    result.correction?.iob ?? 0,
+    1 + (result.profile?.percent ?? 0) / 100,
+  );
+  const { correction, fat_protein_adjustment, ...rest } = result;
+  const next: CalculationResult = {
+    ...rest,
+    items,
+    total_net_carbs_g: Math.round(dose.totalNetCarbs * 10) / 10,
+    recommended_dose: dose.foodDose,
+    total_dose: dose.totalDose,
+  };
+  if (dose.correction) next.correction = dose.correction;
+  if (dose.fat_protein_adjustment) {
+    next.fat_protein_adjustment = dose.fat_protein_adjustment;
+  }
+  return next;
 }

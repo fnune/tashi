@@ -301,19 +301,19 @@ export const DEFAULT_SETTINGS: Settings = {
     {
       id: "sport",
       name: "",
-      emoji: "🏃",
+      emoji: "run",
       adjustment: { mode: "percent", percent: -20 },
     },
     {
       id: "sick",
       name: "",
-      emoji: "🤒",
+      emoji: "thermo",
       adjustment: { mode: "percent", percent: 20 },
     },
     {
       id: "menstruation",
       name: "",
-      emoji: "🩸",
+      emoji: "drop",
       adjustment: { mode: "percent", percent: 15 },
     },
   ],

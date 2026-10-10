@@ -4,9 +4,11 @@ export {
   correctionComponents,
   evaluateFatProteinThreshold,
   findMealWindow,
+  recalculateResult,
   roundToIncrement,
   uncoveredHours,
   windowCovers,
+  withWeight,
 } from "./calculation.js";
 export type { CyclePhase, CyclePhaseRange, CycleStatus } from "./cycle.js";
 export {
@@ -21,7 +23,11 @@ export {
 } from "./cycle.js";
 export type { GlucoseRange } from "./glucose.js";
 export {
+  GLUCOSE_ENTRY_LIMITS,
+  GLUCOSE_GAUGE_SCALE,
+  GLUCOSE_RANGE_LIMITS,
   glucoseRange,
+  isPlausibleGlucose,
   latestRecentReading,
   RECENT_READING_MINUTES,
 } from "./glucose.js";
