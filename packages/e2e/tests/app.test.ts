@@ -23,7 +23,7 @@ test.describe("full user flow", () => {
     page,
   }) => {
     await page.goto("/");
-    await expect(page.locator("h1")).toHaveText("Musa");
+    await expect(page.locator("h1")).toHaveText("Tashi");
 
     await page.getByRole("navigation").getByText("Settings").click();
     for (const name of ["morning", "lunch", "dinner"]) {
@@ -201,7 +201,7 @@ test.describe("full user flow", () => {
     const doses = page.locator('.event[data-entry-type="slow_insulin"]');
     const sheet = page.getByRole("dialog");
 
-    await page.getByRole("button", { name: "+ Add basal insulin" }).click();
+    await page.getByRole("button", { name: "Basal insulin" }).click();
     await sheet.getByRole("button", { name: "0.5 U more" }).click();
     await sheet.getByRole("button", { name: "Save" }).click();
     await expect(doses).toContainText("10.5 U");

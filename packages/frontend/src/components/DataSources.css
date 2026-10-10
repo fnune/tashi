@@ -1,0 +1,30 @@
+.data-sources {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-3-5) var(--space-4) var(--space-4);
+  font-size: var(--text-sm);
+  line-height: var(--leading-normal);
+  color: var(--color-fg-muted);
+}
+
+.data-sources ol {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2-5);
+  padding-left: var(--space-5);
+}
+
+.data-sources li::marker {
+  font-weight: var(--weight-bold);
+}
+
+.data-sources li b {
+  display: block;
+  color: var(--color-fg);
+  font-weight: var(--weight-semibold);
+}
+
+.data-sources a {
+  color: var(--color-accent);
+}

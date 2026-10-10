@@ -27,7 +27,7 @@ const CONTENT: Record<Language, Content> = {
   en: {
     back: "Back",
     title: "How your dose is worked out",
-    lead: "Musa adds up three parts, applies your active profile and rounds once to your pen's increment.",
+    lead: "Tashi adds up three parts, applies your active profile and rounds once to your pen's increment.",
     steps: [
       {
         title: "Meal",
@@ -137,7 +137,7 @@ const CONTENT: Record<Language, Content> = {
               highest early in the follicular phase and lowest in the middle of
               the luteal phase, staying lower until the period starts. It varies
               a lot between people and some women notice no change. That is why
-              Musa only suggests switching profile on day 1 and on the first
+              Tashi only suggests switching profile on day 1 and on the first
               luteal day, and leaves the decision to you.
             </p>
           </>
@@ -181,7 +181,7 @@ const CONTENT: Record<Language, Content> = {
   es: {
     back: "Volver",
     title: "Cómo se calcula tu dosis",
-    lead: "Musa suma tres partes, aplica tu perfil activo y redondea una sola vez al incremento de tu bolígrafo.",
+    lead: "Tashi suma tres partes, aplica tu perfil activo y redondea una sola vez al incremento de tu bolígrafo.",
     steps: [
       {
         title: "Comida",
@@ -298,8 +298,8 @@ const CONTENT: Record<Language, Content> = {
               suele ser máxima al inicio de la fase folicular y mínima a mitad
               de la fase lútea, y sigue baja hasta que llega la regla. Varía
               mucho de una persona a otra y algunas no notan cambios. Por eso
-              Musa solo sugiere cambiar de perfil el día 1 y el primer día de la
-              fase lútea, y la decisión es tuya.
+              Tashi solo sugiere cambiar de perfil el día 1 y el primer día de
+              la fase lútea, y la decisión es tuya.
             </p>
           </>
         ),

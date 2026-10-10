@@ -45,7 +45,7 @@
 .settings-about-logo {
   width: var(--space-14);
   height: var(--space-14);
-  color: var(--color-accent);
+  display: block;
 }
 
 .settings-about div {

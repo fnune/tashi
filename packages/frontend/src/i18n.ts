@@ -2,7 +2,7 @@ import { ApiError } from "./api.js";
 
 const translations = {
   en: {
-    appTitle: "Musa",
+    appTitle: "Tashi",
     settings: "Settings",
     history: "History",
     calculate: "Calculate",
@@ -55,9 +55,10 @@ const translations = {
       "Choose which insulin you're using in settings to see insulin on board.",
     today: "Today",
     yesterday: "Yesterday",
-    addRapid: "Add rapid insulin",
-    addBasal: "Add basal insulin",
-    addGlucose: "Add a glucose reading",
+    addTitle: "Add",
+    addRapid: "Rapid insulin",
+    addBasal: "Basal insulin",
+    addGlucose: "Glucose",
     addedByHand: "Added by hand",
     forMeal: "For {meal}",
     manualReading: "Manual reading",
@@ -111,7 +112,7 @@ const translations = {
     progesteroneMeaning:
       "Dominates the luteal phase. Linked to more insulin resistance.",
     cycleHowTo:
-      "Musa doesn't change your doses by itself. If you need more insulin in the luteal phase, switch to the Menstruation profile on Calculate, or create your own under Ratio profiles, and switch back when your period starts.",
+      "Tashi doesn't change your doses by itself. If you need more insulin in the luteal phase, switch to the Menstruation profile on Calculate, or create your own under Ratio profiles, and switch back when your period starts.",
     phase_period: "Period",
     phase_follicular: "Follicular phase",
     phase_ovulation: "Ovulation",
@@ -192,6 +193,24 @@ const translations = {
     notSet: "Not set",
     general: "General",
     aboutTagline: "Bolus calculator",
+    dataSourcesTitle: "Data sources",
+    dataSourcesIntro:
+      "Each food is looked up in this order, and the first match wins.",
+    sourceYoursTitle: "Your own value",
+    sourceYoursBody:
+      "If you state the carbs yourself, for example from a label, that value is used. You get a warning if it is far from the database.",
+    sourceUsdaTitle: "USDA FoodData Central",
+    sourceUsdaBody:
+      "The US government's reference database. Most foods come from here. The USDA tag next to each food links to its exact entry.",
+    sourceBedcaTitle: "BEDCA",
+    sourceBedcaBody:
+      "The Spanish food composition database, for local foods that USDA does not have.",
+    sourceLlmTitle: "AI estimate",
+    sourceLlmBody:
+      "If no entry matches, the AI estimates the values and the row is marked as estimated. Double-check these.",
+    sourceGiBody:
+      "Glycemic index values come from the University of Sydney's GI database. A ~ in front of the value means it was estimated.",
+    sourceGiLink: "glycemicindex.com",
     no_meal_window:
       "No meal window covers this time. Add one in settings to calculate a dose.",
     validation_failed: "Please check the values you entered.",
@@ -199,7 +218,7 @@ const translations = {
     internal_error: "Something went wrong. Please try again.",
   },
   es: {
-    appTitle: "Musa",
+    appTitle: "Tashi",
     settings: "Ajustes",
     history: "Historial",
     calculate: "Calcular",
@@ -253,9 +272,10 @@ const translations = {
       "Elige qué insulina usas en ajustes para ver la insulina activa.",
     today: "Hoy",
     yesterday: "Ayer",
-    addRapid: "Añadir insulina rápida",
-    addBasal: "Añadir insulina lenta",
-    addGlucose: "Añadir glucemia",
+    addTitle: "Añadir",
+    addRapid: "Insulina rápida",
+    addBasal: "Insulina lenta",
+    addGlucose: "Glucemia",
     addedByHand: "Añadida a mano",
     forMeal: "Para {meal}",
     manualReading: "Medida manual",
@@ -311,7 +331,7 @@ const translations = {
     progesteroneMeaning:
       "Domina la fase lútea. Se asocia a más resistencia a la insulina.",
     cycleHowTo:
-      "Musa no cambia tus dosis por su cuenta. Si en la fase lútea necesitas más insulina, elige el perfil Menstruación en Calcular, o crea uno propio en Perfiles de ratios, y vuelve a Normal cuando te baje la regla.",
+      "Tashi no cambia tus dosis por su cuenta. Si en la fase lútea necesitas más insulina, elige el perfil Menstruación en Calcular, o crea uno propio en Perfiles de ratios, y vuelve a Normal cuando te baje la regla.",
     phase_period: "Regla",
     phase_follicular: "Fase folicular",
     phase_ovulation: "Ovulación",
@@ -392,6 +412,24 @@ const translations = {
     notSet: "Sin definir",
     general: "General",
     aboutTagline: "Calculadora de bolos",
+    dataSourcesTitle: "Fuentes de datos",
+    dataSourcesIntro:
+      "Cada alimento se busca en este orden y se usa la primera coincidencia.",
+    sourceYoursTitle: "Tu propio valor",
+    sourceYoursBody:
+      "Si indicas tú los hidratos, por ejemplo de una etiqueta, se usa ese valor. Verás un aviso si se aleja mucho de la base de datos.",
+    sourceUsdaTitle: "USDA FoodData Central",
+    sourceUsdaBody:
+      "La base de datos de referencia del gobierno de EE. UU. De aquí sale la mayoría de alimentos. La etiqueta USDA junto a cada alimento enlaza a su entrada exacta.",
+    sourceBedcaTitle: "BEDCA",
+    sourceBedcaBody:
+      "La base de datos española de composición de alimentos, para alimentos locales que no están en USDA.",
+    sourceLlmTitle: "Estimación de la IA",
+    sourceLlmBody:
+      "Si no hay ninguna coincidencia, la IA estima los valores y el alimento se marca como estimado. Revísalos.",
+    sourceGiBody:
+      "El índice glucémico sale de la base de datos de la Universidad de Sídney. Un ~ delante del valor indica que es estimado.",
+    sourceGiLink: "glycemicindex.com",
     no_meal_window:
       "Ninguna franja cubre esta hora. Añade una en ajustes para calcular la dosis.",
     validation_failed: "Revisa los valores introducidos.",

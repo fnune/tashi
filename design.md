@@ -1,6 +1,6 @@
-# Musa: T1D fast insulin dose calculator
+# Tashi: T1D fast insulin dose calculator
 
-The app is called Musa; the repository, packages and deployment keep the original name, pincho.
+The app is called Tashi; the repository, packages and deployment keep the original name, pincho.
 
 ## Problem
 

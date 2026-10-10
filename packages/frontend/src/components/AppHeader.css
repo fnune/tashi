@@ -20,7 +20,7 @@
 .app-logo {
   width: var(--icon-lg);
   height: var(--icon-lg);
-  color: var(--color-accent);
+  display: block;
 }
 
 .meal-window-chip {

@@ -43,6 +43,7 @@ import {
 } from "../ratioLabels.js";
 import { RATIOS_ANCHOR } from "./AppHeader.js";
 import { CycleSettings } from "./CycleSettings.js";
+import { DataSources } from "./DataSources.js";
 import { DayBar } from "./DayBar.js";
 import { IobCurve } from "./IobCurve.js";
 import { Logo } from "./Logo.js";
@@ -405,8 +406,10 @@ export function SettingsView({ settings, onSave, lang }: SettingsViewProps) {
         onChange={(cycle) => persist({ ...settings, cycle })}
       />
 
+      <DataSources lang={lang} />
+
       <section className="settings-about">
-        <Logo className="settings-about-logo" />
+        <Logo className="settings-about-logo" variant="icon" />
         <div>
           <b>{t(lang, "appTitle")}</b>
           <span>{t(lang, "aboutTagline")}</span>

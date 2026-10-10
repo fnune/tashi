@@ -1,18 +1,25 @@
-export function Logo({ className }: { className?: string }) {
+import iconDark from "../assets/tashi-icon-dark.svg";
+import iconLight from "../assets/tashi-icon-light.svg";
+import markDark from "../assets/tashi-mark-dark.svg";
+import markLight from "../assets/tashi-mark-light.svg";
+
+const VARIANTS = {
+  mark: { light: markLight, dark: markDark },
+  icon: { light: iconLight, dark: iconDark },
+};
+
+export function Logo({
+  className,
+  variant = "mark",
+}: {
+  className?: string;
+  variant?: keyof typeof VARIANTS;
+}) {
+  const { light, dark } = VARIANTS[variant];
   return (
-    <svg className={className} viewBox="0 0 48 48" aria-hidden="true">
-      <circle
-        cx="24"
-        cy="24"
-        r="19.5"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="5"
-      />
-      <path
-        d="M24 11.5c-3.2 4.3-8.5 11.2-8.5 16.3a8.5 8.5 0 0 0 17 0c0-5.1-5.3-12-8.5-16.3z"
-        fill="currentColor"
-      />
-    </svg>
+    <picture>
+      <source srcSet={dark} media="(prefers-color-scheme: dark)" />
+      <img className={className} src={light} alt="" />
+    </picture>
   );
 }

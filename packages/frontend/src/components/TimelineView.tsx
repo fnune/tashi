@@ -18,7 +18,6 @@ import { MealBreakdown } from "./MealBreakdown.js";
 import { Button } from "./ui/Button.js";
 import { DateTimeField, NumberField, parseDecimal } from "./ui/Field.js";
 import { Icon, type IconName } from "./ui/Icon.js";
-import { ListButton, ListGroup } from "./ui/List.js";
 import { Notice } from "./ui/Notice.js";
 import { Sheet } from "./ui/Sheet.js";
 import { Stepper } from "./ui/Stepper.js";
@@ -89,6 +88,12 @@ const ICONS: Record<TimelineEntry["type"], IconName> = {
   slow_insulin: "pen",
   glucose_reading: "drop",
 };
+
+const ADDABLE = [
+  { type: "fast_insulin", label: "addRapid" },
+  { type: "slow_insulin", label: "addBasal" },
+  { type: "glucose_reading", label: "addGlucose" },
+] as const satisfies { type: NewEntryType; label: string }[];
 
 function EntryRow({
   entry,
@@ -393,23 +398,22 @@ export function TimelineView({
     <div className="timeline">
       <h2 className="screen-title">{t(lang, "timeline")}</h2>
 
-      <ListGroup>
-        <ListButton
-          tone="accent"
-          label={`+ ${t(lang, "addRapid")}`}
-          onClick={() => setAdding("fast_insulin")}
-        />
-        <ListButton
-          tone="accent"
-          label={`+ ${t(lang, "addBasal")}`}
-          onClick={() => setAdding("slow_insulin")}
-        />
-        <ListButton
-          tone="accent"
-          label={`+ ${t(lang, "addGlucose")}`}
-          onClick={() => setAdding("glucose_reading")}
-        />
-      </ListGroup>
+      <section className="timeline-add">
+        <h3>{t(lang, "addTitle")}</h3>
+        <div className="timeline-add-options">
+          {ADDABLE.map(({ type, label }) => (
+            <Button
+              key={type}
+              variant="secondary"
+              data-kind={type}
+              onClick={() => setAdding(type)}
+            >
+              <Icon name={ICONS[type]} size="sm" />
+              {t(lang, label)}
+            </Button>
+          ))}
+        </div>
+      </section>
 
       {sorted.length === 0 && (
         <p className="timeline-empty">{t(lang, "noTimeline")}</p>
