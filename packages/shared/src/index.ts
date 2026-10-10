@@ -67,12 +67,14 @@ export {
   splitLongestWindow,
   windowLength,
 } from "./meal-windows.js";
+export type { RatioModifier, WindowRatio } from "./profiles.js";
 export {
   activeProfile,
   appliedProfile,
   doseScale,
   effectiveRatio,
   renameWindowInProfiles,
+  windowRatio,
 } from "./profiles.js";
 export { fromDisplayRatio, toDisplayRatio } from "./ratio-format.js";
 export type {

@@ -275,21 +275,40 @@ test.describe("full user flow", () => {
     expect(sickDose).toBeGreaterThan(normalDose);
   });
 
-  test("create a per-window profile and use it", async ({ page }) => {
+  test("create a per-window profile and see it override the ratio", async ({
+    page,
+  }) => {
     await page.goto("/settings");
+    await page.getByRole("button", { name: "Manage profiles" }).click();
     await page.getByRole("button", { name: "+ New profile" }).click();
     const sheet = page.getByRole("dialog");
     await sheet.getByLabel("Name").fill("Night shift");
     await sheet.getByText("By time of day").click();
     await sheet.getByLabel("lunch").fill("5");
     await sheet.getByRole("button", { name: "Save" }).click();
-    await expect(
-      page.getByRole("button", { name: /Night shift/ }),
-    ).toContainText("Own ratio per window");
+    await expect(sheet).toBeHidden();
+
+    await page.getByText("Night shift").click();
+    const lunch = page.getByRole("button", { name: /lunch/ });
+    await expect(lunch).toContainText("5 g/U");
+    await expect(lunch).toContainText("from profile");
+    await expect(lunch.locator("s")).toHaveText("10 g/U");
 
     await page.getByRole("navigation").getByText("Calculate").click();
-    await page.getByText("Night shift").click();
     await expect(page.locator(".meal-window-chip")).toContainText("5 g/U");
+  });
+
+  test("a percentage profile shows each window's resulting ratio", async ({
+    page,
+  }) => {
+    await page.goto("/settings");
+    const lunch = page.getByRole("button", { name: /lunch/ });
+    await expect(lunch).toHaveText(/10 g\/U/);
+    await expect(lunch).not.toContainText("%");
+
+    await page.getByText("Sick day").click();
+    await expect(lunch).toContainText("8.33 g/U");
+    await expect(lunch).toContainText("10 g/U · +20 %");
   });
 
   test("cycle tracking shows the phase and suggests a profile on day 1", async ({
@@ -401,5 +420,40 @@ test.describe("full user flow", () => {
     await expect(page.getByRole("button", { name: /supper/ })).toContainText(
       "12 g/U",
     );
+  });
+
+  test("the tab bar stays on screen however many profiles there are", async ({
+    page,
+    request,
+  }) => {
+    const settings = await (
+      await request.get("http://localhost:3100/api/settings")
+    ).json();
+    const extra = ["Night shift", "Long-haul flight", "Exam week"].map(
+      (name, i) => ({
+        id: `extra-${i}`,
+        name,
+        emoji: "⭐",
+        adjustment: { mode: "percent", percent: 10 },
+      }),
+    );
+    await request.put("http://localhost:3100/api/settings", {
+      data: { ...settings, profiles: [...settings.profiles, ...extra] },
+    });
+
+    for (const path of ["/", "/timeline", "/settings"]) {
+      await page.goto(path);
+      await expect(page.locator(".tab-bar")).toBeVisible();
+      const layout = await page.evaluate(() => ({
+        overflow:
+          document.documentElement.scrollWidth -
+          document.documentElement.clientWidth,
+        barBottom: document.querySelector(".tab-bar")?.getBoundingClientRect()
+          .bottom,
+        viewportBottom: window.innerHeight,
+      }));
+      expect(layout.overflow, path).toBe(0);
+      expect(layout.barBottom, path).toBe(layout.viewportBottom);
+    }
   });
 });

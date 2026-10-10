@@ -5,6 +5,7 @@ import {
   doseScale,
   effectiveRatio,
   renameWindowInProfiles,
+  windowRatio,
 } from "../profiles.js";
 import { DEFAULT_SETTINGS, type Profile, type Settings } from "../types.js";
 
@@ -59,6 +60,36 @@ describe("profiles", () => {
     expect(renamed?.adjustment).toEqual({
       mode: "per_window",
       ratios: { Comida: 8, dinner: 6 },
+    });
+  });
+
+  it("shows a percentage profile as the ratio giving the same meal dose", () => {
+    const view = windowRatio(percent(-20), LUNCH);
+    expect(view.modifier).toEqual({ kind: "percent", percent: -20 });
+    expect(view.result).toBeCloseTo(12.5);
+    expect(50 / view.result).toBeCloseTo((50 / LUNCH.ratio) * 0.8);
+  });
+
+  it("shows a per-window profile's own ratio, or no change where it has none", () => {
+    const perWindow: Profile = {
+      ...percent(0),
+      adjustment: { mode: "per_window", ratios: { lunch: 8 } },
+    };
+    expect(windowRatio(perWindow, LUNCH)).toEqual({
+      base: 10,
+      modifier: { kind: "own" },
+      result: 8,
+    });
+    expect(
+      windowRatio(perWindow, { ...LUNCH, name: "dinner" }).modifier.kind,
+    ).toBe("none");
+  });
+
+  it("shows no modifier for Normal", () => {
+    expect(windowRatio(percent(0), LUNCH)).toEqual({
+      base: 10,
+      modifier: { kind: "none" },
+      result: 10,
     });
   });
 });

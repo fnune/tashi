@@ -52,3 +52,38 @@ export function renameWindowInProfiles(
     };
   });
 }
+
+export type RatioModifier =
+  | { kind: "none" }
+  | { kind: "percent"; percent: number }
+  | { kind: "own" };
+
+export interface WindowRatio {
+  base: number;
+  modifier: RatioModifier;
+  result: number;
+}
+
+function ratioGivingSameMealDose(base: number, profile: Profile): number {
+  return base / doseScale(profile);
+}
+
+export function windowRatio(profile: Profile, window: MealWindow): WindowRatio {
+  const base = window.ratio;
+  const adjustment = profile.adjustment;
+  if (adjustment.mode === "percent") {
+    if (adjustment.percent === 0) {
+      return { base, modifier: { kind: "none" }, result: base };
+    }
+    return {
+      base,
+      modifier: { kind: "percent", percent: adjustment.percent },
+      result: ratioGivingSameMealDose(base, profile),
+    };
+  }
+  const own = adjustment.ratios[window.name];
+  if (own === undefined || own === base) {
+    return { base, modifier: { kind: "none" }, result: base };
+  }
+  return { base, modifier: { kind: "own" }, result: own };
+}

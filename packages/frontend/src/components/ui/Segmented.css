@@ -9,6 +9,7 @@
 }
 
 .segmented label {
+  position: relative;
   text-align: center;
   flex: 1;
   border-radius: var(--radius-sm);

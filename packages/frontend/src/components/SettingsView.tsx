@@ -29,6 +29,7 @@ import {
   splitLongestWindow,
   uncoveredHours,
   windowLength,
+  windowRatio,
 } from "@pincho/shared";
 import { useEffect, useState } from "react";
 import { useLocation, useSearchParams } from "react-router";
@@ -40,7 +41,6 @@ import {
   signedPercent,
 } from "../profileLabels.js";
 import {
-  formatRatio,
   parseRatioInput,
   ratioHint,
   ratioInputText,
@@ -50,7 +50,9 @@ import { CycleSettings } from "./CycleSettings.js";
 import { DayBar } from "./DayBar.js";
 import { IobCurve } from "./IobCurve.js";
 import { Logo } from "./Logo.js";
+import { ProfileChips } from "./ProfileChips.js";
 import { ProfileEditor } from "./ProfileEditor.js";
+import { RatioValue } from "./RatioValue.js";
 import { Button } from "./ui/Button.js";
 import {
   NumberField,
@@ -72,6 +74,7 @@ interface SettingsViewProps {
 }
 
 type Editing =
+  | { kind: "profiles" }
   | { kind: "profile"; profile: Profile; isNew: boolean }
   | { kind: "window"; index: number; draft: MealWindow[] }
   | { kind: "correction" }
@@ -290,9 +293,18 @@ export function SettingsView({ settings, onSave, lang }: SettingsViewProps) {
       })}
 
       <ListGroup
-        title={t(lang, "ratiosByWindow")}
+        title={t(lang, "ratiosTitle")}
         footer={t(lang, "windowsTileDay")}
       >
+        <ProfileChips
+          inline
+          label={t(lang, "activeProfile")}
+          settings={settings}
+          lang={lang}
+          onSelect={(active_profile_id) =>
+            persist({ ...settings, active_profile_id })
+          }
+        />
         <DayBar windows={windows} />
         {windows.map((w, i) => (
           <ListButton
@@ -306,7 +318,13 @@ export function SettingsView({ settings, onSave, lang }: SettingsViewProps) {
               </span>
             }
             detail={windowLength(w) === 24 ? t(lang, "allDay") : formatRange(w)}
-            value={formatRatio(w.ratio, settings.ratio_format, lang)}
+            value={
+              <RatioValue
+                ratio={windowRatio(active, w)}
+                format={settings.ratio_format}
+                lang={lang}
+              />
+            }
             onClick={() =>
               setEditing({ kind: "window", index: i, draft: windows })
             }
@@ -317,67 +335,9 @@ export function SettingsView({ settings, onSave, lang }: SettingsViewProps) {
           label={`+ ${t(lang, "addWindow")}`}
           onClick={addWindow}
         />
-      </ListGroup>
-
-      <ListGroup
-        title={t(lang, "profilesTitle")}
-        footer={t(lang, "profilesNote")}
-      >
-        {settings.profiles.map((profile) => {
-          const label = (
-            <span className="profile-label">
-              <span className="profile-emoji" aria-hidden="true">
-                {profile.emoji}
-              </span>
-              {profileName(profile, lang)}
-              {profile.id === active.id && (
-                <span className="profile-badge">{t(lang, "activeBadge")}</span>
-              )}
-            </span>
-          );
-          if (profile.id === NORMAL_PROFILE_ID) {
-            return (
-              <ListRow
-                key={profile.id}
-                label={label}
-                detail={t(lang, "profileNormalDetail")}
-              />
-            );
-          }
-          return (
-            <ListButton
-              key={profile.id}
-              label={label}
-              detail={
-                profile.adjustment.mode === "percent"
-                  ? t(lang, "profilePercentDetail").replace(
-                      "{percent}",
-                      signedPercent(profile.adjustment.percent),
-                    )
-                  : t(lang, "profilePerWindowDetail")
-              }
-              value={profileSummary(profile, lang)}
-              onClick={() =>
-                setEditing({ kind: "profile", profile, isNew: false })
-              }
-            />
-          );
-        })}
         <ListButton
-          tone="accent"
-          label={t(lang, "newProfile")}
-          onClick={() =>
-            setEditing({
-              kind: "profile",
-              isNew: true,
-              profile: {
-                id: crypto.randomUUID(),
-                name: "",
-                emoji: "⭐",
-                adjustment: { mode: "percent", percent: 0 },
-              },
-            })
-          }
+          label={t(lang, "manageProfiles")}
+          onClick={() => setEditing({ kind: "profiles" })}
         />
       </ListGroup>
 
@@ -437,6 +397,74 @@ export function SettingsView({ settings, onSave, lang }: SettingsViewProps) {
           <span>{t(lang, "aboutTagline")}</span>
         </div>
       </section>
+
+      <Sheet
+        open={editing?.kind === "profiles"}
+        title={t(lang, "profilesTitle")}
+        closeLabel={t(lang, "close")}
+        onClose={() => setEditing(null)}
+      >
+        <ListGroup footer={t(lang, "profilesNote")}>
+          {settings.profiles.map((profile) => {
+            const label = (
+              <span className="profile-label">
+                <span className="profile-emoji" aria-hidden="true">
+                  {profile.emoji}
+                </span>
+                {profileName(profile, lang)}
+                {profile.id === active.id && (
+                  <span className="profile-badge">
+                    {t(lang, "activeBadge")}
+                  </span>
+                )}
+              </span>
+            );
+            if (profile.id === NORMAL_PROFILE_ID) {
+              return (
+                <ListRow
+                  key={profile.id}
+                  label={label}
+                  detail={t(lang, "profileNormalDetail")}
+                />
+              );
+            }
+            return (
+              <ListButton
+                key={profile.id}
+                label={label}
+                detail={
+                  profile.adjustment.mode === "percent"
+                    ? t(lang, "profilePercentDetail").replace(
+                        "{percent}",
+                        signedPercent(profile.adjustment.percent),
+                      )
+                    : t(lang, "profilePerWindowDetail")
+                }
+                value={profileSummary(profile, lang)}
+                onClick={() =>
+                  setEditing({ kind: "profile", profile, isNew: false })
+                }
+              />
+            );
+          })}
+          <ListButton
+            tone="accent"
+            label={t(lang, "newProfile")}
+            onClick={() =>
+              setEditing({
+                kind: "profile",
+                isNew: true,
+                profile: {
+                  id: crypto.randomUUID(),
+                  name: "",
+                  emoji: "⭐",
+                  adjustment: { mode: "percent", percent: 0 },
+                },
+              })
+            }
+          />
+        </ListGroup>
+      </Sheet>
 
       <Sheet
         open={editing?.kind === "profile"}

@@ -1,6 +1,6 @@
 import type { Settings } from "@pincho/shared";
 import { activeProfile, NORMAL_PROFILE_ID } from "@pincho/shared";
-import { useId } from "react";
+import { useEffect, useId, useRef } from "react";
 import { type Language, t } from "../i18n.js";
 import { profileName, profileSummary } from "../profileLabels.js";
 import "./ProfileChips.css";
@@ -8,20 +8,49 @@ import "./ProfileChips.css";
 export function ProfileChips({
   settings,
   lang,
+  label,
+  inline = false,
   onSelect,
 }: {
   settings: Settings;
+  label?: string;
+  inline?: boolean;
   lang: Language;
   onSelect: (profileId: string) => void;
 }) {
   const name = useId();
   const active = activeProfile(settings);
+  const row = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const scroller = row.current;
+    const chip = scroller?.querySelector<HTMLElement>(
+      `[data-profile-id="${active.id}"]`,
+    );
+    if (!scroller || !chip) return;
+    const chipEnd = chip.offsetLeft + chip.offsetWidth;
+    const visibleEnd = scroller.scrollLeft + scroller.clientWidth;
+    if (chip.offsetLeft < scroller.scrollLeft || chipEnd > visibleEnd) {
+      const padding = Number.parseFloat(getComputedStyle(scroller).paddingLeft);
+      scroller.scrollTo({
+        left: chip.offsetLeft - scroller.offsetLeft - padding,
+      });
+    }
+  }, [active.id]);
   return (
-    <fieldset className="profile-chips">
-      <legend>{t(lang, "profilesTitle")}</legend>
-      <div className="profile-chips-row">
+    <fieldset
+      className={
+        inline ? "profile-chips profile-chips-inline" : "profile-chips"
+      }
+    >
+      <legend>{label ?? t(lang, "profilesTitle")}</legend>
+      <div className="profile-chips-row" ref={row}>
         {settings.profiles.map((profile) => (
-          <label key={profile.id} className="profile-chip">
+          <label
+            key={profile.id}
+            className="profile-chip"
+            data-profile-id={profile.id}
+          >
             <input
               type="radio"
               className="visually-hidden"
