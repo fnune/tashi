@@ -5,17 +5,24 @@ import "./List.css";
 export function ListGroup({
   id,
   title,
+  action,
   footer,
   children,
 }: {
   id?: string;
   title?: string;
+  action?: ReactNode;
   footer?: ReactNode;
   children: ReactNode;
 }) {
   return (
     <section id={id} className="list-group">
-      {title && <h3 className="list-group-title">{title}</h3>}
+      {title && (
+        <div className="list-group-head">
+          <h3 className="list-group-title">{title}</h3>
+          {action}
+        </div>
+      )}
       <div className="list-group-rows">{children}</div>
       {footer && <div className="list-group-footer">{footer}</div>}
     </section>

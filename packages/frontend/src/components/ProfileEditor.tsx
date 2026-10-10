@@ -167,6 +167,7 @@ export function ProfileEditor({
           <p className="profile-editor-hint">{t(lang, "perWindowHint")}</p>
         </>
       )}
+      <p className="profile-editor-hint">{t(lang, "profilesNote")}</p>
       {error && <Notice tone="danger">{error}</Notice>}
       <Button disabled={mode === "per_window" && !ratiosValid} onClick={save}>
         {t(lang, "save")}

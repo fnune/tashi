@@ -37,18 +37,27 @@
 }
 
 .profile-chip {
-  position: relative;
   flex: none;
   scroll-snap-align: start;
   display: flex;
   align-items: center;
-  gap: var(--space-1-5);
-  padding: var(--space-2) var(--space-3);
   border: var(--border-width-strong) solid var(--color-line);
   border-radius: var(--radius-lg);
   font-size: var(--text-sm);
   font-weight: var(--weight-semibold);
+}
+
+.profile-chip-select {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--space-1-5);
+  padding: var(--space-2) var(--space-3);
   cursor: pointer;
+}
+
+.profile-chip[data-editable] .profile-chip-select {
+  padding-right: var(--space-1-5);
 }
 
 .profile-chip small {
@@ -66,8 +75,26 @@
   color: var(--color-accent);
 }
 
-.profile-chip:has(:focus-visible) {
+.profile-chip:has(.profile-chip-select :focus-visible) {
   outline: var(--border-width-heavy) solid var(--color-accent);
+}
+
+.profile-chip-edit {
+  display: grid;
+  place-items: center;
+  width: var(--space-8);
+  height: var(--space-8);
+  margin: var(--space-0-5) var(--space-1) var(--space-0-5) 0;
+  border: none;
+  border-radius: var(--radius-full);
+  background: var(--color-surface-raised);
+  color: var(--color-fg-muted);
+  cursor: pointer;
+}
+
+.profile-chip:has(:checked) .profile-chip-edit {
+  background: var(--color-surface);
+  color: var(--color-accent);
 }
 
 .profile-chips-inline {

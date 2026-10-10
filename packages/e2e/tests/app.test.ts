@@ -279,8 +279,7 @@ test.describe("full user flow", () => {
     page,
   }) => {
     await page.goto("/settings");
-    await page.getByRole("button", { name: "Manage profiles" }).click();
-    await page.getByRole("button", { name: "+ New profile" }).click();
+    await page.getByRole("button", { name: "+ Profile" }).click();
     const sheet = page.getByRole("dialog");
     await sheet.getByLabel("Name").fill("Night shift");
     await sheet.getByText("By time of day").click();
@@ -478,5 +477,26 @@ test.describe("full user flow", () => {
     await expect(
       page.locator(".cycle-phases li[data-current]"),
     ).toBeInViewport();
+  });
+
+  test("profiles are edited and deleted from their chip", async ({ page }) => {
+    await page.goto("/settings");
+    await expect(page.getByRole("button", { name: "Edit Normal" })).toHaveCount(
+      0,
+    );
+
+    await page.getByRole("button", { name: "Edit Sport" }).click();
+    const sheet = page.getByRole("dialog");
+    await sheet.getByRole("button", { name: "5 % more" }).click();
+    await sheet.getByRole("button", { name: "Save" }).click();
+    await expect(
+      page.locator(".profile-chip", { hasText: "Sport" }),
+    ).toContainText("−15 %");
+
+    await page.getByRole("button", { name: "Edit Sport" }).click();
+    await sheet.getByRole("button", { name: "Delete profile" }).click();
+    await expect(
+      page.locator(".profile-chip", { hasText: "Sport" }),
+    ).toHaveCount(0);
   });
 });
