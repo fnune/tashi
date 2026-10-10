@@ -6,7 +6,9 @@ import {
   toLocalDateString,
 } from "@pincho/shared";
 import { useState } from "react";
+import { useLocation } from "react-router";
 import { type Language, t } from "../i18n.js";
+import { CYCLE_CHART_ANCHOR } from "./CycleBanner.js";
 import { CycleChart } from "./CycleChart.js";
 import { Button } from "./ui/Button.js";
 import { Icon } from "./ui/Icon.js";
@@ -40,6 +42,8 @@ export function CycleSettings({
   onChange: (cycle: CycleTracking) => void;
 }) {
   const [editing, setEditing] = useState<"start" | "length" | null>(null);
+  const { hash } = useLocation();
+  const [chartOpen, setChartOpen] = useState(hash === `#${CYCLE_CHART_ANCHOR}`);
   const cycle = settings.cycle;
   const status = cycleStatus(cycle, new Date());
   const update = (patch: Partial<CycleTracking>) => {
@@ -104,7 +108,12 @@ export function CycleSettings({
               value={`${cycle.length_days} ${t(lang, "daysUnit")}`}
               onClick={() => setEditing("length")}
             />
-            <details className="cycle-disclosure">
+            <details
+              id={CYCLE_CHART_ANCHOR}
+              className="cycle-disclosure"
+              open={chartOpen}
+              onToggle={(e) => setChartOpen(e.currentTarget.open)}
+            >
               <summary>
                 {t(lang, "cycleChart")}
                 <Icon name="chevron" size="sm" />

@@ -1,11 +1,8 @@
 import type { CyclePhase } from "@pincho/shared";
-import {
-  cyclePhaseRanges,
-  ovulationDay,
-  typicalInsulinResistance,
-} from "@pincho/shared";
+import { cyclePhaseRanges, ovulationDay } from "@pincho/shared";
 import type { CSSProperties } from "react";
 import { type Language, t } from "../i18n.js";
+import { CycleStrips } from "./CycleStrips.js";
 import "./CycleChart.css";
 
 const UNITS_PER_DAY = 10;
@@ -92,28 +89,7 @@ export function CycleChart({
         <span className="cycle-chart-track-label" aria-hidden="true">
           {t(lang, "resistanceTrack")}
         </span>
-        <div className="cycle-chart-heat" aria-hidden="true">
-          {Array.from({ length }, (_, i) => (
-            <span
-              key={`day-${i + 1}`}
-              style={
-                {
-                  "--level": typicalInsulinResistance(i + 1, length),
-                } as CSSProperties
-              }
-            />
-          ))}
-        </div>
-        <div className="cycle-chart-strip" aria-hidden="true">
-          {ranges.map((range) => (
-            <span
-              key={range.phase}
-              data-phase={range.phase}
-              data-current={range.phase === currentPhase || undefined}
-              style={{ gridColumn: `${range.firstDay} / ${range.lastDay + 1}` }}
-            />
-          ))}
-        </div>
+        <CycleStrips length={length} currentPhase={currentPhase} />
         <span
           className="cycle-chart-curve-label"
           style={atDay(ovulation - 1)}

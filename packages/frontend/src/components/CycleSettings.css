@@ -45,6 +45,7 @@
 }
 
 .cycle-disclosure {
+  scroll-margin-top: var(--space-4);
   border-top: var(--border-width) solid var(--color-line);
 }
 

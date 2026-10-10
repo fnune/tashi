@@ -328,6 +328,7 @@ test.describe("full user flow", () => {
     await expect(page.locator(".cycle-banner")).toContainText(
       "Day 1 of 28 · Period",
     );
+    await expect(page.locator(".cycle-banner .cycle-strips")).toBeVisible();
     await page.getByRole("button", { name: "Switch profile?" }).click();
     const sheet = page.getByRole("dialog");
     await expect(sheet).toContainText("Your period has started");
@@ -455,5 +456,20 @@ test.describe("full user flow", () => {
       expect(layout.overflow, path).toBe(0);
       expect(layout.barBottom, path).toBe(layout.viewportBottom);
     }
+  });
+
+  test("tapping the cycle strip opens the expanded cycle chart", async ({
+    page,
+  }) => {
+    await page.goto("/settings");
+    await page.getByRole("switch", { name: "Track my cycle" }).check();
+    await logPeriodStart(page, (sheet) => sheet.getByText("Yesterday").click());
+
+    await page.getByRole("navigation").getByText("Calculate").click();
+    await page.locator("a.cycle-banner").click();
+    await expect(page.locator("#cycle-chart")).toHaveJSProperty("open", true);
+    await expect(
+      page.locator(".cycle-phases li[data-current]"),
+    ).toBeInViewport();
   });
 });

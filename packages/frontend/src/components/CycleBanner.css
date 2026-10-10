@@ -1,8 +1,7 @@
 .cycle-banner {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-3);
+  flex-direction: column;
+  gap: var(--space-2-5);
   margin: 0 calc(-1 * var(--space-4)) calc(-1 * var(--space-4));
   padding: var(--space-3) var(--space-4);
   border-top: var(--border-width) solid var(--color-line);
@@ -10,6 +9,21 @@
   font-size: var(--text-sm);
   font-weight: var(--weight-semibold);
   text-decoration: none;
+}
+
+.cycle-banner-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.cycle-banner-dot {
+  flex: none;
+  width: var(--space-2-5);
+  height: var(--space-2-5);
+  border-radius: var(--radius-full);
+  background: var(--phase-color);
 }
 
 .cycle-banner .icon {
