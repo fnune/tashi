@@ -35,6 +35,14 @@ export function formatRatio(
   return `${decimals(lang).format(toDisplayRatio(gramsPerUnit, format))} ${ratioUnit(format, lang)}`;
 }
 
+export function formatRatioNumber(
+  gramsPerUnit: number,
+  format: RatioFormat,
+  lang: Language,
+): string {
+  return decimals(lang).format(toDisplayRatio(gramsPerUnit, format));
+}
+
 export function ratioInputText(
   gramsPerUnit: number,
   format: RatioFormat,

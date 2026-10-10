@@ -46,6 +46,7 @@ import {
   ratioInputText,
   ratioUnit,
 } from "../ratioLabels.js";
+import { RATIOS_ANCHOR } from "./AppHeader.js";
 import { CycleSettings } from "./CycleSettings.js";
 import { DayBar } from "./DayBar.js";
 import { IobCurve } from "./IobCurve.js";
@@ -293,6 +294,7 @@ export function SettingsView({ settings, onSave, lang }: SettingsViewProps) {
       })}
 
       <ListGroup
+        id={RATIOS_ANCHOR}
         title={t(lang, "ratiosTitle")}
         footer={t(lang, "windowsTileDay")}
       >

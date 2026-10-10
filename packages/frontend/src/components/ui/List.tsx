@@ -3,16 +3,18 @@ import { Icon } from "./Icon.js";
 import "./List.css";
 
 export function ListGroup({
+  id,
   title,
   footer,
   children,
 }: {
+  id?: string;
   title?: string;
   footer?: ReactNode;
   children: ReactNode;
 }) {
   return (
-    <section className="list-group">
+    <section id={id} className="list-group">
       {title && <h3 className="list-group-title">{title}</h3>}
       <div className="list-group-rows">{children}</div>
       {footer && <div className="list-group-footer">{footer}</div>}

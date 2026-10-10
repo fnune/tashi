@@ -309,6 +309,13 @@ test.describe("full user flow", () => {
     await page.getByText("Sick day").click();
     await expect(lunch).toContainText("8.33 g/U");
     await expect(lunch).toContainText("10 g/U · +20 %");
+
+    const chip = page.locator(".meal-window-chip");
+    await expect(chip).toHaveText(/lunch\s*10 →\s*8\.33 g\/U/);
+    await page.getByRole("navigation").getByText("Calculate").click();
+    await chip.click();
+    await expect(page).toHaveURL(/\/settings#ratios$/);
+    await expect(page.locator("#ratios")).toBeInViewport();
   });
 
   test("cycle tracking shows the phase and suggests a profile on day 1", async ({
