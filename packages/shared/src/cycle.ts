@@ -56,6 +56,28 @@ export function cyclePhaseRanges(length: number): CyclePhaseRange[] {
   ];
 }
 
+const RESISTANCE_FLOOR = 0.1;
+const RESISTANCE_PEAK_AFTER_OVULATION = 7;
+
+function smoothstep(edge0: number, edge1: number, x: number): number {
+  const t = Math.min(1, Math.max(0, (x - edge0) / (edge1 - edge0)));
+  return t * t * (3 - 2 * t);
+}
+
+// Relative insulin resistance from 0 to 1 by cycle day, shaped after the
+// population pattern in Hossmann et al., Diabetes Care 2026 (77 women, 380
+// cycles): lowest in the early follicular phase, rising after ovulation,
+// highest mid-luteal and still raised until menses. Individuals vary.
+export function typicalInsulinResistance(day: number, length: number): number {
+  const ovulation = ovulationDay(length);
+  const peak = ovulation + RESISTANCE_PEAK_AFTER_OVULATION;
+  const menstrualCarryover = 0.25 * (1 - smoothstep(1, PERIOD_DAYS, day));
+  const rise = smoothstep(ovulation, peak, day);
+  const lateLutealEasing = 0.25 * smoothstep(peak, length, day);
+  const level = Math.max(menstrualCarryover, rise - lateLutealEasing);
+  return RESISTANCE_FLOOR + (1 - RESISTANCE_FLOOR) * level;
+}
+
 export function cycleStatus(
   cycle: CycleTracking,
   today: Date,

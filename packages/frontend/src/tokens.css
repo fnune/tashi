@@ -36,6 +36,8 @@
   --color-insulin-rapid: #e8701a;
   --color-insulin-basal: var(--color-fg-muted);
 
+  --color-resistance: #a33ea1;
+
   --color-phase-period: var(--color-danger);
   --color-phase-follicular: var(--color-ok);
   --color-phase-ovulation: var(--color-accent);
@@ -136,6 +138,7 @@
     --color-warn-soft: #3a2e12;
     --color-danger: #f06a62;
     --color-danger-soft: #3d1a18;
+    --color-resistance: #d77fd5;
     --color-insulin-rapid: #f59145;
     --color-glucose-band: rgb(60 196 135 / 0.1);
   }

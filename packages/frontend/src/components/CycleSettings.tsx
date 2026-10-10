@@ -17,7 +17,8 @@ import { Stepper } from "./ui/Stepper.js";
 import { Toggle } from "./ui/Toggle.js";
 import "./CycleSettings.css";
 
-const EVIDENCE_URL = "https://pmc.ncbi.nlm.nih.gov/articles/PMC9962060/";
+const REVIEW_URL = "https://pmc.ncbi.nlm.nih.gov/articles/PMC9962060/";
+const STUDY_URL = "https://doi.org/10.2337/dc26-0692";
 
 function formatDate(iso: string, lang: Language): string {
   const [year, month, day] = iso.split("-").map(Number);
@@ -118,7 +119,11 @@ export function CycleSettings({
                 <p className="cycle-how-to">{t(lang, "cycleHowTo")}</p>
                 <p className="cycle-note">
                   {t(lang, "cycleNote")}{" "}
-                  <a href={EVIDENCE_URL} target="_blank" rel="noreferrer">
+                  <a href={STUDY_URL} target="_blank" rel="noreferrer">
+                    {t(lang, "cycleStudy")}
+                  </a>
+                  {" · "}
+                  <a href={REVIEW_URL} target="_blank" rel="noreferrer">
                     {t(lang, "cycleSource")}
                   </a>
                 </p>

@@ -133,9 +133,10 @@ const CONTENT: Record<Language, Content> = {
               luteal phase.
             </p>
             <p>
-              Studies in type 1 diabetes point to lower insulin sensitivity in
-              the luteal phase for some women, linked to progesterone, but the
-              evidence is not conclusive and varies between people. That is why
+              In women with type 1 diabetes, insulin sensitivity tends to be
+              highest early in the follicular phase and lowest in the middle of
+              the luteal phase, staying lower until the period starts. It varies
+              a lot between people and some women notice no change. That is why
               Musa only suggests switching profile on day 1 and on the first
               luteal day, and leaves the decision to you.
             </p>
@@ -164,6 +165,11 @@ const CONTENT: Record<Language, Content> = {
       {
         label: "ADA Standards of Care in Diabetes (2024)",
         note: "Recommends +20 % as the starting point for fat and protein.",
+      },
+      {
+        label: "Hossmann S et al. (2026), Diabetes Care",
+        url: "https://doi.org/10.2337/dc26-0692",
+        note: "77 women on automated insulin delivery, 380 cycles: sensitivity highest early follicular, lowest mid-luteal, in 85% of them.",
       },
       {
         label: "Menstrual cycle and insulin sensitivity in T1D (2023)",
@@ -288,11 +294,12 @@ const CONTENT: Record<Language, Content> = {
               una fase lútea de 14.
             </p>
             <p>
-              Los estudios en diabetes tipo 1 apuntan a peor sensibilidad a la
-              insulina en la fase lútea en parte de las mujeres, ligada a la
-              progesterona, pero la evidencia no es concluyente y varía de una
-              persona a otra. Por eso Musa solo sugiere cambiar de perfil el día
-              1 y el primer día de la fase lútea, y la decisión es tuya.
+              En mujeres con diabetes tipo 1, la sensibilidad a la insulina
+              suele ser máxima al inicio de la fase folicular y mínima a mitad
+              de la fase lútea, y sigue baja hasta que llega la regla. Varía
+              mucho de una persona a otra y algunas no notan cambios. Por eso
+              Musa solo sugiere cambiar de perfil el día 1 y el primer día de la
+              fase lútea, y la decisión es tuya.
             </p>
           </>
         ),
@@ -319,6 +326,11 @@ const CONTENT: Record<Language, Content> = {
       {
         label: "ADA Standards of Care in Diabetes (2024)",
         note: "Recomienda +20 % como punto de partida para grasa y proteína.",
+      },
+      {
+        label: "Hossmann S et al. (2026), Diabetes Care",
+        url: "https://doi.org/10.2337/dc26-0692",
+        note: "77 mujeres con sistema de asa cerrada, 380 ciclos: sensibilidad máxima al inicio de la fase folicular y mínima a mitad de la lútea, en el 85 %.",
       },
       {
         label: "Ciclo menstrual y sensibilidad a la insulina en DT1 (2023)",

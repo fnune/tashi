@@ -1,5 +1,9 @@
 import type { CyclePhase } from "@pincho/shared";
-import { cyclePhaseRanges, ovulationDay } from "@pincho/shared";
+import {
+  cyclePhaseRanges,
+  ovulationDay,
+  typicalInsulinResistance,
+} from "@pincho/shared";
 import type { CSSProperties } from "react";
 import { type Language, t } from "../i18n.js";
 import "./CycleChart.css";
@@ -85,6 +89,21 @@ export function CycleChart({
             vectorEffect="non-scaling-stroke"
           />
         </svg>
+        <span className="cycle-chart-track-label" aria-hidden="true">
+          {t(lang, "resistanceTrack")}
+        </span>
+        <div className="cycle-chart-heat" aria-hidden="true">
+          {Array.from({ length }, (_, i) => (
+            <span
+              key={`day-${i + 1}`}
+              style={
+                {
+                  "--level": typicalInsulinResistance(i + 1, length),
+                } as CSSProperties
+              }
+            />
+          ))}
+        </div>
         <div className="cycle-chart-strip" aria-hidden="true">
           {ranges.map((range) => (
             <span
@@ -124,6 +143,17 @@ export function CycleChart({
         <div data-line="progesterone">
           <dt>{t(lang, "progesterone")}</dt>
           <dd>{t(lang, "progesteroneMeaning")}</dd>
+        </div>
+        <div data-line="resistance">
+          <dt>
+            {t(lang, "resistanceTrack")}
+            <span className="cycle-chart-scale">
+              {t(lang, "less")}
+              <i aria-hidden="true" />
+              {t(lang, "more")}
+            </span>
+          </dt>
+          <dd>{t(lang, "resistanceMeaning")}</dd>
         </div>
       </dl>
 

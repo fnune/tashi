@@ -17,6 +17,7 @@ export {
   MIN_CYCLE_DAYS,
   ovulationDay,
   toLocalDateString,
+  typicalInsulinResistance,
 } from "./cycle.js";
 export type { GlucoseRange } from "./glucose.js";
 export {

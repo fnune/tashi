@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { cyclePhase, cyclePhaseRanges, cycleStatus } from "../cycle.js";
+import {
+  cyclePhase,
+  cyclePhaseRanges,
+  cycleStatus,
+  typicalInsulinResistance,
+} from "../cycle.js";
 
 const tracking = (start: string | null, length = 28) => ({
   enabled: true,
@@ -37,6 +42,38 @@ describe("cyclePhaseRanges", () => {
       const days = ranges.reduce((n, r) => n + r.lastDay - r.firstDay + 1, 0);
       expect(days).toBe(length);
     }
+  });
+});
+
+describe("typicalInsulinResistance", () => {
+  const curve = (length: number) =>
+    Array.from({ length }, (_, i) => typicalInsulinResistance(i + 1, length));
+  const dayOfMax = (values: number[]) =>
+    values.indexOf(Math.max(...values)) + 1;
+  const dayOfMin = (values: number[]) =>
+    values.indexOf(Math.min(...values)) + 1;
+
+  it("peaks mid-luteal, about a week after ovulation", () => {
+    expect(dayOfMax(curve(28))).toBe(21);
+    expect(dayOfMax(curve(35))).toBe(28);
+  });
+
+  it("is lowest from the end of menses through the follicular phase", () => {
+    const values = curve(28);
+    const floor = Math.min(...values);
+    expect(dayOfMin(values)).toBeLessThanOrEqual(5);
+    for (let day = 5; day <= 13; day++) {
+      expect(values.at(day - 1)).toBeCloseTo(floor, 2);
+    }
+  });
+
+  it("stays raised through the late luteal phase and drops with menses", () => {
+    const values = curve(28);
+    const at = (day: number) => values.at(day - 1) ?? 0;
+    expect(at(28)).toBeGreaterThan(0.6);
+    expect(at(28)).toBeLessThan(at(21));
+    expect(at(1)).toBeLessThan(at(28));
+    expect(at(5)).toBeLessThan(at(1));
   });
 });
 

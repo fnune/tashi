@@ -100,7 +100,12 @@ const translations = {
     phaseDays: "days {first}–{last}",
     phaseDay: "day {day}",
     youAreHere: "You are here · day {day}",
-    lutealNote: "Insulin resistance may be higher",
+    lutealNote: "Insulin resistance may be higher, most of all mid-phase",
+    resistanceTrack: "Insulin resistance",
+    resistanceMeaning:
+      "Typical pattern in women with type 1 diabetes: highest mid-luteal and still raised until your period. It varies from person to person.",
+    less: "less",
+    more: "more",
     estradiolMeaning:
       "Rises before ovulation. Linked to better insulin sensitivity.",
     progesteroneMeaning:
@@ -128,8 +133,9 @@ const translations = {
     progesterone: "Progesterone",
     estradiol: "Estradiol",
     cycleNote:
-      "Schematic hormone curves. Studies in type 1 diabetes point to lower insulin sensitivity in the luteal phase for some women, linked to progesterone, but the evidence is not conclusive.",
+      "Schematic curves. In the largest study so far, insulin sensitivity was highest in the early follicular phase and lowest mid-luteal for 85% of women, with large differences between individuals.",
     cycleSource: "Systematic review (2023)",
+    cycleStudy: "Hossmann et al. (2026)",
     close: "Close",
     currentGlucose: "Current glucose",
     currentGlucoseHint: "Read it from your meter or sensor and enter it here",
@@ -296,7 +302,13 @@ const translations = {
     phaseDays: "días {first}–{last}",
     phaseDay: "día {day}",
     youAreHere: "Estás aquí · día {day}",
-    lutealNote: "Puede haber más resistencia a la insulina",
+    lutealNote:
+      "Puede haber más resistencia a la insulina, sobre todo a mitad de fase",
+    resistanceTrack: "Resistencia a la insulina",
+    resistanceMeaning:
+      "Patrón típico en mujeres con diabetes tipo 1: máxima a mitad de la fase lútea y alta hasta la regla. Varía de una persona a otra.",
+    less: "menos",
+    more: "más",
     estradiolMeaning:
       "Sube antes de la ovulación. Se asocia a mejor sensibilidad a la insulina.",
     progesteroneMeaning:
@@ -324,8 +336,9 @@ const translations = {
     progesterone: "Progesterona",
     estradiol: "Estradiol",
     cycleNote:
-      "Curvas hormonales esquemáticas. Los estudios en diabetes tipo 1 apuntan a peor sensibilidad a la insulina en la fase lútea en parte de las mujeres, ligada a la progesterona, pero la evidencia no es concluyente.",
+      "Curvas esquemáticas. En el estudio más amplio hasta ahora, la sensibilidad a la insulina fue máxima al inicio de la fase folicular y mínima a mitad de la fase lútea en el 85 % de las mujeres, con grandes diferencias entre personas.",
     cycleSource: "Revisión sistemática (2023)",
+    cycleStudy: "Hossmann et al. (2026)",
     close: "Cerrar",
     currentGlucose: "Glucemia actual",
     currentGlucoseHint: "Mídela con el glucómetro o el lector y escríbela aquí",

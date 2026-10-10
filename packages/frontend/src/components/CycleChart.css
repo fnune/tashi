@@ -19,8 +19,8 @@
 .cycle-chart-plot {
   position: relative;
   display: grid;
-  grid-template-rows: var(--space-24) var(--space-3);
-  margin-top: var(--space-5);
+  grid-template-rows: var(--space-24) auto var(--space-5) var(--space-3);
+  margin: var(--space-5) 0 var(--space-6);
   gap: var(--space-1);
 }
 
@@ -41,6 +41,28 @@
 .cycle-chart-progesterone {
   stroke: var(--color-fg);
   stroke-dasharray: 5 4;
+}
+
+.cycle-chart-track-label {
+  margin-top: var(--space-1-5);
+  font-size: var(--text-2xs);
+  font-weight: var(--weight-bold);
+  color: var(--color-fg-muted);
+}
+
+.cycle-chart-heat {
+  display: grid;
+  grid-template-columns: repeat(var(--days), 1fr);
+  overflow: hidden;
+  border-radius: var(--radius-sm);
+}
+
+.cycle-chart-heat span {
+  background: color-mix(
+    in srgb,
+    var(--color-resistance) calc(var(--level) * 100%),
+    var(--color-surface-raised)
+  );
 }
 
 .cycle-chart-strip {
@@ -71,7 +93,7 @@
 
 .cycle-chart-today span {
   position: absolute;
-  bottom: calc(var(--space-3) + var(--space-1));
+  top: calc(100% + var(--space-1));
   left: var(--space-1);
   padding: 0 var(--space-1-5);
   border-radius: var(--radius-sm);
@@ -101,6 +123,30 @@
   grid-row: 1 / span 2;
   align-self: center;
   border-top: var(--border-width-heavy) solid var(--color-hormone-line);
+}
+
+.cycle-chart-lines [data-line="resistance"]::before {
+  border-top-color: transparent;
+}
+
+.cycle-chart-scale {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  margin-left: var(--space-2);
+  font-weight: var(--weight-medium);
+  color: var(--color-fg-muted);
+}
+
+.cycle-chart-scale i {
+  width: var(--space-8);
+  height: var(--space-1-5);
+  border-radius: var(--radius-full);
+  background: linear-gradient(
+    to right,
+    var(--color-surface-raised),
+    var(--color-resistance)
+  );
 }
 
 .cycle-chart-lines [data-line="progesterone"]::before {
