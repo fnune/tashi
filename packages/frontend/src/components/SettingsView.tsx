@@ -65,6 +65,7 @@ import { OptionList } from "./ui/OptionList.js";
 import { Segmented } from "./ui/Segmented.js";
 import { Sheet } from "./ui/Sheet.js";
 import "./SettingsView.css";
+import { numberFormat } from "../numberFormat.js";
 
 interface SettingsViewProps {
   settings: Settings;
@@ -138,7 +139,7 @@ export function SettingsView({ settings, onSave, lang }: SettingsViewProps) {
       },
     });
   }, [searchParams, setSearchParams, lang]);
-  const number = new Intl.NumberFormat(lang, { maximumFractionDigits: 2 });
+  const number = numberFormat(lang, { maximumFractionDigits: 2 });
   const unit = settings.glucose_unit;
   const windows = sortByStart(settings.meal_windows);
   const gaps = uncoveredHours(windows);

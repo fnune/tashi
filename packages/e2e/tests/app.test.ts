@@ -44,7 +44,6 @@ test.describe("full user flow", () => {
 
     await expect(page.locator(".food")).toHaveCount(2);
     const recommended = await page.locator(".dose-total b").textContent();
-    await page.getByRole("button", { name: "Adjust" }).click();
     await page.getByRole("button", { name: "0.5 U more" }).click();
     const injected = String(Number(recommended) + 0.5);
     await page.getByRole("button", { name: `Log ${injected} U` }).click();
@@ -174,7 +173,9 @@ test.describe("full user flow", () => {
     await page.getByRole("button", { name: "Calculate dose" }).click();
 
     await expect(page.locator(".dose")).toBeVisible({ timeout: 5000 });
-    await expect(page.locator(".dose-parts")).toContainText("+2 U");
+    await expect(
+      page.locator('.dose-parts [data-part="correction"] dd'),
+    ).toHaveText("+2");
   });
 
   test("meal windows keep the whole day covered while editing", async ({
@@ -299,7 +300,7 @@ test.describe("full user flow", () => {
 
     await expect(
       page.locator('.dose-parts [data-part="profile"]'),
-    ).toContainText("Sick day profile+20 %");
+    ).toContainText("Profile");
     const sickDose = Number(await page.locator(".dose-total b").textContent());
     expect(sickDose).toBeGreaterThan(normalDose);
   });

@@ -20,6 +20,7 @@ import { Notice } from "./ui/Notice.js";
 import { Sheet } from "./ui/Sheet.js";
 import { Stepper } from "./ui/Stepper.js";
 import "./TimelineView.css";
+import { numberFormat } from "../numberFormat.js";
 
 interface TimelineViewProps {
   timeline: TimelineEntry[];
@@ -104,7 +105,7 @@ function EntryRow({
   lang: Language;
   onOpen: () => void;
 }) {
-  const decimal = new Intl.NumberFormat(lang, { maximumFractionDigits: 1 });
+  const decimal = numberFormat(lang);
   const time = new Date(entry.timestamp).toLocaleTimeString(lang, {
     hour: "2-digit",
     minute: "2-digit",
@@ -178,7 +179,7 @@ function EntryEditor({
   lang: Language;
   onDone: () => void;
 }) {
-  const decimal = new Intl.NumberFormat(lang, { maximumFractionDigits: 1 });
+  const decimal = numberFormat(lang);
   const initialTime = entry ? new Date(entry.timestamp) : new Date();
   const [when, setWhen] = useState(toLocalDatetime(initialTime));
   const [units, setUnits] = useState(() => {
@@ -341,7 +342,6 @@ function MealDetails({
         lang={lang}
         ratioFormat={settings.ratio_format}
         penIncrement={settings.pen_increment}
-        showDisclaimer={false}
       />
       <FoodList result={entry} lang={lang} />
       <DateTimeField

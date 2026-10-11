@@ -23,8 +23,8 @@ import { Button } from "./ui/Button.js";
 import { Notice } from "./ui/Notice.js";
 import { Segmented } from "./ui/Segmented.js";
 import { Sheet } from "./ui/Sheet.js";
-import { Stepper } from "./ui/Stepper.js";
 import "./CalculatorView.css";
+import { numberFormat } from "../numberFormat.js";
 
 export interface CalculatorFormState {
   foodText: string;
@@ -75,7 +75,6 @@ export function CalculatorView({
   const [logging, setLogging] = useState(false);
   const [logged, setLogged] = useState<string | null>(null);
   const [switchingProfile, setSwitchingProfile] = useState(false);
-  const [adjusting, setAdjusting] = useState(false);
   const cycle = cycleStatus(settings.cycle, new Date());
   const reading = latestRecentReading(timeline, new Date());
 
@@ -146,7 +145,7 @@ export function CalculatorView({
         units,
         pre_bolus_minutes: preBolusMinutes,
       });
-      const decimal = new Intl.NumberFormat(lang, { maximumFractionDigits: 1 });
+      const decimal = numberFormat(lang);
       setLogged(
         units > 0
           ? t(lang, "loggedMealAndUnits").replace(
@@ -155,7 +154,6 @@ export function CalculatorView({
             )
           : t(lang, "loggedMealOnly"),
       );
-      setAdjusting(false);
       update({ result: null, foodText: "" });
       onDataChanged();
     } catch (err) {
@@ -165,7 +163,7 @@ export function CalculatorView({
     }
   }
 
-  const decimal = new Intl.NumberFormat(lang, { maximumFractionDigits: 1 });
+  const decimal = numberFormat(lang);
 
   return (
     <div className="calculator">
@@ -194,48 +192,6 @@ export function CalculatorView({
 
       {result ? (
         <>
-          <DoseSummary
-            result={result}
-            lang={lang}
-            ratioFormat={settings.ratio_format}
-            penIncrement={settings.pen_increment}
-          />
-          <div className="dose-actions">
-            {adjusting && (
-              <Stepper
-                value={units}
-                step={settings.pen_increment}
-                unit="U"
-                format={(v) => decimal.format(v)}
-                decreaseLabel={t(lang, "lessInsulin").replace(
-                  "{step}",
-                  decimal.format(settings.pen_increment),
-                )}
-                increaseLabel={t(lang, "moreInsulin").replace(
-                  "{step}",
-                  decimal.format(settings.pen_increment),
-                )}
-                onChange={(next) => update({ units: next })}
-              />
-            )}
-            <div className="dose-buttons">
-              <Button disabled={logging} onClick={() => logMeal(result)}>
-                {units > 0
-                  ? t(lang, "logUnits").replace(
-                      "{units}",
-                      decimal.format(units),
-                    )
-                  : t(lang, "logMealOnly")}
-              </Button>
-              <Button
-                variant="secondary"
-                aria-expanded={adjusting}
-                onClick={() => setAdjusting(!adjusting)}
-              >
-                {t(lang, adjusting ? "doneAdjusting" : "adjustDose")}
-              </Button>
-            </div>
-          </div>
           <FoodList
             result={result}
             lang={lang}
@@ -247,12 +203,24 @@ export function CalculatorView({
               update({ result: next, units: totalDose(next) ?? 0 });
             }}
           />
+          <DoseSummary
+            result={result}
+            lang={lang}
+            ratioFormat={settings.ratio_format}
+            penIncrement={settings.pen_increment}
+            units={units}
+            onUnitsChange={(next) => update({ units: next })}
+          />
+          <Button disabled={logging} onClick={() => logMeal(result)}>
+            {units > 0
+              ? t(lang, "logUnits").replace("{units}", decimal.format(units))
+              : t(lang, "logMealOnly")}
+          </Button>
           <section className="meal-summary">
             <p>{result.input_text}</p>
             <Button
               variant="text"
               onClick={() => {
-                setAdjusting(false);
                 update({ result: null });
               }}
             >

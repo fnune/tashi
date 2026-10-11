@@ -30,7 +30,7 @@ export function Stepper({
         −
       </button>
       <output>
-        {format(value)} <small>{unit}</small>
+        <b>{format(value)}</b> <small>{unit}</small>
       </output>
       <button
         type="button"

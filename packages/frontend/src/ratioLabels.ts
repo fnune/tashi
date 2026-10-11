@@ -3,6 +3,7 @@ import { fromDisplayRatio, toDisplayRatio } from "@tashi/shared";
 import { parseDecimal } from "./components/ui/Field.js";
 import type { Language } from "./i18n.js";
 import { t } from "./i18n.js";
+import { numberFormat } from "./numberFormat.js";
 
 export function ratioUnit(format: RatioFormat, lang: Language): string {
   return t(
@@ -21,7 +22,7 @@ export function ratioHint(format: RatioFormat, lang: Language): string {
 }
 
 function decimals(lang: Language) {
-  return new Intl.NumberFormat(lang, {
+  return numberFormat(lang, {
     maximumFractionDigits: 2,
     useGrouping: false,
   });

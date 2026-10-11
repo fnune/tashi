@@ -3,6 +3,7 @@ import { GLUCOSE_ENTRY_LIMITS, isPlausibleGlucose } from "@tashi/shared";
 import { parseDecimal } from "./components/ui/Field.js";
 import type { Language } from "./i18n.js";
 import { t } from "./i18n.js";
+import { numberFormat } from "./numberFormat.js";
 
 export function parseGlucoseInput(
   text: string,
@@ -14,7 +15,7 @@ export function parseGlucoseInput(
   if (value !== null && isPlausibleGlucose(value, unit)) {
     return { value, error: null };
   }
-  const decimal = new Intl.NumberFormat(lang, { maximumFractionDigits: 1 });
+  const decimal = numberFormat(lang);
   const { min, max } = GLUCOSE_ENTRY_LIMITS[unit];
   return {
     value: null,

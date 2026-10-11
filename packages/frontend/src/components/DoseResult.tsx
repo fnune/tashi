@@ -7,10 +7,12 @@ import { NORMAL_PROFILE_ID } from "@tashi/shared";
 import { useState } from "react";
 import { Link } from "react-router";
 import { type Language, type TranslationKey, t } from "../i18n.js";
-import { profileName, signedPercent } from "../profileLabels.js";
+import { signedPercent } from "../profileLabels.js";
 import { formatRatio } from "../ratioLabels.js";
 import { parseDecimal } from "./ui/Field.js";
+import { Stepper } from "./ui/Stepper.js";
 import "./DoseResult.css";
+import { numberFormat } from "../numberFormat.js";
 
 export type MealResult = Omit<CalculationResult, "recommended_dose"> & {
   recommended_dose?: number;
@@ -24,7 +26,6 @@ const FAT_PROTEIN_REASON: Record<string, TranslationKey> = {
 
 const LOW_GI_MAX = 55;
 const HIGH_GI_MIN = 70;
-const SHOWN_ROUNDING = 0.05;
 
 function giBand(gi: number): "low" | "medium" | "high" {
   if (gi <= LOW_GI_MAX) return "low";
@@ -66,9 +67,8 @@ function doseLines(
   result: MealResult,
   lang: Language,
   ratioFormat: RatioFormat,
-  penIncrement: number,
 ): DoseLine[] {
-  const decimal = new Intl.NumberFormat(lang, { maximumFractionDigits: 1 });
+  const decimal = numberFormat(lang);
   const ratio = result.meal_window.ratio;
   const carbs = result.total_net_carbs_g / ratio;
   const lines: DoseLine[] = [
@@ -93,7 +93,7 @@ function doseLines(
     if (correction.iob_reduction > 0) {
       lines.push({
         key: "iob",
-        label: t(lang, "activeInsulin"),
+        label: t(lang, "doseIob"),
         detail: t(lang, "doseIobDetail"),
         units: -correction.iob_reduction,
       });
@@ -118,28 +118,13 @@ function doseLines(
     const scaled = sum * (1 + profile.percent / 100);
     lines.push({
       key: "profile",
-      label: t(lang, "doseProfile").replace(
-        "{name}",
-        profileName(profile, lang),
-      ),
+      label: t(lang, "doseProfile"),
       detail: signedPercent(profile.percent),
       units: scaled - sum,
     });
     sum = scaled;
   }
 
-  const total = totalDose(result);
-  if (total !== undefined && Math.abs(total - sum) >= SHOWN_ROUNDING) {
-    lines.push({
-      key: "rounding",
-      label: t(lang, "doseRounding"),
-      detail: t(lang, "doseRoundingDetail").replace(
-        "{pen}",
-        decimal.format(penIncrement),
-      ),
-      units: total - sum,
-    });
-  }
   return lines;
 }
 
@@ -148,50 +133,120 @@ export function DoseSummary({
   lang,
   ratioFormat,
   penIncrement,
-  showDisclaimer = true,
+  units,
+  onUnitsChange,
 }: {
   result: MealResult;
   lang: Language;
   ratioFormat: RatioFormat;
   penIncrement: number;
-  showDisclaimer?: boolean;
+  units?: number;
+  onUnitsChange?: (units: number) => void;
 }) {
-  const decimal = new Intl.NumberFormat(lang, { maximumFractionDigits: 1 });
+  const decimal = numberFormat(lang);
   const total = totalDose(result);
-  const signed = (units: number) =>
-    `${units >= 0 ? "+" : "−"}${decimal.format(Math.abs(units))} U`;
+  const lines = doseLines(result, lang, ratioFormat);
+  const measured = lines.filter((line) => Number.isFinite(line.units));
+  const added = measured.reduce(
+    (sum, line) => sum + Math.max(line.units, 0),
+    0,
+  );
+  const removed = measured.reduce(
+    (sum, line) => sum + Math.max(-line.units, 0),
+    0,
+  );
+  const share = (units: number) => `${(Math.abs(units) / added) * 100}%`;
+  const signed = (units: number, first: boolean) => {
+    if (!Number.isFinite(units)) return decimal.format(units);
+    const sign = units < 0 ? "−" : first ? "" : "+";
+    return `${sign}${decimal.format(Math.abs(units))}`;
+  };
 
   return (
     <section className="dose">
-      <p className="dose-caption">
-        {t(lang, "suggestedDoseFor").replace(
-          "{window}",
-          result.meal_window.name,
-        )}
-      </p>
+      <header className="dose-head">
+        <p className="dose-caption">
+          {t(lang, "suggestedDoseFor").replace(
+            "{window}",
+            result.meal_window.name,
+          )}
+        </p>
+        <Link to="/dose-explained" className="dose-why">
+          {t(lang, "fatProteinLearnMore")}
+        </Link>
+      </header>
       <div className="dose-total">
-        <b className="num">
-          {total === undefined ? "—" : decimal.format(total)}
-        </b>
-        <span>U</span>
+        {units !== undefined && onUnitsChange ? (
+          <Stepper
+            value={units}
+            step={penIncrement}
+            unit="U"
+            format={(v) => decimal.format(v)}
+            decreaseLabel={t(lang, "lessInsulin").replace(
+              "{step}",
+              decimal.format(penIncrement),
+            )}
+            increaseLabel={t(lang, "moreInsulin").replace(
+              "{step}",
+              decimal.format(penIncrement),
+            )}
+            onChange={onUnitsChange}
+          />
+        ) : (
+          <p>
+            <b className="num">
+              {total === undefined ? "—" : decimal.format(total)}
+            </b>{" "}
+            <small>U</small>
+          </p>
+        )}
+        {units !== undefined &&
+          onUnitsChange &&
+          total !== undefined &&
+          units !== total && (
+            <button
+              type="button"
+              className="dose-reset"
+              onClick={() => onUnitsChange(total)}
+            >
+              {t(lang, "backToSuggested").replace(
+                "{units}",
+                decimal.format(total),
+              )}
+            </button>
+          )}
       </div>
+      {added > 0 && (
+        <div className="dose-bar" aria-hidden="true">
+          {measured
+            .filter((line) => line.units > 0)
+            .map((line) => (
+              <span
+                key={line.key}
+                data-part={line.key}
+                style={{ flexBasis: share(line.units) }}
+              />
+            ))}
+          {removed > 0 && (
+            <span
+              className="dose-bar-removed"
+              style={{ width: share(removed) }}
+            />
+          )}
+        </div>
+      )}
       <dl className="dose-parts">
-        {doseLines(result, lang, ratioFormat, penIncrement).map((line) => (
-          <div key={line.key} data-part={line.key}>
-            <dt>
-              {line.label}
-              {line.detail && <small>{line.detail}</small>}
-            </dt>
-            <dd className="num">{signed(line.units)}</dd>
+        {lines.map((line, i) => (
+          <div
+            key={line.key}
+            data-part={line.key}
+            data-removed={line.units < 0 || undefined}
+          >
+            <dt title={line.detail}>{line.label}</dt>
+            <dd className="num">{signed(line.units, i === 0)}</dd>
           </div>
         ))}
       </dl>
-      {showDisclaimer && (
-        <p className="dose-disclaimer">{t(lang, "doseIsYourCall")}</p>
-      )}
-      <Link to="/dose-explained" className="dose-why">
-        {t(lang, "fatProteinLearnMore")}
-      </Link>
     </section>
   );
 }
@@ -205,7 +260,7 @@ function FoodRow({
   lang: Language;
   onWeightChange?: (weight: number) => void;
 }) {
-  const decimal = new Intl.NumberFormat(lang, { maximumFractionDigits: 1 });
+  const decimal = numberFormat(lang);
   const [weightText, setWeightText] = useState(decimal.format(item.weight_g));
   const source = sourceOf(item);
   const gi = item.glycemic_index;
@@ -293,7 +348,7 @@ export function FoodList({
   lang: Language;
   onWeightChange?: (index: number, weight: number) => void;
 }) {
-  const decimal = new Intl.NumberFormat(lang, { maximumFractionDigits: 1 });
+  const decimal = numberFormat(lang);
   return (
     <section className="breakdown">
       <h3 className="section-heading">{t(lang, "foodsTitle")}</h3>

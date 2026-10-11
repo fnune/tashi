@@ -22,6 +22,7 @@ import { NumberField } from "./ui/Field.js";
 import { Icon, type IconName } from "./ui/Icon.js";
 import { Sheet } from "./ui/Sheet.js";
 import "./SensorCard.css";
+import { numberFormat } from "../numberFormat.js";
 
 const RANGE_LABEL: Record<GlucoseRange, TranslationKey> = {
   low: "glucoseLow",
@@ -72,7 +73,7 @@ export function SensorCard({
   onConfirmPeriod: () => void;
 }) {
   const [measuring, setMeasuring] = useState(false);
-  const decimal = new Intl.NumberFormat(lang, { maximumFractionDigits: 1 });
+  const decimal = numberFormat(lang);
   const unit = settings.glucose_unit;
   const range = reading ? glucoseRange(reading.value, unit) : null;
   const minutesAgo = reading
@@ -225,7 +226,7 @@ function CorrectionPreview({
   reading: GlucoseEntry | null;
   iobUnits: number;
 }) {
-  const decimal = new Intl.NumberFormat(lang, { maximumFractionDigits: 1 });
+  const decimal = numberFormat(lang);
   const components = reading
     ? correctionComponents(reading.value, settings, iobUnits)
     : null;

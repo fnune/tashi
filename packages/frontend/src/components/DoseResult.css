@@ -68,9 +68,25 @@
 }
 
 .dose {
+  --dose-carbs: var(--color-meal);
+  --dose-correction: var(--color-glucose);
+  --dose-fat-protein: var(--color-insulin-rapid);
+  --dose-profile: var(--color-insulin-basal);
+
   display: flex;
   flex-direction: column;
-  gap: var(--space-5);
+  gap: var(--space-4);
+  padding: var(--space-5) var(--space-4);
+  border-radius: var(--radius-xl);
+  container: dose / inline-size;
+  background: var(--color-fill);
+}
+
+.dose-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: var(--space-3);
 }
 
 .dose-caption {
@@ -80,64 +96,147 @@
 
 .dose-total {
   display: flex;
-  align-items: baseline;
+  flex-direction: column;
+  align-items: center;
   gap: var(--space-2);
 }
 
-.dose-total b {
+.dose-total .stepper {
+  align-self: stretch;
+}
+
+.dose-total .stepper output {
+  white-space: nowrap;
+}
+
+.dose-total .stepper button {
+  background: var(--color-bg);
+}
+
+.dose-total > p {
   font-size: var(--type-dose-size);
   line-height: var(--type-dose-line);
   font-weight: var(--type-dose-weight);
   letter-spacing: var(--type-dose-tracking);
 }
 
-.dose-total span {
+.dose-total small {
   font-size: var(--type-stat-size);
   font-weight: var(--font-weight-bold);
+  letter-spacing: normal;
   color: var(--color-fg-muted);
 }
 
-.dose-parts {
+.dose-reset {
+  min-height: var(--size-text-button);
+  border: none;
+  background: none;
+  font-size: var(--type-secondary-size);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-accent-text);
+  cursor: pointer;
+}
+
+.dose-bar {
+  position: relative;
   display: flex;
-  flex-direction: column;
+  gap: var(--space-0-5);
+  height: var(--space-3);
+  border-radius: var(--radius-pill);
+  overflow: hidden;
+}
+
+.dose-bar span {
+  min-width: var(--space-1);
+}
+
+.dose-bar-removed {
+  position: absolute;
+  inset: 0 0 0 auto;
+  background: repeating-linear-gradient(
+    -45deg,
+    var(--color-fill) 0 var(--space-0-5),
+    transparent var(--space-0-5) var(--space-1-5)
+  );
+  box-shadow: inset var(--space-0-5) 0 var(--color-fill);
+}
+
+[data-part="carbs"] {
+  --part: var(--dose-carbs);
+}
+[data-part="correction"] {
+  --part: var(--dose-correction);
+}
+[data-part="iob"] {
+  --part: var(--dose-correction);
+}
+[data-part="fatProtein"] {
+  --part: var(--dose-fat-protein);
+}
+[data-part="profile"] {
+  --part: var(--dose-profile);
+}
+
+.dose-bar [data-part] {
+  background: var(--part);
+}
+
+.dose-parts {
+  display: grid;
+  grid-template-columns: repeat(5, auto);
+  justify-content: space-between;
+  column-gap: var(--space-2);
+}
+
+@container dose (width < 18rem) {
+  .dose-parts {
+    grid-template-columns: repeat(3, max-content);
+    row-gap: var(--space-3);
+  }
 }
 
 .dose-parts div {
   display: flex;
-  justify-content: space-between;
-  align-items: baseline;
-  gap: var(--space-3);
-  padding: var(--space-2-5) 0;
-  border-top: var(--border-width) solid var(--color-line);
-}
-
-.dose-parts div:first-child {
-  border-top: none;
-}
-
-.dose-parts dt {
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
-}
-
-.dose-parts small {
-  font-size: var(--type-secondary-size);
-  color: var(--color-fg-muted);
+  flex-direction: column-reverse;
+  justify-content: flex-end;
 }
 
 .dose-parts dd {
-  font-weight: var(--font-weight-bold);
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  font-size: var(--type-body-strong-size);
+  line-height: var(--type-body-strong-line);
+  font-weight: var(--type-body-strong-weight);
   white-space: nowrap;
 }
 
-.dose-disclaimer {
-  font-size: var(--type-secondary-size);
+.dose-parts dd::before {
+  content: "";
+  flex: none;
+  width: var(--space-1-5);
+  height: var(--space-1-5);
+  border-radius: var(--radius-pill);
+  background: var(--part);
+}
+
+.dose-parts [data-removed] dd::before {
+  background: repeating-linear-gradient(
+    -45deg,
+    var(--part) 0 var(--space-0-5),
+    transparent var(--space-0-5) var(--space-1)
+  );
+  box-shadow: inset 0 0 0 var(--space-px) var(--part);
+}
+
+.dose-parts dt {
+  font-size: var(--type-caption-size);
+  line-height: var(--type-caption-line);
   color: var(--color-fg-muted);
 }
 
 .dose-why {
-  align-self: flex-start;
+  flex: none;
   font-size: var(--type-secondary-size);
   font-weight: var(--font-weight-bold);
   color: var(--color-accent-text);
