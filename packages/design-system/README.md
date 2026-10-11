@@ -17,7 +17,7 @@ The app is built to feel calm: simple, clear, predictable, respectful of user ag
 
 How Air expresses this visually:
 
-1. **Space groups things, not boxes.** No cards, no borders around sections. Sections are separated by 40 px of space and a plain heading. The one exception: rows of long lists (Historial, Ajustes) get a light 1 px divider in `line` so they scan easily.
+1. **Space groups things, not boxes.** No cards, no borders around sections (the dose card is the one exception, D-15). Sections are separated by 40 px of space and a plain heading. The one exception: rows of long lists (Historial, Ajustes) get a light 1 px divider in `line` so they scan easily.
 2. **One number leads each screen.** The current glucose on Calcular, the dose on the result. Big, bold, tabular.
 3. **Colour means something.** Neutrals carry the UI. Sora marks the one main action, selection and focus. Status colours (glucose, insulin, warnings) are never decoration.
 4. **Interactive things have a fill.** Chips, segments, inputs and tiles sit on `fill`. Static content sits on `bg`. Selection is a solid fill (accent or inverse), never only a border.

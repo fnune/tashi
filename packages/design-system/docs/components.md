@@ -7,7 +7,7 @@ Screen layout for all screens:
 - Gutter `space-gutter` (20 px) left and right.
 - 24 px between the top bar and the screen's first element; `space-section` (40 px) between sections within a screen. `space-stack` (16 px) between a section heading and its content.
 - Top bar at the top, nav bar at the bottom, content scrolls between them.
-- No cards, borders or shadows around sections.
+- No cards, borders or shadows around sections. The dose card is the one exception (D-15).
 
 ---
 
@@ -151,22 +151,24 @@ Inline messages inside a screen (never modal unless an action is required).
 
 ## 19. Dose result (Calcular)
 
-Shown in place of the food form after "Calcular dosis".
+Shown in place of the food form after "Calcular dosis". The foods come first, so the carbs are read before the dose they lead to.
 
-- **Lead:** "Dosis sugerida · Comida" in `type-secondary` `fg-muted`, then the dose in `type-dose` with "U" in `type-stat` `fg-muted`.
-- **Breakdown:** a list of what makes up the dose, with `line` dividers between rows. Each row: label over a `type-secondary` `fg-muted` detail on the left; a signed value in bold, tabular, on the right. Rows, in order, only when they apply:
-    - Hidratos: "118 g ÷ 10 g/U".
-    - Corrección: "(190 − 100) ÷ 40", before active insulin.
-    - Insulina activa: "Aún activa de dosis anteriores", negative.
-    - Grasa y proteína: the threshold that was met.
-    - Perfil Enfermedad: "+20 %", the units the profile adds or removes.
-    - Redondeo: "A 0,5 U, lo que marca tu bolígrafo", shown only when it changes the dose by 0,05 U or more.
-  The rows add up to the dose.
-- "Basado en tus ajustes. Tú decides la dosis." in `type-secondary` `fg-muted`, and a "¿Por qué?" link to the explanation.
-- **Actions:** two equal buttons side by side: "Registrar 5,5 U" (primary) and "Ajustar" (secondary). Ajustar opens a stepper above them (56 px round − and + on `fill`, the units in `type-dose`), and its label becomes "Listo". The primary label always shows the units that will be logged.
 - **Alimentos:** section heading, then one row per recognised food: name, GI badge and source; the grams as a small `fill` input followed by "g" and the carbs per 100 g; carbs on the right. Changing grams recalculates the dose immediately, with the same ratio, profile and glucose reading. "HC netos" total below.
+- **Dose card:** the one card in the app (D-15): `fill` background, `radius-xl`, 20 px top and bottom, 16 px sides.
+    - Top row: "Dosis sugerida · Comida" in `type-secondary` `fg-muted` on the left, a "¿Por qué?" link to the explanation on the right.
+    - The dose, centred, in `type-dose` with "U" in `type-stat` `fg-muted`, between 56 px round − and + buttons on `bg`. They change the dose by the pen increment. Once it differs from the suggestion, a text button "Volver a 5,5 U" below it resets it.
+    - A 12 px pill bar, one segment per part that adds units, sized by its share and 2 px apart. Units taken away (active insulin, a lower profile) are a striped overlay carved off the end, so the solid part is the dose.
+    - Below the bar, one row of up to five terms, spread across the width: a 6 px dot in the part's colour and the signed value in `type-body-strong`, over a `type-caption` `fg-muted` label. A term that takes units away has a striped dot. In order, only when they apply:
+        - HC (`meal`), unsigned.
+        - Corrección (`glucose`), before active insulin.
+        - Activa (`glucose`, striped), negative.
+        - Grasa y proteína (`insulin-rapid`).
+        - Perfil (`insulin-basal`), the units the profile adds or removes.
+    - Labels may wrap at a space when the row is tight. Under 18 rem of card width the terms take two rows of three.
+    - Pen rounding is not a term (D-16), so the terms can differ from the dose by up to half a pen step.
+- **Action:** one full-width primary button, "Registrar 5,5 U". Its label always shows the units that will be logged.
 - **Last:** the original text in `fg-muted` and a text button "Cambiar plato" that goes back to the form with the text kept.
-- In Historial the same summary is shown read-only, without the disclaimer, the actions or editable grams.
+- In Historial the same card is shown read-only, without − and +, the action or editable grams.
 
 ## 20. Number entry sheet (glucose)
 

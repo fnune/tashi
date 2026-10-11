@@ -80,6 +80,16 @@ Profile emoji (🤒, 🏃) rendered differently per platform and clashed with Ai
 **Chosen:** each recognised food's grams are an input on the result; changing them recalculates the dose on the device with the same ratio, profile and glucose reading the result was made with.
 **Rejected:** editing the text and calculating again (slow, and the parser may recognise different foods the second time).
 
+## D-15 · The dose breakdown is one card
+
+**Chosen:** the dose, its − and + buttons and its breakdown share a single `fill` card, with the breakdown drawn as a proportional bar and one row of short terms. Overrides "no cards" for this one component, and its striped overlays are the only gradients. A list with a formula under each row took most of a screen, and users read the dose before the foods it came from. The card holds everything that decides the dose in one place.
+**Rejected:** the divided list (too long); a separate stepper behind an "Ajustar" button (an extra tap to change a dose); terms that wrap into a grid or scroll sideways (hard to scan).
+
+## D-16 · Pen rounding is not shown as a term
+
+**Chosen:** the breakdown leaves out rounding to the pen increment. It is never more than half a step, and a "+0,1" term with no clear name drew more attention than it deserved.
+**Rejected:** a "Redondeo" or "Pluma" term; folding it into another term.
+
 ---
 
 ## Open work (in priority order)
