@@ -1,7 +1,7 @@
 import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import type { CalculationResult, Settings } from "@pincho/shared";
+import type { CalculationResult, Settings } from "@tashi/shared";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { Calculator } from "../calculator.js";
 import type { FoodDatabase } from "../db/food-db.js";
@@ -49,7 +49,7 @@ describe("Calculator", () => {
   let tmpDir: string;
 
   beforeEach(async () => {
-    tmpDir = await mkdtemp(join(tmpdir(), "pincho-calc-test-"));
+    tmpDir = await mkdtemp(join(tmpdir(), "tashi-calc-test-"));
     parser = new FakeFoodParser();
     foodDb = await createTestFoodDb(tmpDir);
     calculator = new Calculator(parser, foodDb);
@@ -657,7 +657,7 @@ describe("FoodDatabase search", () => {
   let tmpDir: string;
 
   beforeEach(async () => {
-    tmpDir = await mkdtemp(join(tmpdir(), "pincho-search-test-"));
+    tmpDir = await mkdtemp(join(tmpdir(), "tashi-search-test-"));
     foodDb = await createTestFoodDb(tmpDir);
   });
 
@@ -703,7 +703,7 @@ describe("FoodDatabase search", () => {
     let tmpDir: string;
 
     beforeEach(async () => {
-      tmpDir = await mkdtemp(join(tmpdir(), "pincho-profile-test-"));
+      tmpDir = await mkdtemp(join(tmpdir(), "tashi-profile-test-"));
       parser = new FakeFoodParser();
       foodDb = await createTestFoodDb(tmpDir);
       calculator = new Calculator(parser, foodDb);

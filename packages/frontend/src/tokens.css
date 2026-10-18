@@ -1,4 +1,4 @@
-/* Only what @pincho/design-system lacks; prefer its roles. */
+/* Only what @tashi/design-system lacks; prefer its roles. */
 :root {
   /* Fontsource registers the variable font under its own family name. */
   --font-sans:

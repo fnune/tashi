@@ -5,8 +5,8 @@ import type {
   Settings,
   SlowInsulinEntry,
   TimelineEntry,
-} from "@pincho/shared";
-import { getBasalInsulinProfile, getBolusInsulinProfile } from "@pincho/shared";
+} from "@tashi/shared";
+import { getBasalInsulinProfile, getBolusInsulinProfile } from "@tashi/shared";
 import { useState } from "react";
 import * as api from "../api.js";
 import { parseGlucoseInput } from "../glucoseLabels.js";

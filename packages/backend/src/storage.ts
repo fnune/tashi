@@ -6,8 +6,8 @@ import type {
   Settings,
   TimelineEntry,
   UpdateTimelineRequest,
-} from "@pincho/shared";
-import { DEFAULT_SETTINGS } from "@pincho/shared";
+} from "@tashi/shared";
+import { DEFAULT_SETTINGS } from "@tashi/shared";
 
 function isFileNotFound(e: unknown): boolean {
   return e instanceof Error && "code" in e && e.code === "ENOENT";

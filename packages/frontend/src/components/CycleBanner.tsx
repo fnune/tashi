@@ -1,4 +1,4 @@
-import type { CycleStatus } from "@pincho/shared";
+import type { CycleStatus } from "@tashi/shared";
 import type { ReactNode } from "react";
 import { Link } from "react-router";
 import { type Language, t } from "../i18n.js";

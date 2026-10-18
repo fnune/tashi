@@ -7,7 +7,7 @@ import type {
   RatioFormat,
   Settings,
   SourceRef,
-} from "@pincho/shared";
+} from "@tashi/shared";
 import {
   activeProfile,
   allowedEndHours,
@@ -30,7 +30,7 @@ import {
   uncoveredHours,
   windowLength,
   windowRatio,
-} from "@pincho/shared";
+} from "@tashi/shared";
 import { useEffect, useState } from "react";
 import { useLocation, useSearchParams } from "react-router";
 import * as api from "../api.js";

@@ -3,7 +3,7 @@ import type {
   FoodVocabEntry,
   ParsedFoodItem,
   SearchTraceEntry,
-} from "@pincho/shared";
+} from "@tashi/shared";
 import type { FoodDatabase } from "./db/food-db.js";
 import type { FoodParser, ParseOutcome } from "./food-parser.js";
 

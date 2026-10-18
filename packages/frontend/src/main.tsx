@@ -3,7 +3,7 @@ import { createRoot } from "react-dom/client";
 import { App } from "./App.js";
 import { applyTheme, savedTheme } from "./theme.js";
 import "@fontsource-variable/open-sans";
-import "@pincho/design-system/tokens.css";
+import "@tashi/design-system/tokens.css";
 import "./tokens.css";
 import "./styles.css";
 

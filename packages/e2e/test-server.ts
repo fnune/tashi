@@ -3,14 +3,14 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { serve } from "@hono/node-server";
 import { serveStatic } from "@hono/node-server/serve-static";
-import { Calculator } from "@pincho/backend/calculator";
+import { Calculator } from "@tashi/backend/calculator";
 // E2E tests use the real food database
-import { FoodDatabase } from "@pincho/backend/db/food-db";
-import type { FoodParser, ParseOutcome } from "@pincho/backend/food-parser";
-import { createRoutes } from "@pincho/backend/routes";
-import { FileStorage } from "@pincho/backend/storage";
-import type { FoodVocabEntry, ParsedFoodItem } from "@pincho/shared";
-import { DEFAULT_SETTINGS } from "@pincho/shared";
+import { FoodDatabase } from "@tashi/backend/db/food-db";
+import type { FoodParser, ParseOutcome } from "@tashi/backend/food-parser";
+import { createRoutes } from "@tashi/backend/routes";
+import { FileStorage } from "@tashi/backend/storage";
+import type { FoodVocabEntry, ParsedFoodItem } from "@tashi/shared";
+import { DEFAULT_SETTINGS } from "@tashi/shared";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 
@@ -122,7 +122,7 @@ class FakeFoodParser implements FoodParser {
 }
 
 async function startServer(): Promise<void> {
-  const tmpDir = await mkdtemp(join(tmpdir(), "pincho-e2e-"));
+  const tmpDir = await mkdtemp(join(tmpdir(), "tashi-e2e-"));
   const storage = new FileStorage(tmpDir);
   await storage.init();
 

@@ -1,8 +1,4 @@
-import type {
-  FoodVocabEntry,
-  ParsedFoodItem,
-  ParseTrace,
-} from "@pincho/shared";
+import type { FoodVocabEntry, ParsedFoodItem, ParseTrace } from "@tashi/shared";
 
 export type ParseOutcome =
   | { status: "ok"; items: ParsedFoodItem[]; trace: ParseTrace }

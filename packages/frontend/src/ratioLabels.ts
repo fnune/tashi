@@ -1,5 +1,5 @@
-import type { RatioFormat } from "@pincho/shared";
-import { fromDisplayRatio, toDisplayRatio } from "@pincho/shared";
+import type { RatioFormat } from "@tashi/shared";
+import { fromDisplayRatio, toDisplayRatio } from "@tashi/shared";
 import { parseDecimal } from "./components/ui/Field.js";
 import type { Language } from "./i18n.js";
 import { t } from "./i18n.js";

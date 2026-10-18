@@ -1,4 +1,4 @@
-import type { Profile } from "@pincho/shared";
+import type { Profile } from "@tashi/shared";
 import type { IconName } from "./components/ui/Icon.js";
 import type { Language, TranslationKey } from "./i18n.js";
 import { t } from "./i18n.js";

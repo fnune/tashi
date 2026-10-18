@@ -1,5 +1,5 @@
-import type { InsulinOnBoard, Settings, TimelineEntry } from "@pincho/shared";
-import { DEFAULT_SETTINGS } from "@pincho/shared";
+import type { InsulinOnBoard, Settings, TimelineEntry } from "@tashi/shared";
+import { DEFAULT_SETTINGS } from "@tashi/shared";
 import { useCallback, useEffect, useState } from "react";
 import {
   BrowserRouter,
@@ -32,7 +32,7 @@ const INITIAL_FORM: CalculatorFormState = {
 const IOB_REFRESH_INTERVAL_MS = 30_000;
 
 function getSavedLanguage(): Language {
-  const saved = localStorage.getItem("pincho-lang");
+  const saved = localStorage.getItem("tashi-lang");
   if (saved === "es" || saved === "en") return saved;
   return DEFAULT_SETTINGS.language;
 }
@@ -57,7 +57,7 @@ function AppShell() {
       .getSettings()
       .then((s) => {
         setSettings(s);
-        localStorage.setItem("pincho-lang", s.language);
+        localStorage.setItem("tashi-lang", s.language);
         setSettingsLoaded(true);
       })
       .catch((e) => {
@@ -95,7 +95,7 @@ function AppShell() {
 
   function handleSaveSettings(s: Settings) {
     setSettings(s);
-    localStorage.setItem("pincho-lang", s.language);
+    localStorage.setItem("tashi-lang", s.language);
   }
 
   function handleReuse(text: string) {

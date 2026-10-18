@@ -13,7 +13,7 @@ import type {
   SlowInsulinEntry,
   TimelineEntry,
   UpdateTimelineRequest,
-} from "@pincho/shared";
+} from "@tashi/shared";
 import {
   basalInsulinProfiles,
   bolusInsulinProfiles,
@@ -25,7 +25,7 @@ import {
   MIN_CYCLE_DAYS,
   MIN_DIA_MINUTES,
   NORMAL_PROFILE_ID,
-} from "@pincho/shared";
+} from "@tashi/shared";
 import { Hono } from "hono";
 import { z } from "zod";
 import type { Calculator } from "./calculator.js";

@@ -1,4 +1,4 @@
-import type { ApiErrorCode, ErrorResponse } from "@pincho/shared";
+import type { ApiErrorCode, ErrorResponse } from "@tashi/shared";
 import type { Context } from "hono";
 
 const FALLBACK_MESSAGES: Record<ApiErrorCode, string> = {

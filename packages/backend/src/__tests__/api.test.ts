@@ -10,7 +10,7 @@ import {
   type ParsedFoodItem,
   type Settings,
   type TimelineEntry,
-} from "@pincho/shared";
+} from "@tashi/shared";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { Calculator } from "../calculator.js";
 import type { Clock } from "../clock.js";
@@ -87,7 +87,7 @@ describe("API routes", () => {
   let now: Date;
 
   beforeEach(async () => {
-    tmpDir = await mkdtemp(join(tmpdir(), "pincho-test-"));
+    tmpDir = await mkdtemp(join(tmpdir(), "tashi-test-"));
     storage = new FileStorage(tmpDir);
     await storage.init();
     parser = new FakeFoodParser();
@@ -546,7 +546,7 @@ describe("FileStorage error handling", () => {
   let tmpDir: string;
 
   beforeEach(async () => {
-    tmpDir = await mkdtemp(join(tmpdir(), "pincho-test-"));
+    tmpDir = await mkdtemp(join(tmpdir(), "tashi-test-"));
   });
 
   afterEach(async () => {

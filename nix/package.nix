@@ -63,7 +63,7 @@ stdenv.mkDerivation (finalAttrs: {
 
   buildPhase = ''
     runHook preBuild
-    pnpm --filter @pincho/shared --filter @pincho/backend --filter @pincho/frontend build
+    pnpm --filter @tashi/shared --filter @tashi/backend --filter @tashi/frontend build
     runHook postBuild
   '';
 
@@ -71,7 +71,7 @@ stdenv.mkDerivation (finalAttrs: {
     runHook preInstall
 
     app=$out/lib/tashi
-    pnpm --offline --config.inject-workspace-packages=true --filter @pincho/backend deploy --prod $app
+    pnpm --offline --config.inject-workspace-packages=true --filter @tashi/backend deploy --prod $app
     rm -r $app/src $app/scripts $app/dist/__tests__
     mkdir $app/data
     cp -r packages/frontend/dist $app/public

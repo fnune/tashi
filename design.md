@@ -1,7 +1,5 @@
 # Tashi: T1D fast insulin dose calculator
 
-The app is called Tashi, and so is its deployment; the repository and packages keep the original name, pincho.
-
 ## Problem
 
 Calculating fast-acting insulin doses is something T1D people do multiple times a day. It requires:

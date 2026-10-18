@@ -1,4 +1,4 @@
-import type { RatioFormat, WindowRatio } from "@pincho/shared";
+import type { RatioFormat, WindowRatio } from "@tashi/shared";
 import { type Language, t } from "../i18n.js";
 import { signedPercent } from "../profileLabels.js";
 import { formatRatio } from "../ratioLabels.js";

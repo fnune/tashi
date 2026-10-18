@@ -4,14 +4,14 @@ import type {
   InsulinOnBoard,
   Settings,
   TimelineEntry,
-} from "@pincho/shared";
+} from "@tashi/shared";
 import {
   cycleStatus,
   latestRecentReading,
   recalculateResult,
   toLocalDateString,
   withWeight,
-} from "@pincho/shared";
+} from "@tashi/shared";
 import { type Dispatch, type SetStateAction, useState } from "react";
 import * as api from "../api.js";
 import { apiErrorText, type Language, t } from "../i18n.js";

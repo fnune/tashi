@@ -1,4 +1,4 @@
-import type { RatioFormat } from "@pincho/shared";
+import type { RatioFormat } from "@tashi/shared";
 import type { ReactNode } from "react";
 import { useNavigate } from "react-router";
 import type { Language } from "../i18n.js";

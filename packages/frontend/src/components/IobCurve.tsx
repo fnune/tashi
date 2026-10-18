@@ -1,7 +1,7 @@
 import {
   insulinActivityFraction,
   insulinRemainingFraction,
-} from "@pincho/shared";
+} from "@tashi/shared";
 import "./IobCurve.css";
 
 interface IobCurveProps {

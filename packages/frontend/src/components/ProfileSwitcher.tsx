@@ -1,5 +1,5 @@
-import type { CyclePhase, Settings } from "@pincho/shared";
-import { activeProfile, NORMAL_PROFILE_ID } from "@pincho/shared";
+import type { CyclePhase, Settings } from "@tashi/shared";
+import { activeProfile, NORMAL_PROFILE_ID } from "@tashi/shared";
 import { Link } from "react-router";
 import { type Language, t } from "../i18n.js";
 import { profileName, profileSummary } from "../profileLabels.js";

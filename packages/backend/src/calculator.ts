@@ -1,4 +1,4 @@
-import type { FoodItem, FoodVocabEntry, ParsedFoodItem } from "@pincho/shared";
+import type { FoodItem, FoodVocabEntry, ParsedFoodItem } from "@tashi/shared";
 import {
   activeProfile,
   appliedProfile,
@@ -9,7 +9,7 @@ import {
   effectiveRatio,
   findMealWindow,
   type Settings,
-} from "@pincho/shared";
+} from "@tashi/shared";
 import { type Clock, systemClock } from "./clock.js";
 import type { FoodDatabase, FoodMatch } from "./db/food-db.js";
 import type { FoodParser } from "./food-parser.js";

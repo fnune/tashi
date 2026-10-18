@@ -10,7 +10,7 @@ import type {
   Settings,
   TimelineEntry,
   UpdateTimelineRequest,
-} from "@pincho/shared";
+} from "@tashi/shared";
 
 declare const __BASE_PATH__: string;
 const BASE = __BASE_PATH__;

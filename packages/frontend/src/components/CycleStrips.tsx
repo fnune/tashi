@@ -1,5 +1,5 @@
-import type { CyclePhase } from "@pincho/shared";
-import { cyclePhaseRanges, typicalInsulinResistance } from "@pincho/shared";
+import type { CyclePhase } from "@tashi/shared";
+import { cyclePhaseRanges, typicalInsulinResistance } from "@tashi/shared";
 import type { CSSProperties } from "react";
 import "./CycleStrips.css";
 

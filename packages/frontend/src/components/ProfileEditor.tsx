@@ -1,4 +1,4 @@
-import type { MealWindow, Profile, RatioFormat } from "@pincho/shared";
+import type { MealWindow, Profile, RatioFormat } from "@tashi/shared";
 import { useId, useState } from "react";
 import { type Language, t } from "../i18n.js";
 import {

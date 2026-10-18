@@ -1,5 +1,5 @@
 {
-  "name": "@pincho/backend",
+  "name": "@tashi/backend",
   "version": "0.0.1",
   "private": true,
   "type": "module",
@@ -20,7 +20,7 @@
   "dependencies": {
     "@anthropic-ai/sdk": "^0.52.0",
     "@hono/node-server": "^1.14.0",
-    "@pincho/shared": "workspace:*",
+    "@tashi/shared": "workspace:*",
     "hono": "^4.7.0",
     "sql.js": "^1.14.1",
     "zod": "^3.24.0"

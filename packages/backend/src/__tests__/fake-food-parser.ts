@@ -1,4 +1,4 @@
-import type { FoodVocabEntry, ParsedFoodItem } from "@pincho/shared";
+import type { FoodVocabEntry, ParsedFoodItem } from "@tashi/shared";
 import type { FoodParser, ParseOutcome } from "../food-parser.js";
 
 type FakeOutcome =

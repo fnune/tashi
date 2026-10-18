@@ -1,5 +1,5 @@
-import type { MealWindow } from "@pincho/shared";
-import { windowLength } from "@pincho/shared";
+import type { MealWindow } from "@tashi/shared";
+import { windowLength } from "@tashi/shared";
 import "./DayBar.css";
 
 const SERIES_COUNT = 4;

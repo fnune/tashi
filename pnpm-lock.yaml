@@ -26,7 +26,7 @@ importers:
       '@hono/node-server':
         specifier: ^1.14.0
         version: 1.19.14(hono@4.12.12)
-      '@pincho/shared':
+      '@tashi/shared':
         specifier: workspace:*
         version: link:../shared
       hono:
@@ -63,15 +63,15 @@ importers:
         specifier: ^4.7.0
         version: 4.12.12
     devDependencies:
-      '@pincho/backend':
-        specifier: workspace:*
-        version: link:../backend
-      '@pincho/shared':
-        specifier: workspace:*
-        version: link:../shared
       '@playwright/test':
         specifier: ^1.52.0
         version: 1.59.1
+      '@tashi/backend':
+        specifier: workspace:*
+        version: link:../backend
+      '@tashi/shared':
+        specifier: workspace:*
+        version: link:../shared
       '@types/node':
         specifier: ^22.0.0
         version: 22.19.17
@@ -87,10 +87,10 @@ importers:
       '@fontsource-variable/open-sans':
         specifier: ^5.3.0
         version: 5.3.0
-      '@pincho/design-system':
+      '@tashi/design-system':
         specifier: workspace:*
         version: link:../design-system
-      '@pincho/shared':
+      '@tashi/shared':
         specifier: workspace:*
         version: link:../shared
       react:

@@ -1,10 +1,10 @@
-import type { CycleTracking, Settings } from "@pincho/shared";
+import type { CycleTracking, Settings } from "@tashi/shared";
 import {
   cycleStatus,
   MAX_CYCLE_DAYS,
   MIN_CYCLE_DAYS,
   toLocalDateString,
-} from "@pincho/shared";
+} from "@tashi/shared";
 import { useState } from "react";
 import { useLocation } from "react-router";
 import { type Language, t } from "../i18n.js";

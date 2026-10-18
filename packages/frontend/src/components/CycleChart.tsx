@@ -1,5 +1,5 @@
-import type { CyclePhase } from "@pincho/shared";
-import { cyclePhaseRanges, ovulationDay } from "@pincho/shared";
+import type { CyclePhase } from "@tashi/shared";
+import { cyclePhaseRanges, ovulationDay } from "@tashi/shared";
 import type { CSSProperties } from "react";
 import { type Language, t } from "../i18n.js";
 import { CycleStrips } from "./CycleStrips.js";

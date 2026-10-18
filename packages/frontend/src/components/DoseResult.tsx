@@ -2,8 +2,8 @@ import type {
   CalculatedItem,
   CalculationResult,
   RatioFormat,
-} from "@pincho/shared";
-import { NORMAL_PROFILE_ID } from "@pincho/shared";
+} from "@tashi/shared";
+import { NORMAL_PROFILE_ID } from "@tashi/shared";
 import { useState } from "react";
 import { Link } from "react-router";
 import { type Language, type TranslationKey, t } from "../i18n.js";

@@ -1,5 +1,5 @@
-import type { Profile, Settings } from "@pincho/shared";
-import { activeProfile, NORMAL_PROFILE_ID } from "@pincho/shared";
+import type { Profile, Settings } from "@tashi/shared";
+import { activeProfile, NORMAL_PROFILE_ID } from "@tashi/shared";
 import { useEffect, useId, useRef, useState } from "react";
 import { type Language, t } from "../i18n.js";
 import { profileIcon, profileName, profileSummary } from "../profileLabels.js";

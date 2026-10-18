@@ -1,5 +1,5 @@
-import type { GlucoseRange, GlucoseUnit } from "@pincho/shared";
-import { GLUCOSE_GAUGE_SCALE, GLUCOSE_RANGE_LIMITS } from "@pincho/shared";
+import type { GlucoseRange, GlucoseUnit } from "@tashi/shared";
+import { GLUCOSE_GAUGE_SCALE, GLUCOSE_RANGE_LIMITS } from "@tashi/shared";
 import "./GlucoseGauge.css";
 
 const CENTRE = 80;

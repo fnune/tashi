@@ -1,8 +1,8 @@
-# Pincho
+# Tashi
 
-Pincho is a fast-acting insulin dose calculator for people with Type 1 Diabetes.
+Tashi is a fast-acting insulin dose calculator for people with Type 1 Diabetes.
 
-Describe what you're eating in plain language, and Pincho breaks it down into a carb-by-carb table with a recommended insulin dose. It uses an LLM to parse your input and a local nutritional database (USDA, BEDCA) to look up accurate values, so you're never relying on guesswork.
+Describe what you're eating in plain language, and Tashi breaks it down into a carb-by-carb table with a recommended insulin dose. It uses an LLM to parse your input and a local nutritional database (USDA, BEDCA) to look up accurate values, so you're never relying on guesswork.
 
 ## How it works
 

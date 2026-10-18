@@ -5,12 +5,12 @@ import type {
   GlucoseUnit,
   InsulinOnBoard,
   Settings,
-} from "@pincho/shared";
+} from "@tashi/shared";
 import {
   correctionComponents,
   GLUCOSE_RANGE_LIMITS,
   glucoseRange,
-} from "@pincho/shared";
+} from "@tashi/shared";
 import { useState } from "react";
 import { parseGlucoseInput } from "../glucoseLabels.js";
 import type { Language, TranslationKey } from "../i18n.js";

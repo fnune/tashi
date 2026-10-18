@@ -17,7 +17,7 @@ A plus whose stem sweeps like a brush stroke, with a drop falling away from it. 
 From the repository root:
 
 ```sh
-nix develop -c pnpm --filter @pincho/design-system logo
+nix develop -c pnpm --filter @tashi/design-system logo
 ```
 
 It needs Python and `rsvg-convert`, both in the flake's dev shell. Besides writing the files above, it updates what the app ships, so commit those together with the change to the script:

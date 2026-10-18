@@ -41,11 +41,11 @@ How Air expresses this visually:
 
 ## In this repository
 
-This folder is the `@pincho/design-system` workspace package. The app imports `@pincho/design-system/tokens.css` and builds on its roles; nothing here depends on the app, so it can be explored on its own (open `reference/air-reference.html`).
+This folder is the `@tashi/design-system` workspace package. The app imports `@tashi/design-system/tokens.css` and builds on its roles; nothing here depends on the app, so it can be explored on its own (open `reference/air-reference.html`).
 
-- `pnpm --filter @pincho/design-system build` regenerates `tokens.css`.
-- `pnpm --filter @pincho/design-system check:contrast` checks contrast.
-- `nix develop -c pnpm --filter @pincho/design-system logo` regenerates the logo and the app's icons.
+- `pnpm --filter @tashi/design-system build` regenerates `tokens.css`.
+- `pnpm --filter @tashi/design-system check:contrast` checks contrast.
+- `nix develop -c pnpm --filter @tashi/design-system logo` regenerates the logo and the app's icons.
 
 ## Using the tokens (web)
 

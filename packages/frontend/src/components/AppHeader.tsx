@@ -1,5 +1,5 @@
-import type { Settings } from "@pincho/shared";
-import { activeProfile, findMealWindow, windowRatio } from "@pincho/shared";
+import type { Settings } from "@tashi/shared";
+import { activeProfile, findMealWindow, windowRatio } from "@tashi/shared";
 import { Link } from "react-router";
 import type { Language } from "../i18n.js";
 import { t } from "../i18n.js";

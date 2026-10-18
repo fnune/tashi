@@ -1,5 +1,5 @@
-import type { GlucoseUnit } from "@pincho/shared";
-import { GLUCOSE_ENTRY_LIMITS, isPlausibleGlucose } from "@pincho/shared";
+import type { GlucoseUnit } from "@tashi/shared";
+import { GLUCOSE_ENTRY_LIMITS, isPlausibleGlucose } from "@tashi/shared";
 import { parseDecimal } from "./components/ui/Field.js";
 import type { Language } from "./i18n.js";
 import { t } from "./i18n.js";
