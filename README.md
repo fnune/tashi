@@ -24,3 +24,7 @@ Requires [Nix](https://nixos.org/download/):
 nix develop
 pnpm install
 ```
+
+## Deployment
+
+Runs on bilbo as the `tashi` app (`nixos/tashi.nix` in fnune/bilbo), from this flake's default package. To ship, push to `main`, then in bilbo run `nix flake update tashi` and rebuild.

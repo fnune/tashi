@@ -6,8 +6,7 @@
   fetchPnpmDeps,
   pnpmConfigHook,
   makeWrapper,
-  # The frontend bakes its URL prefix in at build time, so a deployment under a
-  # subpath needs its own build: `.override { basePath = "/apps/tashi"; }`.
+  # The frontend bakes basePath in at build time.
   basePath ? "",
 }:
 
