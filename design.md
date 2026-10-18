@@ -1,6 +1,6 @@
 # Tashi: T1D fast insulin dose calculator
 
-The app is called Tashi; the repository, packages and deployment keep the original name, pincho.
+The app is called Tashi, and so is its deployment; the repository and packages keep the original name, pincho.
 
 ## Problem
 
@@ -270,11 +270,11 @@ Since the task is pure parsing (not creative or reasoning-heavy), most capable m
 
 ### Deployment
 
-The app deploys as a NixOS service on Bilbo (https://github.com/fnune/bilbo). Each deployment is pre-configured with LLM credentials -- there is no user-facing API key management.
+The app deploys as a NixOS service on Bilbo (https://github.com/fnune/bilbo). Bilbo builds the flake's `packages.default`, with `basePath` overridden to the subpath it serves the app under, since the frontend bakes that prefix in at build time. Each deployment is pre-configured with LLM credentials -- there is no user-facing API key management.
 
-- LLM API key stored in `/etc/nixos/secrets/pincho-llm-key` (same pattern as other Bilbo secrets)
-- LLM provider and model configured via the NixOS service definition or an environment file
-- The app reads credentials at startup from the filesystem, never exposes them to the frontend
+- The LLM API key is a Bilbo secret, handed to the service as `ANTHROPIC_API_KEY`
+- The model is set with `LLM_MODEL` in the NixOS service definition
+- The app reads credentials at startup, never exposes them to the frontend
 - The frontend is a static SPA; all LLM calls go through the app's backend
 
 This means the app is a single service with a small HTTP API: the frontend serves static files, and one endpoint handles the LLM-proxied food parsing.

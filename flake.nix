@@ -11,6 +11,10 @@
       });
     in
     {
+      packages = forAllSystems ({ pkgs }: {
+        default = pkgs.callPackage ./nix/package.nix { };
+      });
+
       devShells = forAllSystems ({ pkgs }: {
         default = pkgs.mkShell {
           packages = with pkgs; [
