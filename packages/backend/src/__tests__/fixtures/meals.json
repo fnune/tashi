@@ -1,0 +1,72 @@
+[
+  {
+    "input_text": "una barrita de twix",
+    "items": [
+      {
+        "description": "Twix bar",
+        "weight_g": 50,
+        "net_carbs_g": 31.5,
+        "assumed_cooked": true,
+        "confidence": "medium",
+        "notes": "Standard single Twix bar weighs approximately 50g. Matched to closest chocolate/candy category, but not in database.",
+        "warning": null,
+        "data_source": "LLM estimate",
+        "estimated": true,
+        "glycemic_index": 68,
+        "gi_estimated": true
+      }
+    ],
+    "total_net_carbs_g": 31.5
+  },
+  {
+    "input_text": "pizza",
+    "items": [
+      {
+        "description": "Pizza margherita",
+        "weight_g": 300,
+        "net_carbs_g": 92.1,
+        "assumed_cooked": true,
+        "confidence": "medium",
+        "notes": "No specific weight or type provided; assumed 1 typical slice (~300g) of margherita pizza",
+        "warning": null,
+        "data_source": "USDA FoodData Central",
+        "estimated": false
+      }
+    ],
+    "total_net_carbs_g": 92.1
+  },
+  {
+    "input_text": "pizza",
+    "items": [
+      {
+        "description": "pizza",
+        "weight_g": 300,
+        "net_carbs_g": 92.1,
+        "assumed_cooked": true,
+        "confidence": "medium",
+        "notes": "Assuming a typical pizza portion (3 slices, ~100g per slice). Database entry is for 1 slice; multiplied by 3 for a typical serving.",
+        "warning": null,
+        "data_source": "USDA FoodData Central",
+        "estimated": false
+      }
+    ],
+    "total_net_carbs_g": 92.1
+  },
+  {
+    "input_text": "una pizza de tamaño desconocido",
+    "items": [
+      {
+        "description": "Pizza margherita",
+        "weight_g": 300,
+        "net_carbs_g": 92.1,
+        "assumed_cooked": true,
+        "confidence": "low",
+        "notes": "Tamaño desconocido; asumido una porción típica de 300g (aproximadamente 1-2 slices). El usuario no especificó el tamaño exacto ni el tipo de pizza.",
+        "warning": "El tamaño de la pizza es desconocido. La estimación puede variar significativamente dependiendo de si es una slice individual, una pizza personal, o una porción de una pizza grande.",
+        "data_source": "USDA FoodData Central",
+        "estimated": false
+      }
+    ],
+    "total_net_carbs_g": 92.1
+  }
+]
