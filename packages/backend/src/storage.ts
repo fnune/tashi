@@ -5,11 +5,11 @@ import type {
   FoodVocabEntry,
   Settings,
   TimelineEntry,
-  UpdateTimelineRequest,
 } from "@tashi/shared";
 import { DEFAULT_SETTINGS } from "@tashi/shared";
 import type { ApiKeyRecords } from "./api-key-store.js";
 import type { SealedSecret } from "./secret-box.js";
+import { newestFirst } from "./timeline.js";
 
 function isFileNotFound(e: unknown): boolean {
   return e instanceof Error && "code" in e && e.code === "ENOENT";
@@ -78,64 +78,21 @@ export class FileStorage implements ApiKeyRecords {
   }
 
   async addTimelineEntry(entry: TimelineEntry): Promise<void> {
-    const timeline = await this.getTimeline();
-    timeline.unshift(entry);
-    timeline.sort(
-      (a, b) =>
-        new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime(),
-    );
-    await this.saveTimeline(timeline);
+    await this.addTimelineEntries([entry]);
   }
 
   async addTimelineEntries(entries: TimelineEntry[]): Promise<void> {
     const timeline = await this.getTimeline();
-    timeline.push(...entries);
-    timeline.sort(
-      (a, b) =>
-        new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime(),
-    );
-    await this.saveTimeline(timeline);
+    await this.saveTimeline(newestFirst([...timeline, ...entries]));
   }
 
-  async updateTimelineEntry(
-    id: string,
-    updates: UpdateTimelineRequest,
-  ): Promise<TimelineEntry | null> {
+  async replaceTimelineEntry(entry: TimelineEntry): Promise<boolean> {
     const timeline = await this.getTimeline();
-    const idx = timeline.findIndex((e) => e.id === id);
-    if (idx === -1) return null;
-    const existing = timeline[idx];
-    if (!existing || existing.type !== updates.type) return null;
-
-    if (updates.timestamp) existing.timestamp = updates.timestamp;
-    if (
-      existing.type === "fast_insulin" &&
-      updates.type === "fast_insulin" &&
-      updates.units !== undefined
-    ) {
-      existing.units = updates.units;
-    }
-    if (
-      existing.type === "slow_insulin" &&
-      updates.type === "slow_insulin" &&
-      updates.units !== undefined
-    ) {
-      existing.units = updates.units;
-    }
-    if (
-      existing.type === "glucose_reading" &&
-      updates.type === "glucose_reading" &&
-      updates.value !== undefined
-    ) {
-      existing.value = updates.value;
-    }
-
-    timeline.sort(
-      (a, b) =>
-        new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime(),
+    if (!timeline.some((e) => e.id === entry.id)) return false;
+    await this.saveTimeline(
+      newestFirst(timeline.map((e) => (e.id === entry.id ? entry : e))),
     );
-    await this.saveTimeline(timeline);
-    return existing;
+    return true;
   }
 
   async deleteTimelineEntry(id: string): Promise<boolean> {

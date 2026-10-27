@@ -8,7 +8,6 @@ import type {
   FastInsulinEntry,
   GlucoseEntry,
   LogMealResponse,
-  MealEntry,
   Settings,
   SlowInsulinEntry,
   TimelineEntry,
@@ -39,6 +38,11 @@ import {
 } from "./errors.js";
 import type { IdGenerator } from "./ids.js";
 import type { FileStorage } from "./storage.js";
+import {
+  applyTimelineUpdate,
+  fastInsulinEntries,
+  logMeal,
+} from "./timeline.js";
 
 const calculateSchema = z.object({
   food_description: z.string().min(1),
@@ -214,13 +218,11 @@ export function createRoutes({
 
     try {
       const timeline = await storage.getTimeline();
-      const fastEntries = timeline.filter(
-        (e): e is FastInsulinEntry => e.type === "fast_insulin",
-      );
       const iobUnits =
         settings.insulin_action_minutes === null
           ? 0
-          : insulinOnBoard(fastEntries, settings, clock()).total_units;
+          : insulinOnBoard(fastInsulinEntries(timeline), settings, clock())
+              .total_units;
 
       const outcome = await calculator.calculate(
         parsed.data.food_description,
@@ -289,45 +291,23 @@ export function createRoutes({
       return apiError(c, "bolus_insulin_not_configured", 400);
     }
 
-    const { result } = parsed.data;
     const now = clock();
-    const preBolusMs = parsed.data.pre_bolus_minutes * 60_000;
-    const mealEntry: MealEntry = {
-      id: newId(),
-      timestamp: new Date(now.getTime() + preBolusMs).toISOString(),
-      type: "meal",
-      input_text: result.input_text,
-      language: result.language,
-      meal_window: result.meal_window,
-      items: result.items,
-      total_net_carbs_g: result.total_net_carbs_g,
-      recommended_dose: result.recommended_dose,
-      correction: result.correction,
-      fat_protein_adjustment: result.fat_protein_adjustment,
-      trace: result.trace,
-    };
-
-    const entries: TimelineEntry[] = [mealEntry];
-    let insulinEntryId: string | null = null;
-    if (parsed.data.units > 0) {
-      const insulinEntry: FastInsulinEntry = {
-        id: newId(),
-        timestamp: now.toISOString(),
-        type: "fast_insulin",
-        units: parsed.data.units,
-        insulin_id: bolusInsulinId,
-        related_meal_id: mealEntry.id,
-      };
-      entries.push(insulinEntry);
-      insulinEntryId = insulinEntry.id;
-    }
+    const { meal, insulin } = logMeal(
+      parsed.data.result,
+      parsed.data.units,
+      parsed.data.pre_bolus_minutes,
+      bolusInsulinId,
+      now,
+      newId,
+    );
+    const entries: TimelineEntry[] = insulin ? [meal, insulin] : [meal];
 
     await storage.addTimelineEntries(entries);
-    await storage.learnFromItems(result.items, now);
+    await storage.learnFromItems(parsed.data.result.items, now);
 
     const response: LogMealResponse = {
-      meal_entry_id: mealEntry.id,
-      insulin_entry_id: insulinEntryId,
+      meal_entry_id: meal.id,
+      insulin_entry_id: insulin?.id ?? null,
     };
     return c.json(response);
   });
@@ -358,11 +338,10 @@ export function createRoutes({
       return apiError(c, "insulin_action_not_configured", 400);
     }
     const timeline = await storage.getTimeline();
-    const fastEntries = timeline.filter(
-      (e): e is FastInsulinEntry => e.type === "fast_insulin",
-    );
     try {
-      return c.json(insulinOnBoard(fastEntries, settings, clock()));
+      return c.json(
+        insulinOnBoard(fastInsulinEntries(timeline), settings, clock()),
+      );
     } catch (e) {
       const message = e instanceof Error ? e.message : "Unknown error";
       return apiError(c, "internal_error", 500, message);
@@ -429,20 +408,19 @@ export function createRoutes({
   api.put("/api/timeline/:id", async (c) => {
     const id = c.req.param("id");
     const body = await c.req.json<UpdateTimelineRequest>();
-    if (body.type === "glucose_reading" && body.value !== undefined) {
-      const existing = (await storage.getTimeline()).find((e) => e.id === id);
-      if (
-        existing?.type === "glucose_reading" &&
-        !isPlausibleGlucose(body.value, existing.unit)
-      ) {
-        return apiError(c, "validation_failed", 400);
-      }
-    }
-    const updated = await storage.updateTimelineEntry(id, body);
-    if (!updated) {
+    const existing = (await storage.getTimeline()).find((e) => e.id === id);
+    if (!existing) {
       return apiError(c, "not_found", 404);
     }
-    return c.json(updated);
+    const update = applyTimelineUpdate(existing, body);
+    if (update.status === "type_mismatch") {
+      return apiError(c, "not_found", 404);
+    }
+    if (update.status === "implausible_value") {
+      return apiError(c, "validation_failed", 400);
+    }
+    await storage.replaceTimelineEntry(update.entry);
+    return c.json(update.entry);
   });
 
   api.delete("/api/timeline/:id", async (c) => {
