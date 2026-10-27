@@ -54,3 +54,16 @@ export function latestRecentReading(
   }
   return latest;
 }
+
+export const MG_DL_PER_MMOL_L = 18.016;
+
+export function convertGlucose(
+  value: number,
+  from: GlucoseUnit,
+  to: GlucoseUnit,
+): number {
+  if (from === to) return value;
+  return from === "mmol/L"
+    ? value * MG_DL_PER_MMOL_L
+    : value / MG_DL_PER_MMOL_L;
+}

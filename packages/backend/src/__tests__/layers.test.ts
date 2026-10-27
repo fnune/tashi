@@ -10,10 +10,15 @@ const allowedImports: Record<string, string[]> = {
   data: ["domain", "data"],
 };
 
-function sourceFiles(layer: string): string[] {
-  return readdirSync(join(src, layer))
-    .filter((name) => name.endsWith(".ts"))
-    .map((name) => join(src, layer, name));
+function sourceFiles(directory: string): string[] {
+  return readdirSync(join(src, directory), { withFileTypes: true }).flatMap(
+    (entry) =>
+      entry.isDirectory()
+        ? sourceFiles(join(directory, entry.name))
+        : entry.name.endsWith(".ts")
+          ? [join(src, directory, entry.name)]
+          : [],
+  );
 }
 
 function localImports(file: string): string[] {

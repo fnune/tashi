@@ -35,6 +35,7 @@ function fastEntry(
   return {
     id: "entry-1",
     timestamp: NOW.toISOString(),
+    time_zone: "Europe/Berlin",
     type: "fast_insulin",
     units: 5,
     insulin_id: "novorapid",

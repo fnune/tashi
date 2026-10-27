@@ -55,7 +55,10 @@ export class Doses {
     if (settings.insulin_action_minutes === null) {
       throw new DomainError("insulin_action_not_configured");
     }
-    const timeline = await this.repositories.timeline.list();
-    return insulinOnBoard(fastInsulinEntries(timeline), settings, this.clock());
+    const now = this.clock();
+    const recent = await this.repositories.timeline.since(
+      new Date(now.getTime() - settings.insulin_action_minutes * 60_000),
+    );
+    return insulinOnBoard(fastInsulinEntries(recent), settings, now);
   }
 }

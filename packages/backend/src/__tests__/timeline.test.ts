@@ -9,13 +9,13 @@ import {
   applyTimelineUpdate,
   fastInsulinEntries,
   logMeal,
-  newestFirst,
 } from "../domain/timeline.js";
 import { sequentialIds } from "./sequential-ids.js";
 
 const fast: FastInsulinEntry = {
   id: "f",
   timestamp: "2026-06-13T10:00:00.000Z",
+  time_zone: "Europe/Berlin",
   type: "fast_insulin",
   units: 4,
   insulin_id: "novorapid",
@@ -24,6 +24,7 @@ const fast: FastInsulinEntry = {
 const slow: SlowInsulinEntry = {
   id: "s",
   timestamp: "2026-06-13T08:00:00.000Z",
+  time_zone: "Europe/Berlin",
   type: "slow_insulin",
   units: 10,
   insulin_id: "tresiba",
@@ -31,18 +32,13 @@ const slow: SlowInsulinEntry = {
 const glucose: GlucoseEntry = {
   id: "g",
   timestamp: "2026-06-13T09:00:00.000Z",
+  time_zone: "Europe/Berlin",
   type: "glucose_reading",
   value: 120,
   unit: "mg/dL",
 };
 
 describe("timeline rules", () => {
-  it("orders entries newest first without touching the input", () => {
-    const input = [slow, fast, glucose];
-    expect(newestFirst(input).map((e) => e.id)).toEqual(["f", "g", "s"]);
-    expect(input.map((e) => e.id)).toEqual(["s", "f", "g"]);
-  });
-
   it("keeps only fast insulin for insulin on board", () => {
     expect(fastInsulinEntries([slow, fast, glucose])).toEqual([fast]);
   });
@@ -103,6 +99,7 @@ describe("logging a meal", () => {
     items: [],
     total_net_carbs_g: 30,
     recommended_dose: 3,
+    total_dose: 3,
   };
   const now = new Date("2026-06-13T12:00:00.000Z");
 
@@ -114,15 +111,31 @@ describe("logging a meal", () => {
       "novorapid",
       now,
       sequentialIds(),
+      "Europe/Berlin",
     );
     expect(meal.timestamp).toBe("2026-06-13T12:15:00.000Z");
     expect(insulin?.timestamp).toBe("2026-06-13T12:00:00.000Z");
     expect(insulin?.related_meal_id).toBe(meal.id);
   });
 
+  it("records the zone the user was in on both entries", () => {
+    const { meal, insulin } = logMeal(
+      result,
+      3,
+      0,
+      "novorapid",
+      now,
+      sequentialIds(),
+      "Asia/Tokyo",
+    );
+    expect(meal.time_zone).toBe("Asia/Tokyo");
+    expect(insulin?.time_zone).toBe("Asia/Tokyo");
+  });
+
   it("logs no insulin entry for a zero dose", () => {
     expect(
-      logMeal(result, 0, 0, "novorapid", now, sequentialIds()).insulin,
+      logMeal(result, 0, 0, "novorapid", now, sequentialIds(), "Europe/Berlin")
+        .insulin,
     ).toBeNull();
   });
 });

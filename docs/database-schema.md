@@ -89,6 +89,7 @@ CREATE TABLE settings (
 
 CREATE TABLE meal_windows (
   id uuid PRIMARY KEY,
+  position smallint NOT NULL UNIQUE DEFERRABLE INITIALLY IMMEDIATE CHECK (position >= 0),
   name text NOT NULL UNIQUE CHECK (name <> ''),
   start_hour smallint NOT NULL CHECK (start_hour BETWEEN 0 AND 23),
   end_hour smallint NOT NULL CHECK (end_hour BETWEEN 0 AND 24),
@@ -97,6 +98,7 @@ CREATE TABLE meal_windows (
 
 CREATE TABLE profiles (
   id uuid PRIMARY KEY,
+  position smallint NOT NULL UNIQUE DEFERRABLE INITIALLY IMMEDIATE CHECK (position >= 0),
   name text CHECK (name <> ''),
   icon text NOT NULL CHECK (icon <> ''),
   adjustment_mode adjustment_mode NOT NULL,
@@ -122,6 +124,7 @@ ALTER TABLE settings
 
 - `target_glucose_mg_dl` and `glucose_drop_mg_dl_per_unit` (how far one insulin unit lowers glucose) are in mg/dL whatever `glucose_unit` says. Changing the display unit changes no stored number.
 - A profile adjusts by a percentage or sets a ratio per meal window. The composite foreign key stops a percentage profile from owning window ratios, and the check stops it from lacking its percentage.
+- Windows and profiles keep the order the user arranged them in (`position`), because the interface shows them in that order.
 - A window ratio references its window by id; renaming a window changes one row, and names are unique.
 - "The Normal profile cannot be removed" stays a rule of the application.
 

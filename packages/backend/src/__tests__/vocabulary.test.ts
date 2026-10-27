@@ -22,7 +22,7 @@ function item(
     confidence: "high",
     notes: null,
     warning: null,
-    data_source: "SR Legacy",
+    data_source: "sr_legacy_food",
     estimated: false,
     glycemic_index: null,
     gi_estimated: false,
@@ -39,6 +39,7 @@ describe("learning vocabulary", () => {
     expect(learnVocabulary([], [item("Rice", 1)], now)).toEqual([
       {
         description: "Rice",
+        source: "usda_sr_legacy",
         fdc_id: 1,
         usda_description: "USDA 1",
         default_weight_g: 150,
@@ -62,6 +63,7 @@ describe("learning vocabulary", () => {
     const known: FoodVocabEntry[] = [
       {
         description: "Rice",
+        source: "usda_sr_legacy",
         fdc_id: 1,
         usda_description: "USDA 1",
         default_weight_g: 100,

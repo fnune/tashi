@@ -1,10 +1,14 @@
 import type { CalculatedItem, FoodVocabEntry } from "@tashi/shared";
+import { foodSourceOfDataSource } from "@tashi/shared";
+
+type VocabularyKey = Pick<FoodVocabEntry, "description" | "source" | "fdc_id">;
 
 export function sameVocabularyEntry(
-  a: Pick<FoodVocabEntry, "description" | "fdc_id">,
-  b: Pick<FoodVocabEntry, "description" | "fdc_id">,
+  a: VocabularyKey,
+  b: VocabularyKey,
 ): boolean {
   return (
+    a.source === b.source &&
     a.fdc_id === b.fdc_id &&
     a.description.toLowerCase() === b.description.toLowerCase()
   );
@@ -22,6 +26,7 @@ export function learnVocabulary(
     if (!item.food_item || item.estimated) continue;
     const key = {
       description: item.description,
+      source: foodSourceOfDataSource(item.data_source),
       fdc_id: item.food_item.fdc_id,
     };
     const previous = [...learned, ...known].find((v) =>
@@ -29,6 +34,7 @@ export function learnVocabulary(
     );
     const entry: FoodVocabEntry = {
       description: previous?.description ?? item.description,
+      source: key.source,
       fdc_id: key.fdc_id,
       usda_description:
         previous?.usda_description ?? item.food_item.description,

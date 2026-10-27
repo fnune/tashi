@@ -12,7 +12,9 @@ import type {
 import {
   basalInsulinProfiles,
   bolusInsulinProfiles,
+  DATA_SOURCE_LABELS,
   DEFAULT_SETTINGS,
+  FOOD_SOURCE_IDS,
   MAX_CYCLE_DAYS,
   MAX_DIA_MINUTES,
   MIN_CYCLE_DAYS,
@@ -154,7 +156,7 @@ export const calculatedItemSchema = z.object({
   confidence: confidenceSchema,
   notes: nullableString,
   warning: nullableString,
-  data_source: z.string(),
+  data_source: z.enum(DATA_SOURCE_LABELS),
   estimated: z.boolean(),
   glycemic_index: nullableNumber,
   gi_estimated: z.boolean(),
@@ -179,12 +181,6 @@ export const parseTraceSchema = z.object({
   duration_ms: z.number(),
 }) satisfies z.ZodType<ParseTrace>;
 
-export const appliedProfileSchema = z.object({
-  id: z.string(),
-  name: z.string(),
-  percent: z.number(),
-});
-
 export const correctionSchema = z.object({
   current_blood_sugar: z.number(),
   target_blood_sugar: z.number(),
@@ -206,9 +202,19 @@ export const fatProteinAdjustmentSchema = z.object({
   NonNullable<CalculationResult["fat_protein_adjustment"]>
 >;
 
+export const timeZoneSchema = z.string().refine((zone) => {
+  try {
+    new Intl.DateTimeFormat("en", { timeZone: zone });
+    return true;
+  } catch {
+    return false;
+  }
+}, "not a time zone");
+
 export const entryBase = {
-  id: z.string().min(1),
+  id: z.string().uuid(),
   timestamp: isoTimestampSchema,
+  time_zone: timeZoneSchema,
 };
 
 export const storedTimelineSchema = z.array(
@@ -221,9 +227,8 @@ export const storedTimelineSchema = z.array(
       meal_window: mealWindowSchema,
       items: z.array(calculatedItemSchema),
       total_net_carbs_g: z.number(),
-      recommended_dose: z.number().optional(),
-      total_dose: z.number().optional(),
-      profile: appliedProfileSchema.optional(),
+      recommended_dose: z.number(),
+      total_dose: z.number(),
       correction: correctionSchema.optional(),
       fat_protein_adjustment: fatProteinAdjustmentSchema.optional(),
       trace: parseTraceSchema.optional(),
@@ -253,6 +258,7 @@ export const storedTimelineSchema = z.array(
 export const storedVocabularySchema = z.array(
   z.object({
     description: z.string(),
+    source: z.enum(FOOD_SOURCE_IDS),
     fdc_id: z.number(),
     usda_description: z.string(),
     default_weight_g: z.number(),

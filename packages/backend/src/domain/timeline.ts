@@ -9,12 +9,6 @@ import type {
 import { isPlausibleGlucose } from "@tashi/shared";
 import type { IdGenerator } from "./ids.js";
 
-export function newestFirst(entries: TimelineEntry[]): TimelineEntry[] {
-  return [...entries].sort(
-    (a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime(),
-  );
-}
-
 export function fastInsulinEntries(
   timeline: TimelineEntry[],
 ): FastInsulinEntry[] {
@@ -75,7 +69,7 @@ export type LoggableMeal = Pick<
   | "correction"
   | "fat_protein_adjustment"
   | "trace"
->;
+> & { total_dose: number };
 
 export function logMeal(
   result: LoggableMeal,
@@ -84,10 +78,12 @@ export function logMeal(
   bolusInsulinId: BolusInsulinId,
   now: Date,
   newId: IdGenerator,
+  timeZone: string,
 ): LoggedMeal {
   const meal: MealEntry = {
     id: newId(),
     timestamp: new Date(now.getTime() + preBolusMinutes * 60_000).toISOString(),
+    time_zone: timeZone,
     type: "meal",
     input_text: result.input_text,
     language: result.language,
@@ -95,6 +91,7 @@ export function logMeal(
     items: result.items,
     total_net_carbs_g: result.total_net_carbs_g,
     recommended_dose: result.recommended_dose,
+    total_dose: result.total_dose,
     correction: result.correction,
     fat_protein_adjustment: result.fat_protein_adjustment,
     trace: result.trace,
@@ -104,6 +101,7 @@ export function logMeal(
       ? {
           id: newId(),
           timestamp: now.toISOString(),
+          time_zone: timeZone,
           type: "fast_insulin",
           units,
           insulin_id: bolusInsulinId,

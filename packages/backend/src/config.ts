@@ -9,7 +9,6 @@ const envSchema = z.object({
     blankIsUnset,
     z.coerce.number().int().min(1).max(65535).default(3000),
   ),
-  DATA_DIR: z.preprocess(blankIsUnset, z.string().default("./data")),
   BASE_PATH: z.preprocess(
     blankIsUnset,
     z
@@ -19,15 +18,12 @@ const envSchema = z.object({
       })
       .optional(),
   ),
-  DATABASE_URL: z.preprocess(
-    blankIsUnset,
-    z
-      .string()
-      .refine((url) => /^postgres(ql)?:\/\//.test(url), {
-        message: "must be a postgres:// or postgresql:// URL",
-      })
-      .optional(),
-  ),
+  DATABASE_URL: z
+    .string({ required_error: "required" })
+    .refine((url) => /^postgres(ql)?:\/\//.test(url), {
+      message: "must be a postgres:// or postgresql:// URL",
+    }),
+  TIME_ZONE: optionalText,
   FOODS_DB: optionalText,
   LLM_MODEL: z.preprocess(
     blankIsUnset,
@@ -40,8 +36,8 @@ const envSchema = z.object({
 
 export interface Config {
   port: number;
-  dataDir: string;
-  databaseUrl: string | undefined;
+  databaseUrl: string;
+  defaultTimeZone: string;
   basePath: string;
   foodsDbPath: string | undefined;
   model: string;
@@ -66,8 +62,9 @@ export function loadConfig(env: Record<string, string | undefined>): Config {
   const e = parsed.data;
   return {
     port: e.PORT,
-    dataDir: e.DATA_DIR,
     databaseUrl: e.DATABASE_URL,
+    defaultTimeZone:
+      e.TIME_ZONE ?? Intl.DateTimeFormat().resolvedOptions().timeZone,
     basePath: e.BASE_PATH ?? "",
     foodsDbPath: e.FOODS_DB,
     model: e.LLM_MODEL,

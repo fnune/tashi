@@ -1,9 +1,8 @@
-import { mkdtemp, readFile, rm } from "node:fs/promises";
+import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { type ApiKeyStatus, DEFAULT_SETTINGS } from "@tashi/shared";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { openFileRepositories } from "../data/file-repositories.js";
 import type { FoodDatabase } from "../data/food-db.js";
 import { ApiKeyStore } from "../domain/api-key-store.js";
 import { Calculator } from "../domain/calculator.js";
@@ -17,6 +16,7 @@ import { seal, unseal } from "../domain/secret-box.js";
 import { TimelineService } from "../domain/timeline-service.js";
 import { createRoutes } from "../http/routes.js";
 import { FakeFoodParser } from "./fake-food-parser.js";
+import { createInMemoryRepositories } from "./in-memory-repositories.js";
 import { sequentialIds } from "./sequential-ids.js";
 import { createTestFoodDb } from "./test-food-db.js";
 
@@ -59,6 +59,7 @@ describe("api key routes", () => {
       timeline: new TimelineService(repositories, systemClock, newId),
       repositories,
       apiKeys,
+      defaultTimeZone: "Europe/Berlin",
     });
   }
 
@@ -107,7 +108,7 @@ describe("api key routes", () => {
 
   beforeEach(async () => {
     tmpDir = await mkdtemp(join(tmpdir(), "tashi-test-"));
-    repositories = await openFileRepositories(tmpDir);
+    repositories = createInMemoryRepositories();
     await repositories.settings.save({
       ...DEFAULT_SETTINGS,
       meal_windows: [
@@ -150,9 +151,7 @@ describe("api key routes", () => {
       can_save: true,
     });
     expect(verified).toEqual([KEY]);
-    expect(await readFile(join(tmpDir, "api-key.json"), "utf-8")).not.toContain(
-      KEY,
-    );
+    expect(JSON.stringify(await repositories.apiKey.get())).not.toContain(KEY);
 
     await calculate(app);
     expect(created).toEqual([KEY]);

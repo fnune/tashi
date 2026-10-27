@@ -32,7 +32,7 @@ export class TimelineService {
     private newId: IdGenerator,
   ) {}
 
-  async logMeal(meal: MealToLog): Promise<LogMealResponse> {
+  async logMeal(meal: MealToLog, timeZone: string): Promise<LogMealResponse> {
     const settings = await this.repositories.settings.get();
     if (settings.bolus_insulin_id === null) {
       throw new DomainError("bolus_insulin_not_configured");
@@ -45,6 +45,7 @@ export class TimelineService {
       settings.bolus_insulin_id,
       now,
       this.newId,
+      timeZone,
     );
     await this.repositories.timeline.add(
       logged.insulin ? [logged.meal, logged.insulin] : [logged.meal],
@@ -62,8 +63,12 @@ export class TimelineService {
     };
   }
 
-  async addEntry(data: NewEntry): Promise<TimelineEntry> {
-    const base = { id: this.newId(), timestamp: this.clock().toISOString() };
+  async addEntry(data: NewEntry, timeZone: string): Promise<TimelineEntry> {
+    const base = {
+      id: this.newId(),
+      timestamp: this.clock().toISOString(),
+      time_zone: timeZone,
+    };
     const settings = await this.repositories.settings.get();
     let entry: TimelineEntry;
 

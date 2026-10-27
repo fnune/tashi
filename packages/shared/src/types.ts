@@ -1,3 +1,4 @@
+import type { FoodSourceId } from "./food-sources.js";
 import type { BasalInsulinId, BolusInsulinId } from "./insulin.js";
 
 export interface FoodItem {
@@ -161,6 +162,7 @@ export interface CalculationResult {
 interface BaseEntry {
   id: string;
   timestamp: string;
+  time_zone: string;
 }
 
 export interface MealEntry extends BaseEntry {
@@ -170,9 +172,8 @@ export interface MealEntry extends BaseEntry {
   meal_window: MealWindow;
   items: CalculatedItem[];
   total_net_carbs_g: number;
-  recommended_dose?: number;
-  total_dose?: number;
-  profile?: AppliedProfile;
+  recommended_dose: number;
+  total_dose: number;
   correction?: CalculationResult["correction"];
   fat_protein_adjustment?: CalculationResult["fat_protein_adjustment"];
   trace?: ParseTrace;
@@ -232,6 +233,11 @@ export interface LogMealRequest {
   pre_bolus_minutes?: number;
 }
 
+export interface TimelinePageResponse {
+  entries: TimelineEntry[];
+  next_cursor: string | null;
+}
+
 export interface LogMealResponse {
   meal_entry_id: string;
   insulin_entry_id: string | null;
@@ -279,6 +285,7 @@ export type UpdateTimelineRequest =
 
 export interface FoodVocabEntry {
   description: string;
+  source: FoodSourceId;
   fdc_id: number;
   usda_description: string;
   default_weight_g: number;

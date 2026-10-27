@@ -1,11 +1,13 @@
+import type { TimelinePageResponse } from "@tashi/shared";
 import { Hono } from "hono";
 import type { ApiKeyStore } from "../domain/api-key-store.js";
 import type { Doses } from "../domain/doses.js";
 import { DomainError } from "../domain/errors.js";
 import type { Repositories } from "../domain/repositories.js";
-import { settingsSchema } from "../domain/schemas.js";
+import { settingsSchema, timeZoneSchema } from "../domain/schemas.js";
 import type { TimelineService } from "../domain/timeline-service.js";
 import { apiError } from "./api-error.js";
+import { decodeCursor, encodeCursor } from "./cursor.js";
 import {
   apiKeySchema,
   calculateSchema,
@@ -21,6 +23,7 @@ export interface RouteDependencies {
   timeline: TimelineService;
   repositories: Repositories;
   apiKeys: ApiKeyStore;
+  defaultTimeZone: string;
 }
 
 export function createRoutes({
@@ -28,8 +31,14 @@ export function createRoutes({
   timeline,
   repositories,
   apiKeys,
+  defaultTimeZone,
 }: RouteDependencies): Hono {
   const api = new Hono();
+
+  function timeZoneOf(header: string | undefined): string {
+    const parsed = timeZoneSchema.safeParse(header);
+    return parsed.success ? parsed.data : defaultTimeZone;
+  }
 
   api.onError((error, c) => {
     if (error instanceof DomainError) {
@@ -71,7 +80,12 @@ export function createRoutes({
     if (!parsed.success) {
       return apiError(c, "validation_failed", 400, parsed.error.message);
     }
-    return c.json(await timeline.logMeal(parsed.data));
+    return c.json(
+      await timeline.logMeal(
+        parsed.data,
+        timeZoneOf(c.req.header(TIME_ZONE_HEADER)),
+      ),
+    );
   });
 
   api.get("/api/settings", async (c) =>
@@ -87,9 +101,23 @@ export function createRoutes({
     return c.json(parsed.data);
   });
 
-  api.get("/api/timeline", async (c) =>
-    c.json(await repositories.timeline.list()),
-  );
+  api.get("/api/timeline", async (c) => {
+    const limit = Math.min(
+      Math.max(Number.parseInt(c.req.query("limit") ?? "", 10) || 100, 1),
+      500,
+    );
+    const cursorText = c.req.query("cursor");
+    const before = cursorText ? decodeCursor(cursorText) : undefined;
+    if (before === null) {
+      return apiError(c, "validation_failed", 400, "Invalid cursor.");
+    }
+    const page = await repositories.timeline.page({ before, limit });
+    const response: TimelinePageResponse = {
+      entries: page.entries,
+      next_cursor: page.next ? encodeCursor(page.next) : null,
+    };
+    return c.json(response);
+  });
 
   api.get("/api/iob", async (c) => c.json(await doses.insulinOnBoard()));
 
@@ -98,7 +126,13 @@ export function createRoutes({
     if (!parsed.success) {
       return apiError(c, "validation_failed", 400, parsed.error.message);
     }
-    return c.json(await timeline.addEntry(parsed.data), 201);
+    return c.json(
+      await timeline.addEntry(
+        parsed.data,
+        timeZoneOf(c.req.header(TIME_ZONE_HEADER)),
+      ),
+      201,
+    );
   });
 
   api.put("/api/timeline/:id", async (c) => {

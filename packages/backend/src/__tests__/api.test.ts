@@ -1,4 +1,4 @@
-import { mkdtemp, rm, writeFile } from "node:fs/promises";
+import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import {
@@ -10,9 +10,9 @@ import {
   type ParsedFoodItem,
   type Settings,
   type TimelineEntry,
+  type TimelinePageResponse,
 } from "@tashi/shared";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { openFileRepositories } from "../data/file-repositories.js";
 import type { FoodDatabase } from "../data/food-db.js";
 import { ApiKeyStore } from "../domain/api-key-store.js";
 import { Calculator } from "../domain/calculator.js";
@@ -22,8 +22,11 @@ import type { Repositories } from "../domain/repositories.js";
 import { TimelineService } from "../domain/timeline-service.js";
 import { createRoutes } from "../http/routes.js";
 import { FakeFoodParser } from "./fake-food-parser.js";
+import { createInMemoryRepositories } from "./in-memory-repositories.js";
 import { sequentialIds } from "./sequential-ids.js";
 import { createTestFoodDb } from "./test-food-db.js";
+
+const ENTRY_ID = "00000000-0000-4000-8000-0000000000e1";
 
 function configured(overrides: Partial<Settings> = {}): Settings {
   return {
@@ -71,7 +74,9 @@ async function postJson(
 async function readTimeline(
   app: ReturnType<typeof createRoutes>,
 ): Promise<TimelineEntry[]> {
-  return (await (await app.request("/api/timeline")).json()) as TimelineEntry[];
+  return (
+    (await (await app.request("/api/timeline")).json()) as TimelinePageResponse
+  ).entries;
 }
 
 function expectOkResponse(body: CalculateResponse): CalculateOk {
@@ -93,7 +98,7 @@ describe("API routes", () => {
 
   beforeEach(async () => {
     tmpDir = await mkdtemp(join(tmpdir(), "tashi-test-"));
-    repositories = await openFileRepositories(tmpDir);
+    repositories = createInMemoryRepositories();
     parser = new FakeFoodParser();
     foodDb = await createTestFoodDb(tmpDir);
     now = new Date("2026-06-13T12:00:00.000Z");
@@ -105,6 +110,7 @@ describe("API routes", () => {
       timeline: new TimelineService(repositories, clock, newId),
       repositories,
       apiKeys: new ApiKeyStore(repositories.apiKey),
+      defaultTimeZone: "Europe/Berlin",
     });
   });
 
@@ -299,6 +305,7 @@ describe("API routes", () => {
       {
         id: crypto.randomUUID(),
         timestamp: new Date(now.getTime() - 30 * 60_000).toISOString(),
+        time_zone: "Europe/Berlin",
         type: "fast_insulin",
         units: 10,
         insulin_id: "novorapid",
@@ -339,6 +346,7 @@ describe("API routes", () => {
       {
         id: crypto.randomUUID(),
         timestamp: new Date(now.getTime() - 60 * 60_000).toISOString(),
+        time_zone: "Europe/Berlin",
         type: "fast_insulin",
         units: 8,
         insulin_id: "novorapid",
@@ -415,7 +423,8 @@ describe("API routes", () => {
     expect(glucoseRes.status).toBe(201);
 
     const timelineRes = await app.request("/api/timeline");
-    const timeline = (await timelineRes.json()) as TimelineEntry[];
+    const timeline = ((await timelineRes.json()) as TimelinePageResponse)
+      .entries;
     expect(timeline).toHaveLength(3);
 
     const types = timeline.map((e) => e.type).sort();
@@ -435,7 +444,8 @@ describe("API routes", () => {
     });
 
     const timelineRes = await app.request("/api/timeline");
-    const timeline = (await timelineRes.json()) as TimelineEntry[];
+    const timeline = ((await timelineRes.json()) as TimelinePageResponse)
+      .entries;
     expect(timeline).toHaveLength(1);
 
     const deleteRes = await app.request(`/api/timeline/${timeline[0]!.id}`, {
@@ -444,7 +454,7 @@ describe("API routes", () => {
     expect(deleteRes.status).toBe(200);
 
     const afterRes = await app.request("/api/timeline");
-    const after = (await afterRes.json()) as TimelineEntry[];
+    const after = ((await afterRes.json()) as TimelinePageResponse).entries;
     expect(after).toHaveLength(0);
   });
 
@@ -608,8 +618,9 @@ describe("API routes", () => {
     await repositories.settings.save(configured());
     await repositories.timeline.add([
       {
-        id: "e1",
+        id: ENTRY_ID,
         timestamp: "2026-06-13T11:00:00.000Z",
+        time_zone: "Europe/Berlin",
         type: "fast_insulin",
         units: 3,
         insulin_id: "novorapid",
@@ -622,7 +633,7 @@ describe("API routes", () => {
       { type: "fast_insulin", timestamp: "yesterday-ish" },
       { units: 2 },
     ]) {
-      const res = await app.request("/api/timeline/e1", {
+      const res = await app.request(`/api/timeline/${ENTRY_ID}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
@@ -630,14 +641,5 @@ describe("API routes", () => {
       expect(res.status).toBe(400);
     }
     expect((await readTimeline(app))[0]).toMatchObject({ units: 3 });
-  });
-
-  it("names the file when stored data is not in the expected shape", async () => {
-    await writeFile(join(tmpDir, "timeline.json"), JSON.stringify([{ id: 1 }]));
-    await expect(repositories.timeline.list()).rejects.toThrow(
-      /timeline\.json/,
-    );
-    const res = await app.request("/api/timeline");
-    expect(res.status).toBe(500);
   });
 });

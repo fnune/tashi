@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import type { FoodItem } from "@tashi/shared";
@@ -26,9 +27,11 @@ function countMatchingPhrases(buf: Uint8Array): number {
 
 export class FoodDatabase {
   private db: Database;
+  readonly release: string;
 
-  private constructor(db: Database) {
+  private constructor(db: Database, release: string) {
     this.db = db;
+    this.release = release;
   }
 
   static async open(dbPath: string): Promise<FoodDatabase> {
@@ -41,7 +44,8 @@ export class FoodDatabase {
     });
     const buffer = await readFile(dbPath);
     const db = new SQL.Database(buffer);
-    return new FoodDatabase(db);
+    const digest = createHash("sha256").update(buffer).digest("hex");
+    return new FoodDatabase(db, `sha256:${digest.slice(0, 12)}`);
   }
 
   search(query: string, limit = 10): FoodMatch[] {

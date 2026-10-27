@@ -6,8 +6,22 @@ export interface SettingsRepository {
   save(settings: Settings): Promise<void>;
 }
 
+export interface TimelineCursor {
+  occurredAt: string;
+  id: string;
+}
+
+export interface TimelinePage {
+  entries: TimelineEntry[];
+  next: TimelineCursor | null;
+}
+
 export interface TimelineRepository {
-  list(): Promise<TimelineEntry[]>;
+  page(options: {
+    before?: TimelineCursor;
+    limit: number;
+  }): Promise<TimelinePage>;
+  since(instant: Date): Promise<TimelineEntry[]>;
   get(id: string): Promise<TimelineEntry | null>;
   add(entries: TimelineEntry[]): Promise<void>;
   replace(entry: TimelineEntry): Promise<boolean>;
@@ -31,4 +45,8 @@ export interface Repositories {
   timeline: TimelineRepository;
   vocabulary: VocabularyRepository;
   apiKey: ApiKeyRepository;
+}
+
+export function cursorAfter(entry: TimelineEntry): TimelineCursor {
+  return { occurredAt: new Date(entry.timestamp).toISOString(), id: entry.id };
 }

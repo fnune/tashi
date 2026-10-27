@@ -22,14 +22,24 @@ export {
   toLocalDateString,
   typicalInsulinResistance,
 } from "./cycle.js";
+export type { FoodSourceId } from "./food-sources.js";
+export {
+  DATA_SOURCE_LABELS,
+  dataSourceOfFoodSource,
+  FOOD_SOURCE_IDS,
+  FOOD_SOURCES,
+  foodSourceOfDataSource,
+} from "./food-sources.js";
 export type { GlucoseRange } from "./glucose.js";
 export {
+  convertGlucose,
   GLUCOSE_ENTRY_LIMITS,
   GLUCOSE_GAUGE_SCALE,
   GLUCOSE_RANGE_LIMITS,
   glucoseRange,
   isPlausibleGlucose,
   latestRecentReading,
+  MG_DL_PER_MMOL_L,
   RECENT_READING_MINUTES,
 } from "./glucose.js";
 export type {
@@ -114,6 +124,7 @@ export type {
   Settings,
   SlowInsulinEntry,
   TimelineEntry,
+  TimelinePageResponse,
   UpdateTimelineRequest,
   UserCarbs,
 } from "./types.js";
