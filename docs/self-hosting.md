@@ -34,6 +34,12 @@ Progress:
 - [x] 3. Storage abstraction that survives a change of technology: one repository interface per aggregate (settings, timeline, vocabulary, API key), declared by the domain, with a contract suite the file implementation passes. Details in [storage-assessment.md](storage-assessment.md).
 - [x] 3b. Separate view, domain and data: `http/`, `domain/` and `data/` folders, `FoodLookup` declared by the domain, domain errors apart from HTTP mapping, `Doses` and `TimelineService` called by thin route handlers, and a test that enforces the import directions.
 - [x] 4. Postgres through Kysely and `pg`, behind `DATABASE_URL`. The repositories in `data/postgres-repositories.ts` pass the same contract suite as the file ones. Without `DATABASE_URL` the server keeps using the files, so bilbo is unaffected until it is migrated. Details below.
+- [ ] 4b. Implement the schema in [database-schema.md](database-schema.md) (phase 1), and prove it end to end:
+    - [ ] Domain: a time zone on every entry, a required `total_dose` on meals, a source on vocabulary entries, paginated timeline reads.
+    - [ ] Migration `0001` rewritten, Postgres repositories rewritten, in-memory fakes for unit tests, one contract suite for both. File storage is removed.
+    - [ ] Server and API: `DATABASE_URL` required, cursor pagination, the zone taken from the browser.
+    - [ ] End-to-end tests with Playwright on Postgres: the whole app, with a stand-in for the language model.
+    - [ ] The bilbo script re-run against the new schema.
 - [ ] 5. Write the bilbo migration script (backup with checksums, idempotent, counts per table, dry run), then cut over as described below.
 - [ ] 6. Find providers.
 
@@ -92,22 +98,17 @@ Not needed for the bilbo move, which reads the raw files.
 
 Basic auth with one shared password is the placeholder.
 
-- Real sign-in page with email and password, a session cookie and logout.
+- Real sign-in page for an account with email and password, a session cookie and logout.
 - Password change and reset without losing the saved API key: give the encryption secret its own env var or generated secret instead of reusing the login password.
 - Rate limiting or lockout on failed sign-ins.
 - HTTPS-only cookies and a note on what platforms terminate TLS for the user.
-- Decide whether the instance stays single-user. Multiple users and sharing with a caregiver are out of scope until then.
+- Decide whether the instance stays single-account. More than one account and sharing a person with a caregiver are out of scope until then.
 
 ### Connecting data to users
 
-No table has an owner today. `settings` and `api_key` are one-row tables (a boolean primary key), and the timeline and the vocabulary are global. The retrofit is a forward migration, `0002`, done when users arrive:
+No table has an owner today. The design, with the reasons for the names, is in [database-schema.md](database-schema.md#accounts-and-people-later): an **account** is a login, a **person** is the one whose data it is, and an **access** row says which account reaches which person and how (self, parent, partner, family, friend, caregiver, clinician; read, write, admin). Settings, entries and vocabulary belong to a person, never to an account. It lands as migration `0002`, with one account and one person created for bilbo's existing data.
 
-- Create `users` and insert the first user inside the migration. Bilbo's data becomes that user's.
-- Add `user_id` (a foreign key, not null, backfilled to that user) to `timeline_entries` and `food_vocabulary`, and add it to the vocabulary key. Entry ids are UUIDs, so nothing collides.
-- Key `settings` and `api_key` by `user_id` instead of the single-row constraint.
-- Repositories take the user id when they are built, for example `forUser(id)`, so the domain code and the contract suite change little. The HTTP layer resolves the user from the session.
-
-Left until then on purpose, because some answers are not known yet: whether the Anthropic key belongs to a user or to the instance, and what a caregiver sharing an account looks like.
+Left open until then: whether the Anthropic key belongs to an account or to the instance, and what a caregiver sharing a person looks like in the interface.
 
 ### Platform setup and documentation
 
@@ -122,6 +123,20 @@ Left until then on purpose, because some answers are not known yet: whether the 
 - First request after the database scales to zero must not time out or show an error. Use a pooled connection string.
 - The API key sheet and the "set it up" notice in the calculator have not been looked at in a browser.
 - The e2e suite has not been run against these changes. `packages/e2e/test-server.ts` has its own `cors()` and builds its clock in the machine's time zone.
+
+### Repository tooling
+
+Not needed to self-host, but the repository should have it before it is published:
+
+- A `LICENSE` file and `license` fields: done, AGPL-3.0-only.
+- `renovate.json5`: weekly, a 7 day minimum release age, exact pins, no automatic merge, security updates without delay.
+- A pnpm catalog so shared dependency versions are pinned once, and exact versions in place of `^` ranges.
+- A Biome plugin that makes `as` type assertions an error, then remove the ones it finds.
+- `AGENTS.md` pointing to `docs/engineering.md` and listing the checks to run before calling work done.
+- `CHANGELOG.md` with an Unreleased section, because people updating a fork need to know what changed.
+- A pull request template with a test plan.
+- Report missing and invalid environment variables separately at startup.
+- A CI workflow running `pnpm check`, `pnpm typecheck` and `pnpm test:unit` (and the Postgres tests against a service container).
 
 ### Provider
 
