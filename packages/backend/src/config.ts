@@ -19,6 +19,15 @@ const envSchema = z.object({
       })
       .optional(),
   ),
+  DATABASE_URL: z.preprocess(
+    blankIsUnset,
+    z
+      .string()
+      .refine((url) => /^postgres(ql)?:\/\//.test(url), {
+        message: "must be a postgres:// or postgresql:// URL",
+      })
+      .optional(),
+  ),
   FOODS_DB: optionalText,
   LLM_MODEL: z.preprocess(
     blankIsUnset,
@@ -32,6 +41,7 @@ const envSchema = z.object({
 export interface Config {
   port: number;
   dataDir: string;
+  databaseUrl: string | undefined;
   basePath: string;
   foodsDbPath: string | undefined;
   model: string;
@@ -57,6 +67,7 @@ export function loadConfig(env: Record<string, string | undefined>): Config {
   return {
     port: e.PORT,
     dataDir: e.DATA_DIR,
+    databaseUrl: e.DATABASE_URL,
     basePath: e.BASE_PATH ?? "",
     foodsDbPath: e.FOODS_DB,
     model: e.LLM_MODEL,

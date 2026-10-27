@@ -33,9 +33,21 @@ Progress:
 - [x] 2. Fix what the assessment found, one commit each, listed at the end of that document.
 - [x] 3. Storage abstraction that survives a change of technology: one repository interface per aggregate (settings, timeline, vocabulary, API key), declared by the domain, with a contract suite the file implementation passes. Details in [storage-assessment.md](storage-assessment.md).
 - [x] 3b. Separate view, domain and data: `http/`, `domain/` and `data/` folders, `FoodLookup` declared by the domain, domain errors apart from HTTP mapping, `Doses` and `TimelineService` called by thin route handlers, and a test that enforces the import directions.
-- [ ] 4. Pick the storage technology and implement it against the contract suite. Informed by the deployment targets, so it may wait on a first look at providers.
+- [x] 4. Postgres through Kysely and `pg`, behind `DATABASE_URL`. The repositories in `data/postgres-repositories.ts` pass the same contract suite as the file ones. Without `DATABASE_URL` the server keeps using the files, so bilbo is unaffected until it is migrated. Details below.
 - [ ] 5. Write the bilbo migration script (backup with checksums, idempotent, counts per table, dry run), then cut over as described below.
 - [ ] 6. Find providers.
+
+Storage design:
+
+- Tables: `settings` and `api_key` hold one row each. `timeline_entries` has typed columns for the shared fields (id, type, time, units, insulin, glucose value and unit) and a `meal` jsonb column for the meal detail, with check constraints that tie the columns to the type. `food_vocabulary` is keyed by lower-cased description and food id.
+- Migrations are TypeScript modules in `data/migrations/` holding plain SQL, applied by Kysely's migrator when the server starts, so a platform needs no extra step. They only go forward.
+- The table types in `data/database.ts` are written by hand. Review nullable columns against the migration when changing either; `kysely-codegen` is the move if the schema grows.
+- Rows read back go through the same zod schemas as the files and fail with a `StoredDataError` naming the table and entry.
+- `pg` is pinned with Kysely; both were published more than seven days ago when added.
+
+Running the Postgres tests: set `TASHI_TEST_DATABASE_URL` to an empty database you do not mind losing (the tests truncate its tables). Without it the suite is skipped.
+
+Before deploying the Nix package to bilbo: `nix/package.nix` pins a hash of the pnpm dependencies (`pnpmDeps`), which changed with `kysely`, `pg` and `@types/pg`. Update it or the build fails.
 
 ### Migration of the bilbo data
 

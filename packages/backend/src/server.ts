@@ -7,6 +7,7 @@ import { loadConfig } from "./config.js";
 import { AnthropicFoodParser } from "./data/anthropic-food-parser.js";
 import { openFileRepositories } from "./data/file-repositories.js";
 import { FoodDatabase } from "./data/food-db.js";
+import { openPostgresRepositories } from "./data/postgres-repositories.js";
 import { ApiKeyStore } from "./domain/api-key-store.js";
 import { Calculator } from "./domain/calculator.js";
 import { systemClock } from "./domain/clock.js";
@@ -25,7 +26,14 @@ const foodsDbPath =
   config.foodsDbPath ?? join(import.meta.dirname, "../../../data/foods.db");
 const { basePath } = config;
 
-const repositories = await openFileRepositories(config.dataDir);
+const repositories = config.databaseUrl
+  ? (await openPostgresRepositories(config.databaseUrl)).repositories
+  : await openFileRepositories(config.dataDir);
+console.log(
+  config.databaseUrl
+    ? "Storing data in Postgres"
+    : `Storing data in ${config.dataDir}`,
+);
 
 const foodDb = await FoodDatabase.open(foodsDbPath);
 console.log(`Food database loaded: ${foodDb.foodCount()} foods`);

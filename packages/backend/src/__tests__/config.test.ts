@@ -6,6 +6,7 @@ describe("loadConfig", () => {
     expect(loadConfig({})).toEqual({
       port: 3000,
       dataDir: "./data",
+      databaseUrl: undefined,
       basePath: "",
       foodsDbPath: undefined,
       model: "claude-haiku-4-5-20251001",
@@ -43,12 +44,22 @@ describe("loadConfig", () => {
       { PORT: "70000" },
       { BASE_PATH: "tashi" },
       { BASE_PATH: "/tashi/" },
+      { DATABASE_URL: "mysql://localhost/tashi" },
+      { DATABASE_URL: "postgres" },
     ]) {
       expect(() => loadConfig(env)).toThrow(ConfigError);
     }
     expect(() => loadConfig({ PORT: "abc", BASE_PATH: "x" })).toThrow(
       /PORT.*BASE_PATH/,
     );
+  });
+
+  it("accepts a Postgres connection string", () => {
+    expect(
+      loadConfig({
+        DATABASE_URL: "postgresql://u:p@host:5432/db?sslmode=require",
+      }).databaseUrl,
+    ).toBe("postgresql://u:p@host:5432/db?sslmode=require");
   });
 
   it("accepts a base path under a prefix", () => {
