@@ -1,6 +1,6 @@
 import { Hono } from "hono";
 import { describe, expect, it } from "vitest";
-import { passwordGate } from "../password-gate.js";
+import { passwordGate } from "../http/password-gate.js";
 
 function appWith(password: string | undefined) {
   const app = new Hono();

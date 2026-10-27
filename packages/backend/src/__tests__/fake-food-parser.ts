@@ -1,5 +1,5 @@
 import type { FoodVocabEntry, ParsedFoodItem } from "@tashi/shared";
-import type { FoodParser, ParseOutcome } from "../food-parser.js";
+import type { FoodParser, ParseOutcome } from "../domain/food-parser.js";
 
 type FakeOutcome =
   | { status: "ok"; items: ParsedFoodItem[] }

@@ -4,8 +4,8 @@ import type {
   ParsedFoodItem,
   SearchTraceEntry,
 } from "@tashi/shared";
-import type { FoodDatabase } from "./db/food-db.js";
-import type { FoodParser, ParseOutcome } from "./food-parser.js";
+import type { FoodDatabase } from "./food-db.js";
+import type { FoodParser, ParseOutcome } from "../domain/food-parser.js";
 
 const SYSTEM_PROMPT = `You are a food parsing assistant for a diabetes insulin calculator.
 

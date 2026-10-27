@@ -3,17 +3,20 @@ import { join } from "node:path";
 import { serve } from "@hono/node-server";
 import { serveStatic } from "@hono/node-server/serve-static";
 import { Hono } from "hono";
-import { AnthropicFoodParser } from "./anthropic-food-parser.js";
-import { ApiKeyStore } from "./api-key-store.js";
-import { Calculator } from "./calculator.js";
-import { systemClock } from "./clock.js";
 import { loadConfig } from "./config.js";
-import { FoodDatabase } from "./db/food-db.js";
-import { openFileRepositories } from "./file-repositories.js";
-import { randomId } from "./ids.js";
-import { anthropicAcceptsKey, KeyedFoodParser } from "./keyed-food-parser.js";
-import { passwordGate } from "./password-gate.js";
-import { createRoutes } from "./routes.js";
+import { AnthropicFoodParser } from "./data/anthropic-food-parser.js";
+import { openFileRepositories } from "./data/file-repositories.js";
+import { FoodDatabase } from "./data/food-db.js";
+import { ApiKeyStore } from "./domain/api-key-store.js";
+import { Calculator } from "./domain/calculator.js";
+import { systemClock } from "./domain/clock.js";
+import { randomId } from "./domain/ids.js";
+import {
+  anthropicAcceptsKey,
+  KeyedFoodParser,
+} from "./domain/keyed-food-parser.js";
+import { passwordGate } from "./http/password-gate.js";
+import { createRoutes } from "./http/routes.js";
 
 const config = loadConfig(process.env);
 const foodsDbPath =

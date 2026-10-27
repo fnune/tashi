@@ -10,8 +10,8 @@ import {
   findMealWindow,
   type Settings,
 } from "@tashi/shared";
+import type { FoodDatabase, FoodMatch } from "../data/food-db.js";
 import type { Clock } from "./clock.js";
-import type { FoodDatabase, FoodMatch } from "./db/food-db.js";
 import type { FoodParser } from "./food-parser.js";
 import type { IdGenerator } from "./ids.js";
 

@@ -2,23 +2,23 @@ import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import type { FoodVocabEntry, Settings, TimelineEntry } from "@tashi/shared";
 import type { z } from "zod";
-import { StoredDataError } from "./errors.js";
+import { StoredDataError } from "../domain/errors.js";
 import type {
   ApiKeyRepository,
   Repositories,
   SettingsRepository,
   TimelineRepository,
   VocabularyRepository,
-} from "./repositories.js";
+} from "../domain/repositories.js";
 import {
   parseStoredSettings,
   sealedSecretSchema,
   storedTimelineSchema,
   storedVocabularySchema,
-} from "./schemas.js";
-import type { SealedSecret } from "./secret-box.js";
-import { newestFirst } from "./timeline.js";
-import { sameVocabularyEntry } from "./vocabulary.js";
+} from "../schemas.js";
+import type { SealedSecret } from "../domain/secret-box.js";
+import { newestFirst } from "../domain/timeline.js";
+import { sameVocabularyEntry } from "../domain/vocabulary.js";
 
 function isFileNotFound(e: unknown): boolean {
   return e instanceof Error && "code" in e && e.code === "ENOENT";

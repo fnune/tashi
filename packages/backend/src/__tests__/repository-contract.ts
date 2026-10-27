@@ -1,8 +1,8 @@
 import type { FastInsulinEntry, TimelineEntry } from "@tashi/shared";
 import { DEFAULT_SETTINGS, type FoodVocabEntry } from "@tashi/shared";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import type { Repositories } from "../repositories.js";
-import { seal } from "../secret-box.js";
+import type { Repositories } from "../domain/repositories.js";
+import { seal } from "../domain/secret-box.js";
 
 export interface RepositoryHarness {
   repositories: Repositories;

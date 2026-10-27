@@ -22,7 +22,7 @@ import {
   NORMAL_PROFILE_ID,
 } from "@tashi/shared";
 import { z } from "zod";
-import type { SealedSecret } from "./secret-box.js";
+import type { SealedSecret } from "./domain/secret-box.js";
 
 export const calculateSchema = z.object({
   food_description: z.string().min(1),

@@ -10,7 +10,7 @@ import {
   fastInsulinEntries,
   logMeal,
   newestFirst,
-} from "../timeline.js";
+} from "../domain/timeline.js";
 import { sequentialIds } from "./sequential-ids.js";
 
 const fast: FastInsulinEntry = {

@@ -7,17 +7,23 @@ import type {
 } from "@tashi/shared";
 import { findMealWindow, insulinOnBoard } from "@tashi/shared";
 import { Hono } from "hono";
-import type { ApiKeyStore } from "./api-key-store.js";
-import type { Calculator } from "./calculator.js";
-import type { Clock } from "./clock.js";
+import type { ApiKeyStore } from "../domain/api-key-store.js";
+import type { Calculator } from "../domain/calculator.js";
+import type { Clock } from "../domain/clock.js";
 import {
   apiError,
   InvalidApiKeyError,
   MissingApiKeyError,
   SecretUnavailableError,
-} from "./errors.js";
-import type { IdGenerator } from "./ids.js";
-import type { Repositories } from "./repositories.js";
+} from "../domain/errors.js";
+import type { IdGenerator } from "../domain/ids.js";
+import type { Repositories } from "../domain/repositories.js";
+import {
+  applyTimelineUpdate,
+  fastInsulinEntries,
+  logMeal,
+} from "../domain/timeline.js";
+import { learnVocabulary } from "../domain/vocabulary.js";
 import {
   apiKeySchema,
   calculateSchema,
@@ -25,13 +31,7 @@ import {
   logMealSchema,
   settingsSchema,
   updateTimelineSchema,
-} from "./schemas.js";
-import {
-  applyTimelineUpdate,
-  fastInsulinEntries,
-  logMeal,
-} from "./timeline.js";
-import { learnVocabulary } from "./vocabulary.js";
+} from "../schemas.js";
 
 const TIME_ZONE_HEADER = "X-Timezone";
 

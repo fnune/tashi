@@ -1,7 +1,7 @@
 import { writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import initSqlJs from "sql.js";
-import { FoodDatabase } from "../db/food-db.js";
+import { FoodDatabase } from "../data/food-db.js";
 
 export async function createTestFoodDb(tmpDir: string): Promise<FoodDatabase> {
   const wasmPath = join(

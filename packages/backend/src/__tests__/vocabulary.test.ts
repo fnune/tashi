@@ -1,6 +1,6 @@
 import type { CalculatedItem, FoodItem, FoodVocabEntry } from "@tashi/shared";
 import { describe, expect, it } from "vitest";
-import { learnVocabulary } from "../vocabulary.js";
+import { learnVocabulary } from "../domain/vocabulary.js";
 
 const now = new Date("2026-06-13T12:00:00.000Z");
 

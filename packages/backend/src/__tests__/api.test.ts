@@ -12,13 +12,13 @@ import {
   type TimelineEntry,
 } from "@tashi/shared";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { ApiKeyStore } from "../api-key-store.js";
-import { Calculator } from "../calculator.js";
-import type { Clock } from "../clock.js";
-import type { FoodDatabase } from "../db/food-db.js";
-import { openFileRepositories } from "../file-repositories.js";
-import type { Repositories } from "../repositories.js";
-import { createRoutes } from "../routes.js";
+import { openFileRepositories } from "../data/file-repositories.js";
+import type { FoodDatabase } from "../data/food-db.js";
+import { ApiKeyStore } from "../domain/api-key-store.js";
+import { Calculator } from "../domain/calculator.js";
+import type { Clock } from "../domain/clock.js";
+import type { Repositories } from "../domain/repositories.js";
+import { createRoutes } from "../http/routes.js";
 import { FakeFoodParser } from "./fake-food-parser.js";
 import { sequentialIds } from "./sequential-ids.js";
 import { createTestFoodDb } from "./test-food-db.js";

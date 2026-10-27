@@ -2,9 +2,9 @@ import { mkdtemp, rm, stat, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { StoredDataError } from "../errors.js";
-import { openFileRepositories } from "../file-repositories.js";
-import { seal } from "../secret-box.js";
+import { openFileRepositories } from "../data/file-repositories.js";
+import { StoredDataError } from "../domain/errors.js";
+import { seal } from "../domain/secret-box.js";
 import { repositoryContract } from "./repository-contract.js";
 
 repositoryContract("file", async () => {

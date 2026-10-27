@@ -5,9 +5,9 @@ import { serve } from "@hono/node-server";
 import { serveStatic } from "@hono/node-server/serve-static";
 import { ApiKeyStore } from "@tashi/backend/api-key-store";
 import { Calculator } from "@tashi/backend/calculator";
-// E2E tests use the real food database
-import { FoodDatabase } from "@tashi/backend/db/food-db";
 import { openFileRepositories } from "@tashi/backend/file-repositories";
+// E2E tests use the real food database
+import { FoodDatabase } from "@tashi/backend/food-db";
 import type { FoodParser, ParseOutcome } from "@tashi/backend/food-parser";
 import { randomId } from "@tashi/backend/ids";
 import { createRoutes } from "@tashi/backend/routes";
