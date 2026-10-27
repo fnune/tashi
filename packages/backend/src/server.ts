@@ -3,7 +3,7 @@ import { join } from "node:path";
 import { serve } from "@hono/node-server";
 import { serveStatic } from "@hono/node-server/serve-static";
 import { Hono } from "hono";
-import { loadConfig } from "./config.js";
+import { ConfigError, loadConfig } from "./config.js";
 import { AnthropicFoodParser } from "./data/anthropic-food-parser.js";
 import { FoodDatabase } from "./data/food-db.js";
 import { openPostgresRepositories } from "./data/postgres/index.js";
@@ -20,7 +20,17 @@ import { TimelineService } from "./domain/timeline-service.js";
 import { passwordGate } from "./http/password-gate.js";
 import { createRoutes } from "./http/routes.js";
 
-const config = loadConfig(process.env);
+function configOrExit() {
+  try {
+    return loadConfig(process.env);
+  } catch (error) {
+    if (!(error instanceof ConfigError)) throw error;
+    console.error(error.message);
+    process.exit(1);
+  }
+}
+
+const config = configOrExit();
 const foodsDbPath =
   config.foodsDbPath ?? join(import.meta.dirname, "../../../data/foods.db");
 const { basePath } = config;
