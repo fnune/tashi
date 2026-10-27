@@ -142,7 +142,7 @@ describe("API routes", () => {
       basal_insulin_id: "tresiba",
       insulin_action_minutes: 300,
       language: "en",
-      profiles: [],
+      profiles: DEFAULT_SETTINGS.profiles,
       active_profile_id: "normal",
       cycle: { enabled: false, last_period_start: null, length_days: 28 },
     });
@@ -493,7 +493,7 @@ describe("API routes", () => {
       basal_insulin_id: "tresiba",
       insulin_action_minutes: 300,
       language: "en",
-      profiles: [],
+      profiles: DEFAULT_SETTINGS.profiles,
       active_profile_id: "normal",
       cycle: { enabled: false, last_period_start: null, length_days: 28 },
     });
@@ -554,7 +554,7 @@ describe("API routes", () => {
       basal_insulin_id: "tresiba",
       insulin_action_minutes: 300,
       language: "en",
-      profiles: [],
+      profiles: DEFAULT_SETTINGS.profiles,
       active_profile_id: "normal",
       cycle: { enabled: false, last_period_start: null, length_days: 28 },
     });
@@ -597,6 +597,39 @@ describe("API routes", () => {
     expect((await put(missingActive)).status).toBe(400);
     expect((await put(sportActive)).status).toBe(200);
     expect((await storage.getSettings()).active_profile_id).toBe("sport");
+  });
+
+  it("PUT /api/timeline/:id rejects a body that is not an update", async () => {
+    await storage.saveSettings(configured());
+    await storage.addTimelineEntry({
+      id: "e1",
+      timestamp: "2026-06-13T11:00:00.000Z",
+      type: "fast_insulin",
+      units: 3,
+      insulin_id: "novorapid",
+      related_meal_id: null,
+    });
+    for (const body of [
+      { type: "fast_insulin", units: "lots" },
+      { type: "fast_insulin", units: -1 },
+      { type: "fast_insulin", timestamp: "yesterday-ish" },
+      { units: 2 },
+    ]) {
+      const res = await app.request("/api/timeline/e1", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      expect(res.status).toBe(400);
+    }
+    expect((await readTimeline(app))[0]).toMatchObject({ units: 3 });
+  });
+
+  it("names the file when stored data is not in the expected shape", async () => {
+    await writeFile(join(tmpDir, "timeline.json"), JSON.stringify([{ id: 1 }]));
+    await expect(storage.getTimeline()).rejects.toThrow(/timeline\.json/);
+    const res = await app.request("/api/timeline");
+    expect(res.status).toBe(500);
   });
 });
 

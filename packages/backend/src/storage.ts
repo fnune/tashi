@@ -7,7 +7,15 @@ import type {
   TimelineEntry,
 } from "@tashi/shared";
 import { DEFAULT_SETTINGS } from "@tashi/shared";
+import { z } from "zod";
 import type { ApiKeyRecords } from "./api-key-store.js";
+import { StoredDataError } from "./errors.js";
+import {
+  sealedSecretSchema,
+  settingsSchema,
+  storedTimelineSchema,
+  storedVocabularySchema,
+} from "./schemas.js";
 import type { SealedSecret } from "./secret-box.js";
 import { newestFirst } from "./timeline.js";
 
@@ -30,13 +38,35 @@ export class FileStorage implements ApiKeyRecords {
     return join(this.dataDir, filename);
   }
 
-  async getSettings(): Promise<Settings> {
+  private async read<T>(
+    filename: string,
+    schema: z.ZodType<T, z.ZodTypeDef, unknown>,
+    whenMissing: T,
+  ): Promise<T> {
+    let raw: string;
     try {
-      const raw = await readFile(this.path("settings.json"), "utf-8");
-      return { ...DEFAULT_SETTINGS, ...JSON.parse(raw) };
+      raw = await readFile(this.path(filename), "utf-8");
     } catch (e: unknown) {
-      if (isFileNotFound(e)) return { ...DEFAULT_SETTINGS };
+      if (isFileNotFound(e)) return whenMissing;
       throw e;
+    }
+    try {
+      return schema.parse(JSON.parse(raw));
+    } catch (e) {
+      throw new StoredDataError(filename, e);
+    }
+  }
+
+  async getSettings(): Promise<Settings> {
+    const stored = await this.read(
+      "settings.json",
+      z.record(z.string(), z.unknown()),
+      {},
+    );
+    try {
+      return settingsSchema.parse({ ...DEFAULT_SETTINGS, ...stored });
+    } catch (e) {
+      throw new StoredDataError("settings.json", e);
     }
   }
 
@@ -48,13 +78,7 @@ export class FileStorage implements ApiKeyRecords {
   }
 
   async getApiKeyRecord(): Promise<SealedSecret | null> {
-    try {
-      const raw = await readFile(this.path("api-key.json"), "utf-8");
-      return JSON.parse(raw) as SealedSecret;
-    } catch (e: unknown) {
-      if (isFileNotFound(e)) return null;
-      throw e;
-    }
+    return this.read("api-key.json", sealedSecretSchema.nullable(), null);
   }
 
   async saveApiKeyRecord(record: SealedSecret): Promise<void> {
@@ -68,13 +92,7 @@ export class FileStorage implements ApiKeyRecords {
   }
 
   async getTimeline(): Promise<TimelineEntry[]> {
-    try {
-      const raw = await readFile(this.path("timeline.json"), "utf-8");
-      return JSON.parse(raw) as TimelineEntry[];
-    } catch (e: unknown) {
-      if (isFileNotFound(e)) return [];
-      throw e;
-    }
+    return this.read("timeline.json", storedTimelineSchema, []);
   }
 
   async addTimelineEntry(entry: TimelineEntry): Promise<void> {
@@ -115,13 +133,7 @@ export class FileStorage implements ApiKeyRecords {
   }
 
   async getVocabulary(): Promise<FoodVocabEntry[]> {
-    try {
-      const raw = await readFile(this.path("food-vocab.json"), "utf-8");
-      return JSON.parse(raw) as FoodVocabEntry[];
-    } catch (e: unknown) {
-      if (isFileNotFound(e)) return [];
-      throw e;
-    }
+    return this.read("food-vocab.json", storedVocabularySchema, []);
   }
 
   async learnFromItems(items: CalculatedItem[], now: Date): Promise<void> {
