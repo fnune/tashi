@@ -11,6 +11,7 @@ import type {
   SetApiKeyRequest,
   Settings,
   TimelineEntry,
+  TimelinePageResponse,
   UpdateTimelineRequest,
 } from "@tashi/shared";
 
@@ -81,8 +82,23 @@ export function logMeal(req: LogMealRequest): Promise<LogMealResponse> {
   });
 }
 
-export function getTimeline(): Promise<TimelineEntry[]> {
-  return request<TimelineEntry[]>("/api/timeline");
+const TIMELINE_PAGE_SIZE = 200;
+
+export async function getTimeline(): Promise<TimelineEntry[]> {
+  const entries: TimelineEntry[] = [];
+  let cursor: string | null = null;
+  do {
+    const query: string = new URLSearchParams({
+      limit: String(TIMELINE_PAGE_SIZE),
+      ...(cursor ? { cursor } : {}),
+    }).toString();
+    const page: TimelinePageResponse = await request<TimelinePageResponse>(
+      `/api/timeline?${query}`,
+    );
+    entries.push(...page.entries);
+    cursor = page.next_cursor;
+  } while (cursor);
+  return entries;
 }
 
 export function getIob(): Promise<InsulinOnBoard> {
