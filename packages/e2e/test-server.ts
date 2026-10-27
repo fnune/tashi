@@ -1,22 +1,30 @@
-import { mkdtemp } from "node:fs/promises";
-import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { serve } from "@hono/node-server";
 import { serveStatic } from "@hono/node-server/serve-static";
-import { ApiKeyStore } from "@tashi/backend/api-key-store";
+import {
+  ApiKeyStore,
+  type ApiKeyStoreOptions,
+} from "@tashi/backend/api-key-store";
 import { Calculator } from "@tashi/backend/calculator";
 import { Doses } from "@tashi/backend/doses";
-import { openFileRepositories } from "@tashi/backend/file-repositories";
-// E2E tests use the real food database
 import { FoodDatabase } from "@tashi/backend/food-db";
 import type { FoodParser, ParseOutcome } from "@tashi/backend/food-parser";
 import { randomId } from "@tashi/backend/ids";
+import { KeyedFoodParser } from "@tashi/backend/keyed-food-parser";
+import { passwordGate } from "@tashi/backend/password-gate";
+import { openPostgresRepositories } from "@tashi/backend/postgres";
 import { createRoutes } from "@tashi/backend/routes";
 import { TimelineService } from "@tashi/backend/timeline-service";
 import type { FoodVocabEntry, ParsedFoodItem } from "@tashi/shared";
 import { DEFAULT_SETTINGS } from "@tashi/shared";
 import { Hono } from "hono";
-import { cors } from "hono/cors";
+import pg from "pg";
+import { temporaryDatabase } from "./postgres.js";
+
+export const OPEN_PORT = 3100;
+export const GATED_PORT = 3101;
+export const GATE_PASSWORD = "e2e-password";
+export const ENVIRONMENT_KEY = "sk-ant-from-the-server";
 
 class FakeFoodParser implements FoodParser {
   async parse(
@@ -126,60 +134,92 @@ class FakeFoodParser implements FoodParser {
 }
 
 async function startServer(): Promise<void> {
-  const tmpDir = await mkdtemp(join(tmpdir(), "tashi-e2e-"));
-  const repositories = await openFileRepositories(tmpDir);
+  const database = await temporaryDatabase();
+  const stopDatabase = () => database.stop();
+  process.on("exit", stopDatabase);
+  for (const signal of ["SIGINT", "SIGTERM"] as const) {
+    process.on(signal, () => process.exit(0));
+  }
 
   const foodDb = await FoodDatabase.open(
     join(import.meta.dirname, "../../data/foods.db"),
   );
+  const { repositories } = await openPostgresRepositories(database.url, {
+    newId: randomId,
+    catalogRelease: foodDb.release,
+  });
 
-  const parser = new FakeFoodParser();
   const lunchtimeClock = () => {
     const now = new Date();
     now.setHours(13, 0, 0, 0);
     return now;
   };
+
+  const keyOptions: ApiKeyStoreOptions = {
+    encryptionPassphrase: "e2e-secret",
+    environmentKey: ENVIRONMENT_KEY,
+    verify: async (key) =>
+      key.startsWith("sk-ant-") && key !== "sk-ant-rejected",
+  };
+  const apiKeys = new ApiKeyStore(repositories.apiKey, keyOptions);
+  const parser = new KeyedFoodParser(apiKeys, () => new FakeFoodParser());
   const calculator = new Calculator(parser, foodDb, lunchtimeClock, randomId);
-
-  const app = new Hono();
-  app.use("/api/*", cors());
-
-  app.post("/api/__reset", async (c) => {
-    await repositories.timeline.clear();
-    await repositories.settings.save({
-      ...DEFAULT_SETTINGS,
-      correction_factor: null,
-      target_blood_sugar: 100,
-      glucose_unit: "mg/dL",
-      ratio_format: "grams_per_unit",
-      pen_increment: 0.5,
-      bolus_insulin_id: "novorapid",
-      basal_insulin_id: "lantus",
-      insulin_action_minutes: null,
-      language: "en",
-    });
-    return c.json({ ok: true });
-  });
 
   const routes = createRoutes({
     doses: new Doses(repositories, calculator, lunchtimeClock),
     timeline: new TimelineService(repositories, lunchtimeClock, randomId),
     repositories,
-    apiKeys: new ApiKeyStore(repositories.apiKey),
-  });
-  app.route("/", routes);
-
-  app.use("/*", serveStatic({ root: "../frontend/dist" }));
-
-  app.get("/*", async (c) => {
-    const fs = await import("node:fs/promises");
-    const html = await fs.readFile("../frontend/dist/index.html", "utf-8");
-    return c.html(html);
+    apiKeys,
+    defaultTimeZone: "Europe/Berlin",
   });
 
-  const port = 3100;
-  console.log(`Test server listening on http://localhost:${port}`);
-  serve({ fetch: app.fetch, port });
+  const sql = new pg.Client({ connectionString: database.url });
+  await sql.connect();
+
+  function build(options: { password?: string }): Hono {
+    const app = new Hono();
+    if (options.password) app.use("*", passwordGate(options.password));
+
+    app.post("/api/__reset", async (c) => {
+      await sql.query(`TRUNCATE settings, profile_window_ratios, profiles,
+        meal_windows, ratio_versions, glucose_entries, slow_insulin_entries,
+        fast_insulin_entries, meal_entries, food_vocabulary,
+        anthropic_api_key CASCADE`);
+      keyOptions.environmentKey =
+        c.req.query("key") === "none" ? undefined : ENVIRONMENT_KEY;
+      await apiKeys.clear();
+      await repositories.settings.save({
+        ...DEFAULT_SETTINGS,
+        correction_factor: null,
+        target_blood_sugar: 100,
+        glucose_unit: "mg/dL",
+        ratio_format: "grams_per_unit",
+        pen_increment: 0.5,
+        bolus_insulin_id: "novorapid",
+        basal_insulin_id: "lantus",
+        insulin_action_minutes: null,
+        language: "en",
+      });
+      return c.json({ ok: true });
+    });
+
+    app.get("/api/__vocabulary", async (c) =>
+      c.json(await repositories.vocabulary.list()),
+    );
+
+    app.route("/", routes);
+    app.use("/*", serveStatic({ root: "../frontend/dist" }));
+    app.get("/*", async (c) => {
+      const fs = await import("node:fs/promises");
+      const html = await fs.readFile("../frontend/dist/index.html", "utf-8");
+      return c.html(html);
+    });
+    return app;
+  }
+
+  serve({ fetch: build({}).fetch, port: OPEN_PORT });
+  serve({ fetch: build({ password: GATE_PASSWORD }).fetch, port: GATED_PORT });
+  console.log(`Test server listening on http://localhost:${OPEN_PORT}`);
 }
 
 startServer();

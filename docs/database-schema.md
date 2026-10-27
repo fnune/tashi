@@ -537,6 +537,18 @@ Decisions 2, 3, 4, 7 and 8 are made. Decisions 1, 5 and 6 are recommendations wa
 7. **Foods catalog in the database.** Decided: the catalog is imported as catalog entries, facts with sources and releases, and a small curated layer of foods, modelled on USDA FoodData Central, Open Food Facts and EuroFIR (see Foods catalog). It arrives in a second phase; the first migration stores references and a transitional snapshot.
 8. **Keys for catalog entries.** Decided: an entry is keyed by `(source, external_id)`, with `external_id` as text, so no source needs a numbering that fits another's. There is no negative-number convention and no surrogate id. The nine BEDCA foods keep the number the catalog build gave them (`-1` to `-9`) as an opaque external id.
 
+## What the implementation does differently
+
+Phase 1 is implemented. Where it departs from the plan above:
+
+- **Time zone as a second field.** Entries carry `time_zone` next to `timestamp` in the domain and the API, not one combined value. The repositories always read and write the pair, and the zone is validated, but code can still use the instant without it. The combined type is still the better end state.
+- **Glucose conversion lives in the repositories.** The domain and the API keep the user's display unit, and the Postgres repositories convert at the boundary. A settings save that changes only the unit and keeps the numbers is treated as a display change, which is what the settings screen does, so the stored mg/dL values do not move.
+- **Running totals are recomputed.** A correction's `total_dose` is worked out on read from the stored parts, and agrees with the stored total whenever there is no fat and protein adjustment. The explainer shows the same numbers it did.
+- **Windows and profiles have a `position`** so the interface order survives. Built-in profiles map to fixed UUIDs in code.
+- **Transitional snapshot.** `meal_items.food_snapshot` holds the catalog row until phase 2.
+- **File storage is gone.** There is one implementation, plus an in-memory fake for fast tests; both pass the same contract suite. The migration is generated from this document and a test checks that it is identical.
+- **Negative carbohydrate is allowed**, as described under Units.
+
 ## Code changes and bilbo's data
 
 ### What changes in the code

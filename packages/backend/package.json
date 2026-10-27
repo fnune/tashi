@@ -5,16 +5,17 @@
   "license": "AGPL-3.0-only",
   "type": "module",
   "exports": {
-    "./calculator": "./src/domain/calculator.ts",
     "./api-key-store": "./src/domain/api-key-store.ts",
-    "./food-parser": "./src/domain/food-parser.ts",
+    "./calculator": "./src/domain/calculator.ts",
     "./doses": "./src/domain/doses.ts",
+    "./food-db": "./src/data/food-db.ts",
+    "./food-parser": "./src/domain/food-parser.ts",
     "./ids": "./src/domain/ids.ts",
-    "./timeline-service": "./src/domain/timeline-service.ts",
+    "./keyed-food-parser": "./src/domain/keyed-food-parser.ts",
+    "./password-gate": "./src/http/password-gate.ts",
+    "./postgres": "./src/data/postgres/index.ts",
     "./routes": "./src/http/routes.ts",
-    "./file-repositories": "./src/data/file-repositories.ts",
-    "./repositories": "./src/domain/repositories.ts",
-    "./food-db": "./src/data/food-db.ts"
+    "./timeline-service": "./src/domain/timeline-service.ts"
   },
   "scripts": {
     "dev": "tsx watch --env-file-if-exists=../../.env src/server.ts",

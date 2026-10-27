@@ -25,11 +25,21 @@ nix develop
 pnpm install
 ```
 
+Tashi stores its data in Postgres, so a running server needs `DATABASE_URL`. The shell has Postgres 18 for the tests:
+
+```sh
+pnpm check && pnpm typecheck
+TASHI_TEST_DATABASE_URL=postgres://user@localhost/scratch pnpm test:unit   # truncates that database's tables
+pnpm test:e2e                                                              # starts its own temporary Postgres
+```
+
+Without `TASHI_TEST_DATABASE_URL` the Postgres tests are skipped. The end-to-end tests need `initdb` and `pg_ctl` on `PATH` (or `PG_BIN` pointing at their directory) unless `TASHI_TEST_DATABASE_URL` is set.
+
 ## Deployment
 
 Runs on bilbo as the `tashi` app (`nixos/tashi.nix` in fnune/bilbo), from this flake's default package. To ship, push to `main`, then in bilbo run `nix flake update tashi` and rebuild.
 
-Set `TASHI_PASSWORD` to require HTTP Basic auth (any username, that password) on everything except `GET /api/health`. Leave it unset for no gate.
+`DATABASE_URL` (a `postgres://` URL) is required; the schema is created and updated at startup. Set `TASHI_PASSWORD` to require HTTP Basic auth (any username, that password) on everything except `GET /api/health`. Leave it unset for no gate.
 
 ## License
 

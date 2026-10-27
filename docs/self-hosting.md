@@ -34,13 +34,13 @@ Progress:
 - [x] 3. Storage abstraction that survives a change of technology: one repository interface per aggregate (settings, timeline, vocabulary, API key), declared by the domain, with a contract suite the file implementation passes. Details in [storage-assessment.md](storage-assessment.md).
 - [x] 3b. Separate view, domain and data: `http/`, `domain/` and `data/` folders, `FoodLookup` declared by the domain, domain errors apart from HTTP mapping, `Doses` and `TimelineService` called by thin route handlers, and a test that enforces the import directions.
 - [x] 4. Postgres through Kysely and `pg`, behind `DATABASE_URL`. The repositories in `data/postgres-repositories.ts` pass the same contract suite as the file ones. Without `DATABASE_URL` the server keeps using the files, so bilbo is unaffected until it is migrated. Details below.
-- [ ] 4b. Implement the schema in [database-schema.md](database-schema.md) (phase 1), and prove it end to end:
-    - [ ] Domain: a time zone on every entry, a required `total_dose` on meals, a source on vocabulary entries, paginated timeline reads.
-    - [ ] Migration `0001` rewritten, Postgres repositories rewritten, in-memory fakes for unit tests, one contract suite for both. File storage is removed.
-    - [ ] Server and API: `DATABASE_URL` required, cursor pagination, the zone taken from the browser.
-    - [ ] End-to-end tests with Playwright on Postgres: the whole app, with a stand-in for the language model.
-    - [ ] The bilbo script re-run against the new schema.
-- [ ] 5. Write the bilbo migration script (backup with checksums, idempotent, counts per table, dry run), then cut over as described below.
+- [x] 4b. Implement the schema in [database-schema.md](database-schema.md) (phase 1), and prove it end to end:
+  - [x] Domain: a time zone on every entry, a required `total_dose` on meals, a source on vocabulary entries, cursor-paged timeline reads.
+  - [x] Migration `0001` generated from the schema document (a test keeps them identical), Postgres repositories, in-memory fakes for unit tests, one contract suite run against both. File storage is removed.
+  - [x] Server and API: `DATABASE_URL` required, cursor pagination, the zone taken from the browser.
+  - [x] End-to-end tests with Playwright on Postgres, with a stand-in for the language model at the `FoodParser` seam: 21 new tests besides the 22 existing ones, on desktop and phone.
+  - [x] The bilbo script re-run against the new schema: 384 entries, read back identical to the upgraded source, second run a no-op.
+- [ ] 5. Cut bilbo over. The backup and the script are done and tested on a throwaway database; what remains is under Cutover below.
 - [ ] 6. Find providers.
 
 Storage design. The tables below are the first cut, which mirrors the JSON files. The schema to build instead, with its review, is in [database-schema.md](database-schema.md); it replaces this list and the current migration.
@@ -71,8 +71,8 @@ Open decision: bilbo moves to the database too (recommended, one code path) or k
 Status of the plan above (the script and the backups live outside the repo, in `~/Documents/Context/tashi/`):
 
 - Done: a backup of `/var/lib/tashi` was copied off bilbo and compared by checksum with the live files (`backups/20261027/`, read-only, plus a `.tar.gz` copy). Nothing on bilbo was changed beyond a copy in the home directory.
-- Done: `bilbo-migration/migrate.mts` runs as a dry run by default, applies with `--to` and `--apply`, refuses a target holding timeline entries the source lacks, and reads the target back and compares it with the source. It passed twice in a row against a throwaway Postgres, and the server read the migrated database correctly.
-- Not done: the cutover. It needs the choice of database for bilbo (it already runs a PostgreSQL server for other apps), a change in `nixos/tashi.nix` in the bilbo repo for `DATABASE_URL`, and the pnpm hash update in `nix/package.nix`.
+- Done: `bilbo-migration/migrate.mts` reads the legacy files, upgrades and validates them, writes through the real repositories, and reads the target back to compare it with the source. It is a dry run by default, refuses a target holding timeline entries the source lacks, and was run twice against a throwaway Postgres: 384 entries, identical read-back, the second run inserting nothing. The server then served the migrated data and the app showed it correctly.
+- Not done: the cutover (Cutover below).
 - Not done: database backups on bilbo. The unit's `tashi-backup` step copies only `settings.json`, `history.json` and `timeline.json`, so it protects nothing once the data is in Postgres. Replace it with a `pg_dump` step before the cutover.
 - bilbo has no `api-key.json`: it passes the key to the service as a credential, so the environment fallback keeps working after the move.
 
@@ -83,10 +83,21 @@ Old data does not fit the current schemas. 96 of the 146 meals (Apr 14 to Jun 11
 - A `food_item` in the pre-USDA shape becomes `null` (37): the item keeps its description, weight and carbs.
 - `weight_g: null` becomes 0 (3): the stored `net_carbs_g` was already 0.
 - `correction: null` is removed (3).
+- A meal with no `recommended_dose` (1, from the first days) gets the carbohydrate dose worked out from its carbs and ratio.
+- An item labelled `BEDCA` becomes `curated` (1).
+- A fast insulin entry of 0 U is dropped (1): a meal logged without insulin, which current logging records with no entry.
+- Meals get `total_dose` (146), entries get the Europe/Berlin zone, 21 entries get a UUID derived from their old id, 2 dangling meal links are cleared, and the vocabulary entry gets its source.
 
 The raw files stay in the backup. The legacy `history.json` is not migrated.
 
 Backward compatibility is not a goal while there is one instance and one person's data to keep. That changes once other people deploy this: schema changes then need migrations that carry their data, and this one-off upgrade is the kind of work that has to become a normal migration.
+
+Cutover. Everything below waits for you, because it changes bilbo:
+
+1. Choose the database. The decision was a Postgres of its own for Tashi on bilbo, in the pattern of `nixos/sourceslist.nix`: Postgres 18, no TCP port (a Unix socket only), peer authentication so there is no password, a `tashi` role and database. The existing shared Postgres is Immich's and is version 14, which reaches end of life in November 2026.
+2. In the bilbo repo, in a workspace of its own: add that unit to `nixos/tashi.nix`, set `DATABASE_URL` for the service, and replace the `tashi-backup` pre-start step with a `pg_dump` into `/var/lib/tashi/backups` (borg already covers that directory), on start and from a daily timer before the borg run.
+3. The pnpm dependency hash in `nix/package.nix` is updated for `kysely`, `pg` and `@types/pg`, and the package was built and started from a clean copy against the migrated database. Bump the `tashi` flake input in bilbo once these commits are on `main`.
+4. Stop the service, take a final copy of `/var/lib/tashi`, run the script against the new database, start the service on `DATABASE_URL`, check the history, and keep the files and the backups for a while.
 
 ### Export and import
 

@@ -16,5 +16,6 @@ export default defineConfig({
     command: "npx tsx test-server.ts",
     port: 3100,
     reuseExistingServer: false,
+    timeout: 120_000,
   },
 });
