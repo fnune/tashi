@@ -22,10 +22,17 @@ import type {
   TimelinePage,
   TimelineRepository,
 } from "../../domain/repositories.js";
+import {
+  type CatalogRecord,
+  foodItemOf,
+} from "../../domain/food-catalog.js";
 import { storedTimelineSchema } from "../../domain/schemas.js";
 import { StoredDataError } from "../stored-data-error.js";
 import type { Db, Executor } from "./connection.js";
+import { type EntryKey, entryKeyOf, recordsAt } from "./food-catalog.js";
 import { fromMgDl, toMgDl } from "./glucose-units.js";
+
+const SEPARATOR = "\u0000";
 
 const entrySchema = storedTimelineSchema.element;
 
@@ -290,9 +297,6 @@ export class PostgresTimelineRepository implements TimelineRepository {
               notes: item.notes,
               warning: item.warning,
               external_id: item.food_item ? String(item.food_item.fdc_id) : null,
-              food_snapshot: item.food_item
-                ? JSON.stringify(item.food_item)
-                : null,
             };
           }),
         )
@@ -465,6 +469,42 @@ export class PostgresTimelineRepository implements TimelineRepository {
     });
   }
 
+  private async foodItems(
+    db: Executor,
+    meals: { id: string; catalog_release: number }[],
+    items: { meal_entry_id: string; position: number; source: string; external_id: string | null }[],
+  ): Promise<Map<string, FoodItem | null>> {
+    const releaseOf = new Map(meals.map((m) => [m.id, m.catalog_release]));
+    const keysByRelease = new Map<number, EntryKey[]>();
+    for (const item of items) {
+      const release = releaseOf.get(item.meal_entry_id);
+      if (item.external_id === null || release === undefined) continue;
+      const keys = keysByRelease.get(release) ?? [];
+      keys.push({
+        source: item.source as FoodSourceId,
+        externalId: item.external_id,
+      });
+      keysByRelease.set(release, keys);
+    }
+    const recordsByRelease = new Map<number, Map<string, CatalogRecord>>();
+    for (const [release, keys] of keysByRelease) {
+      recordsByRelease.set(release, await recordsAt(db, keys, release));
+    }
+    const foodItems = new Map<string, FoodItem | null>();
+    for (const item of items) {
+      const release = releaseOf.get(item.meal_entry_id);
+      if (item.external_id === null || release === undefined) continue;
+      const record = recordsByRelease
+        .get(release)
+        ?.get(entryKeyOf({ source: item.source as FoodSourceId, externalId: item.external_id }));
+      foodItems.set(
+        `${item.meal_entry_id}${SEPARATOR}${item.position}`,
+        record ? foodItemOf(record) : null,
+      );
+    }
+    return foodItems;
+  }
+
   private async meals(
     db: Executor,
     ids: string[],
@@ -482,6 +522,7 @@ export class PostgresTimelineRepository implements TimelineRepository {
         "meal_entries.total_carbs_g",
         "meal_entries.carb_dose_units",
         "meal_entries.total_dose_units",
+        "meal_entries.catalog_release",
         "ratio_versions.window_name",
         "ratio_versions.window_start_hour",
         "ratio_versions.window_end_hour",
@@ -495,6 +536,7 @@ export class PostgresTimelineRepository implements TimelineRepository {
       .where("meal_entry_id", "in", ids)
       .orderBy("position")
       .execute();
+    const foodItems = await this.foodItems(db, meals, items);
     const corrections = await db
       .selectFrom("meal_corrections")
       .selectAll()
@@ -550,7 +592,11 @@ export class PostgresTimelineRepository implements TimelineRepository {
               estimated: FOOD_SOURCES[source].estimate,
               glycemic_index: item.glycemic_index,
               gi_estimated: item.gi_estimated,
-              food_item: item.food_snapshot as FoodItem | null,
+              food_item: item.external_id
+                ? (foodItems.get(
+                    `${row.id}${SEPARATOR}${item.position}`,
+                  ) ?? null)
+                : null,
             };
           }),
         total_net_carbs_g: row.total_carbs_g,

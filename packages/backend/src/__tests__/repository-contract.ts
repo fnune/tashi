@@ -30,7 +30,7 @@ function vocabEntry(
     description,
     source: "usda_sr_legacy",
     fdc_id,
-    usda_description: description,
+    catalog_name: `Catalog ${fdc_id}`,
     default_weight_g: 100,
     use_count,
     last_used: "2026-06-13T12:00:00.000Z",

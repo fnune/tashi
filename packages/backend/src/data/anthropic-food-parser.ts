@@ -4,7 +4,7 @@ import type {
   ParsedFoodItem,
   SearchTraceEntry,
 } from "@tashi/shared";
-import type { FoodDatabase } from "./food-db.js";
+import type { FoodCatalog } from "../domain/food-catalog.js";
 import type { FoodParser, ParseOutcome } from "../domain/food-parser.js";
 
 const SYSTEM_PROMPT = `You are a food parsing assistant for a diabetes insulin calculator.
@@ -92,7 +92,7 @@ function buildVocabPrompt(vocabulary: FoodVocabEntry[]): string {
   if (vocabulary.length === 0) return "";
   const lines = vocabulary.map(
     (v) =>
-      `- "${v.description}": fdc_id ${v.fdc_id} (${v.usda_description}), ~${v.default_weight_g}g`,
+      `- "${v.description}": fdc_id ${v.fdc_id} (${v.catalog_name}), ~${v.default_weight_g}g`,
   );
   return (
     "\n\nPreviously resolved foods (use these fdc_ids directly without searching):\n" +
@@ -153,16 +153,16 @@ function coerceEnvelope(value: unknown): ParsedEnvelope | null {
 export class AnthropicFoodParser implements FoodParser {
   private client: Anthropic;
   private model: string;
-  private foodDb: FoodDatabase;
+  private foodCatalog: FoodCatalog;
 
   constructor(
     apiKey: string,
-    foodDb: FoodDatabase,
+    foodCatalog: FoodCatalog,
     model = "claude-haiku-4-5-20251001",
   ) {
     this.client = new Anthropic({ apiKey });
     this.model = model;
-    this.foodDb = foodDb;
+    this.foodCatalog = foodCatalog;
   }
 
   async parse(
@@ -249,7 +249,7 @@ export class AnthropicFoodParser implements FoodParser {
         if (block.type !== "tool_use") continue;
         if (block.name === "search_foods") {
           const input = block.input as { query: string };
-          const results = this.foodDb.search(input.query, 10);
+          const results = await this.foodCatalog.search(input.query, 10);
           const formatted = results.map((r) => ({
             fdc_id: r.fdc_id,
             description: r.description,

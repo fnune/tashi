@@ -5,7 +5,7 @@ import { serveStatic } from "@hono/node-server/serve-static";
 import { Hono } from "hono";
 import { ConfigError, loadConfig } from "./config.js";
 import { AnthropicFoodParser } from "./data/anthropic-food-parser.js";
-import { FoodDatabase } from "./data/food-db.js";
+import { readCatalogFile } from "./data/catalog-file.js";
 import { openPostgresRepositories } from "./data/postgres/index.js";
 import { ApiKeyStore } from "./domain/api-key-store.js";
 import { Calculator } from "./domain/calculator.js";
@@ -35,13 +35,12 @@ const foodsDbPath =
   config.foodsDbPath ?? join(import.meta.dirname, "../../../data/foods.db");
 const { basePath } = config;
 
-const foodDb = await FoodDatabase.open(foodsDbPath);
-console.log(`Food database loaded: ${foodDb.foodCount()} foods`);
-
-const { repositories } = await openPostgresRepositories(config.databaseUrl, {
-  newId: randomId,
-  catalogRelease: foodDb.release,
-});
+const catalog = await readCatalogFile(foodsDbPath);
+const { repositories, foodCatalog } = await openPostgresRepositories(
+  config.databaseUrl,
+  { newId: randomId, catalog },
+);
+console.log(`Food catalog ${catalog.label}: ${catalog.records.length} foods`);
 
 const apiKeys = new ApiKeyStore(repositories.apiKey, {
   encryptionPassphrase: config.encryptionPassphrase,
@@ -54,9 +53,9 @@ if (!(await apiKeys.status()).configured) {
 
 const parser = new KeyedFoodParser(
   apiKeys,
-  (apiKey) => new AnthropicFoodParser(apiKey, foodDb, config.model),
+  (apiKey) => new AnthropicFoodParser(apiKey, foodCatalog, config.model),
 );
-const calculator = new Calculator(parser, foodDb, systemClock, randomId);
+const calculator = new Calculator(parser, foodCatalog, systemClock, randomId);
 
 const app = new Hono();
 

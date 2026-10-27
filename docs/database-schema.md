@@ -305,7 +305,7 @@ Today's `curated` table is this second layer, attached to one chosen entry by a 
 ### Two phases
 
 1. **With the first migration.** `food_sources` and `catalog_releases` exist. Meal items and the vocabulary hold `source` and `external_id` as plain columns, the meal holds its `catalog_release`, and items keep the transitional `food_snapshot`. Runtime search and lookups stay on the bundled catalog. This is what moving off the JSON files needs.
-2. **Later, as its own migration.** The catalog is imported into the tables below, the plain columns become foreign keys, `food_snapshot` is dropped, and search moves to Postgres.
+2. **Later, as its own migration (done, `0002-catalog`).** The catalog is imported into the tables below, the plain columns become foreign keys, `food_snapshot` is dropped, and search moves to Postgres.
 
 ```sql
 CREATE TABLE catalog_releases (
@@ -333,10 +333,10 @@ CREATE TABLE catalog_entries (
   external_id text NOT NULL CHECK (external_id <> ''),
   name text NOT NULL CHECK (name <> ''),
   category text CHECK (category <> ''),
-  published_on date,
   FOREIGN KEY (source, source_is_catalog) REFERENCES food_sources (id, catalog),
   PRIMARY KEY (source, external_id)
 );
+CREATE INDEX catalog_entries_name_search ON catalog_entries USING gin (to_tsvector('english', name));
 
 CREATE TABLE entry_nutrients (
   source text NOT NULL,
@@ -363,6 +363,7 @@ CREATE TABLE entry_servings (
   FOREIGN KEY (source, external_id) REFERENCES catalog_entries (source, external_id),
   PRIMARY KEY (source, external_id, position, from_release)
 );
+CREATE UNIQUE INDEX entry_servings_current ON entry_servings (source, external_id, position) WHERE to_release IS NULL;
 
 CREATE TABLE foods (
   id uuid PRIMARY KEY,
@@ -393,25 +394,34 @@ CREATE TABLE food_glycemic_indexes (
   CHECK (to_release IS NULL OR to_release > from_release),
   PRIMARY KEY (food_id, fact_source, from_release)
 );
+CREATE UNIQUE INDEX food_glycemic_indexes_current ON food_glycemic_indexes (food_id, fact_source) WHERE to_release IS NULL;
 
 CREATE TABLE food_cooking_factors (
   food_id uuid PRIMARY KEY REFERENCES foods (id) ON DELETE CASCADE,
   multiplier double precision NOT NULL CHECK (multiplier > 0),
   fact_source text NOT NULL REFERENCES food_sources (id)
 );
+```
 
+The migration then backfills the entries that existing meals and the vocabulary point at (see below) and ties them down:
+
+```sql
 ALTER TABLE meal_items
   ADD FOREIGN KEY (source, external_id) REFERENCES catalog_entries (source, external_id),
   DROP COLUMN food_snapshot;
 ALTER TABLE food_vocabulary
-  ADD FOREIGN KEY (source, external_id) REFERENCES catalog_entries (source, external_id);
+  ADD FOREIGN KEY (source, external_id) REFERENCES catalog_entries (source, external_id),
+  DROP COLUMN usda_description;
 ```
 
 - **Nutrients are rows.** A nutrient that was not measured has no row, which is the honest way to say "unknown". Net carbohydrate is never stored: it is carbohydrate minus fibre, worked out in code. The import maps USDA's ids to ours (carbohydrate 1005, fibre 1079, sugars 1063 and then 2000, fat 1004, protein 1003; the survey rows carry the old nutrient numbers 205, 291, 269, 204 and 203 in the same column).
-- **Unknown is not zero.** The current build treats missing fibre as 0 when it computes net carbohydrate, and 208 Foundation foods and 562 SR Legacy foods have none. Sixty Foundation foods have no carbohydrate at all. The code needs an explicit rule for a missing nutrient (for instance: without fibre, use carbohydrate and say so), decided before phase 2.
+- **Unknown is not zero.** The old build stored a missing nutrient as 0. Now a missing nutrient has no row, and the code applies one rule for each: net carbohydrate is carbohydrate minus fibre, and without fibre it is the carbohydrate. A missing fat, protein or sugars figure is unknown (`null` in the food item), and the dose uses the parser's estimate for fat and protein where the catalog has none instead of 0. An entry without a carbohydrate figure (60 Foundation foods and 1 survey food) is kept in the catalog, but the search does not offer it and a lookup does not return it: a dose calculated from a made-up 0 g would be wrong without anyone seeing it. The parser then estimates it, as for any food that is not in the catalog.
+- **Negative carbohydrate.** Ten entries (raw poultry and pork, down to -0.705 g per 100 g) have a slightly negative figure, an artefact of how USDA derives carbohydrate by difference. The catalog stores what the source says. The net carbohydrate of a food item is never below 0, so these foods add 0 g to a dose and never subtract from it.
 - **Measured figures are never rewritten.** Nutrients, servings and glycemic indexes carry a release range: a fact applies from `from_release` up to, not including, `to_release`, which is null while it is current. A corrected figure closes one row and adds another. The facts a meal used are those valid at its `catalog_release`. Hand-curated claims (names, cooking multipliers) are corrected in place, and their `fact_source` is `curated`.
 - **Sources of facts.** The glycemic index cites `sugirs`, the Sydney glycemic index tables; the nutrient figures take the source of their entry. USDA's `data_type` becomes the entry's `source`.
-- **Import.** A catalog update is a script run as a migration per release: it adds the release, adds entries, adds facts and closes the ones that changed. Rows are never otherwise updated or deleted. Only `foundation_food` rows are imported from Foundation, as the build does today.
+- **Import.** `data/foods.db` is still the shipped build of the catalog (made by `pnpm --filter backend import-usda` from the CSVs in `data/usda` and the curated lists). The server compares it with the database on every start, inside one transaction, and writes only the difference: it adds the release when its label (a hash of the file) is new, adds entries and facts, and closes the facts that changed or vanished by setting `to_release`. A figure is never updated or deleted. Names and categories of entries and the curated layer (food links, Spanish names, cooking multipliers) are corrected in place. Comparing everything on each start is cheap for 13,670 entries and would not be for a catalog of millions; that catalog would need an import of its own.
+- **Reading a meal.** A meal's food items are looked up by `(source, external_id)` among the facts valid at the meal's release. A fact that did not exist yet at that release, such as a glycemic index added later, falls back to the oldest fact there is. An entry without carbohydrate at that release gives no food item (the item keeps its own figures).
+- **Backfill.** The migration that creates the tables first inserts an entry for every `(source, external_id)` that a meal item or a vocabulary row refers to, with the figures of the newest `food_snapshot` of that entry as facts from the oldest release a meal used it in. The newest snapshot is the one closest to the catalog: meals from before fat and protein were recorded carry snapshots with zeros the upgrade of the legacy files put there. Snapshots stored a missing nutrient as 0, so the first import closes the facts the build does not have. Then it drops `food_snapshot` and `usda_description`.
 - **Size.** About 13,670 entries and, at five nutrients each, roughly 70,000 nutrient rows for the first release: a few megabytes. A later release adds only what changed.
 - **The columns were checked** against `data/foods.db` and the USDA CSVs on 2026-10-27. The glycemic index, Spanish names and cooking multipliers come from the `curated` table of the build.
 
@@ -456,7 +466,7 @@ CREATE TABLE anthropic_api_key (
 | `meal_items.glycemic_index`                  | Unknown; `gi_estimated` is true only when it is not null                                              |
 | `meal_items.notes`, `warning`                | The parser had nothing to add                                                                         |
 | `meal_items.external_id`, `food_snapshot`    | No catalog entry: an estimate, a figure the user gave, or an item logged before entries were recorded |
-| `catalog_entries.category`, `published_on`   | The source gives none (phase 2)                                                                       |
+| `catalog_entries.category`                   | The source gives none (phase 2)                                                                       |
 | `*.to_release` on the fact tables            | The fact is current (phase 2)                                                                         |
 | `fast_insulin_entries.meal_entry_id`         | The dose was not tied to a meal, or its meal was deleted                                              |
 | `ratio_versions.profile_id, adjustment_mode` | The meal was logged before the profile was recorded                                                   |
@@ -526,26 +536,29 @@ Real violations:
 
 ## Decisions to confirm
 
-Decisions 2, 3, 4, 7 and 8 are made. Decisions 1, 5 and 6 are recommendations waiting for confirmation, and the DDL already assumes 5 (`food_sources`). Decided besides: bilbo's existing entries get the time zone Europe/Berlin.
+Decisions 2 to 8 are made, and 5 (`food_sources`) and 6 are built. Decision 1 is a recommendation waiting for confirmation. Decided besides: bilbo's existing entries get the time zone Europe/Berlin.
 
 1. **Normalised meals or typed columns plus `jsonb`.** The schema spreads a meal over six tables so nothing is null that should not be. The simpler alternative keeps one `meal_entries` row with typed columns for the totals and one `jsonb` column for items, correction, adjustment and trace: about a third of the mapping code, but items and corrections can no longer be constrained or queried in SQL. Recommendation: normalised for the dose figures and items, `jsonb` only for the parser's searches.
 2. **Enum types or text with checks.** Decided: enums for sets whose values each have their own code path (glucose unit, ratio format, entry kind, confidence, adjustment mode, fat and protein trigger); a lookup table for insulin products, which will grow; text with a check for language. Enums can gain values but not lose or rename them.
 3. **Glucose in one canonical unit.** Decided: mg/dL everywhere in the database, as `double precision`, with no unit columns. The display unit is a setting, and conversion happens only at the code's edges.
 4. **Ids.** Decided: every id for something the user creates is a `uuid`: entries, profiles, meal windows, ratio versions. Built-in profiles get fixed UUIDs (v5 of their old id), kept as constants in code, which is also how the code finds their translated names. Registries the code names keep natural keys (`insulin_products.id`), and foods keep USDA's `fdc_id`. The 21 legacy `<uuid>-ins` ids are replaced with UUIDs derived from the old id (UUID v5), so the migration gives the same result every time.
 5. **Provenance of an item.** `data_source` mixed two naming schemes in bilbo's data (`sr_legacy_food`, `survey_fndds_food`, `foundation_food`, `curated`, `USDA FoodData Central`, `LLM estimate`), and `estimated` repeated whether it was an estimate. Recommendation, changed after review: a registry table `food_sources`, like `insulin_products`, not an enum. New catalogs will arrive (the README already names BEDCA), enums cannot drop or rename a value, and each source has properties of its own: `catalog` (its rows live in `foods`) and `estimate` (its figures are an estimate). `meal_items` and `foods` reference it, a composite foreign key keeps `foods` to catalog sources, and `estimated` is gone. Registering a source is one `INSERT` in a migration. The code names `llm_estimate` and `user`, so a test checks the ids in code against the table. The migration maps the old labels to ids: `sr_legacy_food` to `usda_sr_legacy`, `survey_fndds_food` to `usda_survey`, `foundation_food` to `usda_foundation`, `USDA FoodData Central` to `usda_unspecified`, `curated` and `LLM estimate` to their ids.
-6. **Vocabulary catalog name.** Drop `usda_description` and read the name from the catalog entry by `(source, external_id)`, so the table holds only what the user did. Recommendation: drop it, once the catalog tables exist in phase 2.
+6. **Vocabulary catalog name.** Drop `usda_description` and read the name from the catalog entry by `(source, external_id)`, so the table holds only what the user did. Done in phase 2: `catalog_name` in the API is the name of the entry.
 7. **Foods catalog in the database.** Decided: the catalog is imported as catalog entries, facts with sources and releases, and a small curated layer of foods, modelled on USDA FoodData Central, Open Food Facts and EuroFIR (see Foods catalog). It arrives in a second phase; the first migration stores references and a transitional snapshot.
 8. **Keys for catalog entries.** Decided: an entry is keyed by `(source, external_id)`, with `external_id` as text, so no source needs a numbering that fits another's. There is no negative-number convention and no surrogate id. The nine BEDCA foods keep the number the catalog build gave them (`-1` to `-9`) as an opaque external id.
 
 ## What the implementation does differently
 
-Phase 1 is implemented. Where it departs from the plan above:
+Both phases are implemented. Where they depart from the plan above:
 
 - **Time zone as a second field.** Entries carry `time_zone` next to `timestamp` in the domain and the API, not one combined value. The repositories always read and write the pair, and the zone is validated, but code can still use the instant without it. The combined type is still the better end state.
 - **Glucose conversion lives in the repositories.** The domain and the API keep the user's display unit, and the Postgres repositories convert at the boundary. A settings save that changes only the unit and keeps the numbers is treated as a display change, which is what the settings screen does, so the stored mg/dL values do not move.
 - **Running totals are recomputed.** A correction's `total_dose` is worked out on read from the stored parts, and agrees with the stored total whenever there is no fat and protein adjustment. The explainer shows the same numbers it did.
 - **Windows and profiles have a `position`** so the interface order survives. Built-in profiles map to fixed UUIDs in code.
-- **Transitional snapshot.** `meal_items.food_snapshot` holds the catalog row until phase 2.
+- **Phase 2 is migration `0002-catalog`.** It creates the catalog tables, backfills the entries that meals and the vocabulary point at, adds the foreign keys and drops `food_snapshot` and `usda_description`. The server imports `data/foods.db` after migrating (see Foods catalog, Import). `catalog_entries` has no `published_on`, since `foods.db` never carried one.
+- **The catalog is imported from the built `foods.db`, not from the CSVs.** `foods.db` stays the build artifact, so the CSV parsing exists once. Servings are the one the build keeps for each entry (position 0); the table allows more when the build does.
+- **A serving without a description is called `serving`**, which 75 entries had: the nine BEDCA foods and 66 USDA portions with an empty description.
+- **`FoodItem` nutrients can be `null`.** `fiber_per_100g`, `sugars_per_100g`, `fat_per_100g` and `protein_per_100g` are `null` when the catalog has no figure, and the dose uses the parser's estimate for fat and protein in that case, where it used 0 before. An entry without carbohydrate gives no food item.
 - **File storage is gone.** There is one implementation, plus an in-memory fake for fast tests; both pass the same contract suite. The migration is generated from this document and a test checks that it is identical.
 - **Negative carbohydrate is allowed**, as described under Units.
 

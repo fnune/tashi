@@ -8,7 +8,7 @@
     "./api-key-store": "./src/domain/api-key-store.ts",
     "./calculator": "./src/domain/calculator.ts",
     "./doses": "./src/domain/doses.ts",
-    "./food-db": "./src/data/food-db.ts",
+    "./catalog-file": "./src/data/catalog-file.ts",
     "./food-parser": "./src/domain/food-parser.ts",
     "./ids": "./src/domain/ids.ts",
     "./keyed-food-parser": "./src/domain/keyed-food-parser.ts",

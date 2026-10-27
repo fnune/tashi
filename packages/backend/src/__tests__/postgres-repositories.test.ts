@@ -1,10 +1,14 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { DEFAULT_SETTINGS, FOOD_SOURCES } from "@tashi/shared";
+import { Migrator } from "kysely/migration";
 import pg from "pg";
 import { describe, expect, it } from "vitest";
+import { migrations } from "../data/migrations/index.js";
+import { connect } from "../data/postgres/connection.js";
 import { openPostgresRepositories } from "../data/postgres/index.js";
 import { StoredDataError } from "../data/stored-data-error.js";
+import type { CatalogBuild, CatalogRecord } from "../domain/food-catalog.js";
 import {
   at,
   fastInsulin,
@@ -13,8 +17,16 @@ import {
   simpleMeal,
   ZONE,
 } from "./entries.js";
+import { foodCatalogContract } from "./food-catalog-contract.js";
 import { repositoryContract } from "./repository-contract.js";
 import { sequentialIds, uuidNumber } from "./sequential-ids.js";
+import {
+  BANANA,
+  contractBuild,
+  RICE,
+  SUGAR,
+  testFoodItem,
+} from "./test-catalog.js";
 
 const databaseUrl = process.env.TASHI_TEST_DATABASE_URL;
 
@@ -28,10 +40,10 @@ async function query(statement: string, params: unknown[] = []) {
   }
 }
 
-async function emptyDatabase() {
+async function emptyDatabase(catalog: CatalogBuild = contractBuild) {
   const opened = await openPostgresRepositories(databaseUrl ?? "", {
     newId: sequentialIds(1000),
-    catalogRelease: "test-release",
+    catalog,
   });
   await query(`TRUNCATE settings, profile_window_ratios, profiles, meal_windows,
     ratio_versions, glucose_entries, slow_insulin_entries, fast_insulin_entries,
@@ -39,10 +51,29 @@ async function emptyDatabase() {
   return opened;
 }
 
+async function emptyCatalog(catalog: CatalogBuild) {
+  await query(`TRUNCATE settings, profile_window_ratios, profiles, meal_windows,
+    ratio_versions, glucose_entries, slow_insulin_entries, fast_insulin_entries,
+    meal_entries, food_vocabulary, anthropic_api_key, catalog_entries, foods CASCADE`);
+  await query("DELETE FROM catalog_releases WHERE id > 0");
+  return openPostgresRepositories(databaseUrl ?? "", {
+    newId: sequentialIds(1000),
+    catalog,
+  });
+}
+
 describe.skipIf(!databaseUrl)("postgres", () => {
   repositoryContract("postgres", async () => {
     const { repositories, close } = await emptyDatabase();
     return { repositories, dispose: close };
+  });
+
+  foodCatalogContract("postgres", async (records) => {
+    const { foodCatalog, close } = await emptyCatalog({
+      label: "contract",
+      records,
+    });
+    return { catalog: foodCatalog, dispose: close };
   });
 
   describe("storage", () => {
@@ -56,7 +87,7 @@ describe.skipIf(!databaseUrl)("postgres", () => {
 
       const second = await openPostgresRepositories(databaseUrl ?? "", {
         newId: sequentialIds(2000),
-        catalogRelease: "test-release",
+        catalog: contractBuild,
       });
       expect(
         (await second.repositories.settings.get()).target_blood_sugar,
@@ -65,7 +96,10 @@ describe.skipIf(!databaseUrl)("postgres", () => {
       const applied = await query(
         "SELECT name FROM kysely_migration ORDER BY name",
       );
-      expect(applied.rows).toEqual([{ name: "0001-initial" }]);
+      expect(applied.rows).toEqual([
+        { name: "0001-initial" },
+        { name: "0002-catalog" },
+      ]);
     });
 
     it("registers the same food sources the code knows", async () => {
@@ -225,7 +259,7 @@ describe.skipIf(!databaseUrl)("postgres", () => {
       await close();
     });
 
-    it("keeps no item without a catalog entry tied to a snapshot", async () => {
+    it("refuses an item that points at an entry the catalog does not have", async () => {
       const { close } = await emptyDatabase();
       await expect(
         query(`INSERT INTO ratio_versions (id, window_name, window_start_hour, window_end_hour, carbs_g_per_unit, first_used_at)
@@ -339,5 +373,311 @@ describe("the migration", () => {
     expect(schema.trim()).toBe(
       `${expected.join("\n\n")}\n\nINSERT INTO catalog_releases (id, label, imported_at)\n  VALUES (0, 'before releases were recorded', now());`,
     );
+  });
+
+  it("is the phase 2 SQL of the schema document", async () => {
+    const doc = readFileSync(
+      join(import.meta.dirname, "../../../../docs/database-schema.md"),
+      "utf-8",
+    );
+    const blocks = [...doc.matchAll(/```sql\n([\s\S]*?)```/g)].map((m) =>
+      (m[1] ?? "").trim(),
+    );
+    const { tables, constraints } = await import(
+      "../data/migrations/0002-catalog.js"
+    );
+    expect(blocks).toContain(tables.trim());
+    expect(blocks).toContain(constraints.trim());
+  });
+});
+
+const withRiceChanged = (record: Partial<CatalogRecord>): CatalogRecord => ({
+  ...RICE,
+  ...record,
+});
+
+function build(label: string, ...records: CatalogRecord[]): CatalogBuild {
+  return { label, records };
+}
+
+async function releaseId(label: string): Promise<number> {
+  const { rows } = await query(
+    "SELECT id FROM catalog_releases WHERE label = $1",
+    [label],
+  );
+  return rows[0].id;
+}
+
+describe.skipIf(!databaseUrl)("the catalog in postgres", () => {
+  const first = build("first", RICE, BANANA, SUGAR);
+
+  it("imports every entry, nutrient and curated fact once", async () => {
+    const { close } = await emptyCatalog(first);
+    const count = async (table: string) =>
+      (await query(`SELECT count(*)::int AS n FROM ${table}`)).rows[0].n;
+    expect(await count("catalog_entries")).toBe(3);
+    expect(await count("entry_nutrients")).toBe(15);
+    expect(await count("entry_servings")).toBe(2);
+    expect(await count("foods")).toBe(2);
+    expect(await count("food_entries")).toBe(2);
+    expect(await count("food_names")).toBe(2);
+    expect(await count("food_glycemic_indexes")).toBe(2);
+    expect(await count("food_cooking_factors")).toBe(1);
+    await close();
+  });
+
+  it("writes nothing when the build has not changed", async () => {
+    const opened = await emptyCatalog(first);
+    await opened.close();
+    const again = await openPostgresRepositories(databaseUrl ?? "", {
+      newId: sequentialIds(1),
+      catalog: first,
+    });
+    const rows = await query(
+      `SELECT (SELECT count(*)::int FROM catalog_releases) AS releases,
+        (SELECT count(*)::int FROM entry_nutrients) AS nutrients,
+        (SELECT count(*)::int FROM entry_nutrients WHERE to_release IS NOT NULL) AS closed`,
+    );
+    expect(rows.rows[0]).toEqual({ releases: 2, nutrients: 15, closed: 0 });
+    await again.close();
+  });
+
+  it("closes a changed figure and adds the new one from the new release", async () => {
+    await (await emptyCatalog(first)).close();
+    const changed = withRiceChanged({
+      nutrients: { ...RICE.nutrients, carbohydrate: 30 },
+    });
+    const { close, foodCatalog } = await openPostgresRepositories(
+      databaseUrl ?? "",
+      {
+        newId: sequentialIds(1),
+        catalog: build("second", changed, BANANA, SUGAR),
+      },
+    );
+    const rows = await query(
+      `SELECT amount_per_100g, from_release, to_release FROM entry_nutrients
+       WHERE external_id = '169756' AND nutrient_id = 'carbohydrate' ORDER BY from_release`,
+    );
+    expect(rows.rows).toEqual([
+      {
+        amount_per_100g: 28.17,
+        from_release: await releaseId("first"),
+        to_release: await releaseId("second"),
+      },
+      {
+        amount_per_100g: 30,
+        from_release: await releaseId("second"),
+        to_release: null,
+      },
+    ]);
+    expect((await foodCatalog.getByFdcId(169756))?.total_carbs_per_100g).toBe(
+      30,
+    );
+    await close();
+  });
+
+  it("shows a meal the figures of the release it was logged under", async () => {
+    const logged = await emptyCatalog(first);
+    await logged.repositories.settings.save(DEFAULT_SETTINGS);
+    await logged.repositories.timeline.add([fullMeal(1, 10)]);
+    await logged.close();
+
+    const second = await openPostgresRepositories(databaseUrl ?? "", {
+      newId: sequentialIds(500),
+      catalog: build(
+        "second",
+        withRiceChanged({
+          nutrients: { ...RICE.nutrients, carbohydrate: 30 },
+          food: RICE.food && {
+            ...RICE.food,
+            glycemicIndex: { source: "sugirs", value: 80 },
+          },
+        }),
+        BANANA,
+        SUGAR,
+      ),
+    });
+    const meal = await second.repositories.timeline.get(uuidNumber(1));
+    expect(meal).toMatchObject({
+      items: [{ food_item: testFoodItem(RICE) }, { food_item: null }],
+    });
+    expect((await second.foodCatalog.getByFdcId(169756))?.glycemic_index).toBe(
+      80,
+    );
+    await second.close();
+  });
+
+  it("stops offering an entry that left the build and keeps it for old meals", async () => {
+    const logged = await emptyCatalog(first);
+    await logged.repositories.settings.save(DEFAULT_SETTINGS);
+    await logged.repositories.timeline.add([fullMeal(1, 10)]);
+    await logged.close();
+
+    const second = await openPostgresRepositories(databaseUrl ?? "", {
+      newId: sequentialIds(500),
+      catalog: build("second", BANANA, SUGAR),
+    });
+    expect(await second.foodCatalog.getByFdcId(169756)).toBeNull();
+    expect(await second.foodCatalog.search("rice", 10)).toEqual([]);
+    expect(await second.repositories.timeline.get(uuidNumber(1))).toMatchObject(
+      { items: [{ food_item: testFoodItem(RICE) }, { food_item: null }] },
+    );
+    await second.close();
+  });
+
+  it("replaces a figure that was recorded under the same label instead of closing it", async () => {
+    await (await emptyCatalog(first)).close();
+    const rewritten = await openPostgresRepositories(databaseUrl ?? "", {
+      newId: sequentialIds(1),
+      catalog: build(
+        "first",
+        withRiceChanged({ nutrients: { ...RICE.nutrients, protein: 3 } }),
+        BANANA,
+        SUGAR,
+      ),
+    });
+    const rows = await query(
+      `SELECT amount_per_100g, to_release FROM entry_nutrients
+       WHERE external_id = '169756' AND nutrient_id = 'protein'`,
+    );
+    expect(rows.rows).toEqual([{ amount_per_100g: 3, to_release: null }]);
+    await rewritten.close();
+  });
+
+  it("corrects a curated name in place and keeps the glycemic index history", async () => {
+    await (await emptyCatalog(first)).close();
+    const corrected = await openPostgresRepositories(databaseUrl ?? "", {
+      newId: sequentialIds(1),
+      catalog: build(
+        "second",
+        withRiceChanged({
+          name: "Rice, white, cooked",
+          food: RICE.food && {
+            ...RICE.food,
+            nameEs: "Arroz blanco",
+            glycemicIndex: { source: "sugirs", value: 70 },
+          },
+        }),
+        BANANA,
+        SUGAR,
+      ),
+    });
+    expect(
+      (
+        await query(
+          "SELECT name FROM catalog_entries WHERE external_id = '169756'",
+        )
+      ).rows,
+    ).toEqual([{ name: "Rice, white, cooked" }]);
+    expect(
+      (await query("SELECT name FROM food_names ORDER BY name")).rows.map(
+        (r) => r.name,
+      ),
+    ).toEqual(["Arroz blanco", "Plátano"]);
+    const indexes = await query(
+      `SELECT glycemic_index, to_release IS NULL AS current FROM food_glycemic_indexes
+       WHERE food_id = (SELECT id FROM foods WHERE slug = 'rice_white_cooked') ORDER BY from_release`,
+    );
+    expect(indexes.rows).toEqual([
+      { glycemic_index: 73, current: false },
+      { glycemic_index: 70, current: true },
+    ]);
+    await corrected.close();
+  });
+
+  it("gives a vocabulary entry the name of its catalog entry", async () => {
+    const { repositories, close } = await emptyCatalog(first);
+    await repositories.vocabulary.upsert([
+      {
+        description: "my rice",
+        source: "usda_sr_legacy",
+        fdc_id: 169756,
+        catalog_name: "ignored",
+        default_weight_g: 150,
+        use_count: 1,
+        last_used: "2026-06-13T12:00:00.000Z",
+      },
+    ]);
+    expect(await repositories.vocabulary.list()).toMatchObject([
+      { catalog_name: RICE.name },
+    ]);
+    await close();
+  });
+});
+
+describe.skipIf(!databaseUrl)("the catalog migration on existing data", () => {
+  it("keeps what meals and the vocabulary point at and drops the snapshots", async () => {
+    await query("DROP SCHEMA public CASCADE; CREATE SCHEMA public");
+    const db = connect(databaseUrl ?? "");
+    const migrator = new Migrator({
+      db,
+      provider: { getMigrations: async () => migrations },
+    });
+    expect((await migrator.migrateTo("0001-initial")).error).toBeUndefined();
+
+    const snapshot = testFoodItem(RICE);
+    const lateSnapshot = { ...snapshot, total_carbs_per_100g: 30 };
+    await query(`INSERT INTO catalog_releases (id, label, imported_at) VALUES (1, 'later', now());
+      INSERT INTO ratio_versions (id, window_name, window_start_hour, window_end_hour, carbs_g_per_unit, first_used_at)
+      VALUES ('${uuidNumber(1)}', 'w', 1, 2, 10, now())`);
+    for (const [n, release, figures] of [
+      [2, 0, snapshot],
+      [3, 1, lateSnapshot],
+    ] as const) {
+      await query(
+        `INSERT INTO meal_entries (id, occurred_at, occurred_tz, input_text, input_language, ratio_version_id, total_carbs_g, carb_dose_units, total_dose_units, catalog_release)
+         VALUES ($1, now() - $2::int * interval '1 minute', 'UTC', 'x', 'en', $3, 1, 1, 1, $4)`,
+        [uuidNumber(n), n * 10, uuidNumber(1), release],
+      );
+      await query(
+        `INSERT INTO meal_items (meal_entry_id, position, description, weight_g, assumed_cooked, confidence, source, carbs_per_100g, carbs_g, fat_per_100g, fat_g, protein_per_100g, protein_g, gi_estimated, external_id, food_snapshot)
+         VALUES ($1, 0, 'rice', 1, false, 'low', 'usda_sr_legacy', 1, 1, 1, 1, 1, 1, false, '169756', $2::jsonb)`,
+        [uuidNumber(n), JSON.stringify(figures)],
+      );
+    }
+    await query(`INSERT INTO food_vocabulary (description_key, source, external_id, description, usda_description, last_weight_g, use_count, last_used_at)
+      VALUES ('quinoa', 'usda_sr_legacy', '777', 'Quinoa', 'Quinoa, cooked', 100, 1, now())`);
+
+    expect((await migrator.migrateToLatest()).error).toBeUndefined();
+
+    const entries = await query(
+      "SELECT external_id, name FROM catalog_entries ORDER BY external_id",
+    );
+    expect(entries.rows).toEqual([
+      { external_id: "169756", name: RICE.name },
+      { external_id: "777", name: "Quinoa, cooked" },
+    ]);
+    const carbohydrate = await query(
+      `SELECT amount_per_100g, from_release, to_release FROM entry_nutrients
+       WHERE external_id = '169756' AND nutrient_id = 'carbohydrate'`,
+    );
+    expect(carbohydrate.rows).toEqual([
+      { amount_per_100g: 30, from_release: 0, to_release: null },
+    ]);
+    const dropped = await query(
+      `SELECT table_name, column_name FROM information_schema.columns
+       WHERE column_name IN ('food_snapshot', 'usda_description')`,
+    );
+    expect(dropped.rows).toEqual([]);
+    await expect(
+      query(`INSERT INTO meal_items (meal_entry_id, position, description, weight_g, assumed_cooked, confidence, source, carbs_per_100g, carbs_g, fat_per_100g, fat_g, protein_per_100g, protein_g, gi_estimated, external_id)
+        VALUES ('${uuidNumber(2)}', 1, 'x', 1, false, 'low', 'usda_sr_legacy', 1, 1, 1, 1, 1, 1, false, '42')`),
+    ).rejects.toThrow();
+
+    const opened = await openPostgresRepositories(databaseUrl ?? "", {
+      newId: sequentialIds(900),
+      catalog: build("after", RICE, BANANA),
+    });
+    expect(await opened.repositories.timeline.get(uuidNumber(2))).toMatchObject(
+      { items: [{ food_item: { total_carbs_per_100g: 30 } }] },
+    );
+    expect(
+      (await opened.foodCatalog.getByFdcId(169756))?.total_carbs_per_100g,
+    ).toBe(28.17);
+    expect(await opened.repositories.vocabulary.list()).toMatchObject([
+      { description: "Quinoa", catalog_name: "Quinoa, cooked" },
+    ]);
+    await opened.close();
+    await db.destroy();
   });
 });

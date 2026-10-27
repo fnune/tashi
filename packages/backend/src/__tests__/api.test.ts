@@ -1,6 +1,3 @@
-import { mkdtemp, rm } from "node:fs/promises";
-import { tmpdir } from "node:os";
-import { join } from "node:path";
 import {
   type CalculateResponse,
   DEFAULT_SETTINGS,
@@ -12,8 +9,7 @@ import {
   type TimelineEntry,
   type TimelinePageResponse,
 } from "@tashi/shared";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import type { FoodDatabase } from "../data/food-db.js";
+import { beforeEach, describe, expect, it } from "vitest";
 import { ApiKeyStore } from "../domain/api-key-store.js";
 import { Calculator } from "../domain/calculator.js";
 import type { Clock } from "../domain/clock.js";
@@ -22,9 +18,10 @@ import type { Repositories } from "../domain/repositories.js";
 import { TimelineService } from "../domain/timeline-service.js";
 import { createRoutes } from "../http/routes.js";
 import { FakeFoodParser } from "./fake-food-parser.js";
+import { InMemoryFoodCatalog } from "./in-memory-food-catalog.js";
 import { createInMemoryRepositories } from "./in-memory-repositories.js";
 import { sequentialIds } from "./sequential-ids.js";
-import { createTestFoodDb } from "./test-food-db.js";
+import { testBuild } from "./test-catalog.js";
 
 const ENTRY_ID = "00000000-0000-4000-8000-0000000000e1";
 
@@ -92,19 +89,17 @@ describe("API routes", () => {
   let app: ReturnType<typeof createRoutes>;
   let repositories: Repositories;
   let parser: FakeFoodParser;
-  let foodDb: FoodDatabase;
-  let tmpDir: string;
+  let foodCatalog: InMemoryFoodCatalog;
   let now: Date;
 
   beforeEach(async () => {
-    tmpDir = await mkdtemp(join(tmpdir(), "tashi-test-"));
     repositories = createInMemoryRepositories();
     parser = new FakeFoodParser();
-    foodDb = await createTestFoodDb(tmpDir);
+    foodCatalog = new InMemoryFoodCatalog(testBuild.records);
     now = new Date("2026-06-13T12:00:00.000Z");
     const clock: Clock = () => now;
     const newId = sequentialIds();
-    const calculator = new Calculator(parser, foodDb, clock, newId);
+    const calculator = new Calculator(parser, foodCatalog, clock, newId);
     app = createRoutes({
       doses: new Doses(repositories, calculator, clock),
       timeline: new TimelineService(repositories, clock, newId),
@@ -112,11 +107,6 @@ describe("API routes", () => {
       apiKeys: new ApiKeyStore(repositories.apiKey),
       defaultTimeZone: "Europe/Berlin",
     });
-  });
-
-  afterEach(async () => {
-    foodDb.close();
-    await rm(tmpDir, { recursive: true });
   });
 
   it("POST /api/calculate previews a dose without touching the timeline", async () => {
@@ -536,7 +526,7 @@ describe("API routes", () => {
     const vocab2 = await repositories.vocabulary.list();
     expect(vocab2).toHaveLength(1);
     expect(vocab2[0]!.use_count).toBe(2);
-    expect(vocab2[0]!.usda_description).toContain("Rice");
+    expect(vocab2[0]!.catalog_name).toContain("Rice");
   });
 
   it("does not learn estimated items into vocabulary", async () => {

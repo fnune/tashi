@@ -8,10 +8,10 @@ export interface FoodItem {
   category: string | null;
   net_carbs_per_100g: number;
   total_carbs_per_100g: number;
-  fiber_per_100g: number;
-  sugars_per_100g: number;
-  fat_per_100g: number;
-  protein_per_100g: number;
+  fiber_per_100g: number | null;
+  sugars_per_100g: number | null;
+  fat_per_100g: number | null;
+  protein_per_100g: number | null;
   serving_g: number | null;
   serving_desc: string | null;
   name_es: string | null;
@@ -287,7 +287,7 @@ export interface FoodVocabEntry {
   description: string;
   source: FoodSourceId;
   fdc_id: number;
-  usda_description: string;
+  catalog_name: string;
   default_weight_g: number;
   use_count: number;
   last_used: string;

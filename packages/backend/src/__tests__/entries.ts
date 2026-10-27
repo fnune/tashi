@@ -6,6 +6,7 @@ import type {
   SlowInsulinEntry,
 } from "@tashi/shared";
 import { uuidNumber } from "./sequential-ids.js";
+import { RICE, testFoodItem } from "./test-catalog.js";
 
 export const ZONE = "Europe/Berlin";
 
@@ -52,24 +53,7 @@ export function fastInsulin(
 }
 
 export function foodItem(): FoodItem {
-  return {
-    fdc_id: 169756,
-    description: "Rice, white, long-grain, regular, enriched, cooked",
-    data_type: "sr_legacy_food",
-    category: "Cereal Grains and Pasta",
-    net_carbs_per_100g: 28,
-    total_carbs_per_100g: 28.2,
-    fiber_per_100g: 0.2,
-    sugars_per_100g: 0.04,
-    fat_per_100g: 0.3,
-    protein_per_100g: 2.7,
-    serving_g: 158,
-    serving_desc: "1 cup",
-    name_es: "Arroz blanco cocido",
-    glycemic_index: 73,
-    gi_source: "SUGiRS",
-    cooking_multiplier: null,
-  };
+  return testFoodItem(RICE);
 }
 
 export function simpleMeal(n: number, minutes: number): MealEntry {

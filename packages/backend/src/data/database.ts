@@ -3,7 +3,6 @@ import type { ColumnType, Generated, JSONColumnType } from "kysely";
 type Timestamp = ColumnType<Date, Date | string, Date | string>;
 type DateOnly = ColumnType<string, string, string>;
 type Json<T extends object | null> = JSONColumnType<T>;
-type NullableJson<T extends object> = ColumnType<T | null, string | null, string | null>;
 
 export interface InsulinProductsTable {
   id: string;
@@ -138,7 +137,6 @@ export interface MealItemsTable {
   notes: string | null;
   warning: string | null;
   external_id: string | null;
-  food_snapshot: NullableJson<Record<string, unknown>>;
 }
 
 export interface MealCorrectionsTable {
@@ -181,10 +179,73 @@ export interface FoodVocabularyTable {
   source: string;
   external_id: string;
   description: string;
-  usda_description: string;
   last_weight_g: number;
   use_count: number;
   last_used_at: Timestamp;
+}
+
+export interface NutrientsTable {
+  id: string;
+  name: string;
+  unit: "g" | "mg" | "ug" | "kcal";
+}
+
+export interface CatalogEntriesTable {
+  source: string;
+  source_is_catalog: Generated<true>;
+  external_id: string;
+  name: string;
+  category: string | null;
+}
+
+export interface EntryNutrientsTable {
+  source: string;
+  external_id: string;
+  nutrient_id: string;
+  amount_per_100g: number;
+  from_release: number;
+  to_release: number | null;
+}
+
+export interface EntryServingsTable {
+  source: string;
+  external_id: string;
+  position: number;
+  description: string;
+  grams: number;
+  from_release: number;
+  to_release: number | null;
+}
+
+export interface FoodsTable {
+  id: string;
+  slug: string;
+}
+
+export interface FoodEntriesTable {
+  food_id: string;
+  source: string;
+  external_id: string;
+}
+
+export interface FoodNamesTable {
+  food_id: string;
+  language: "en" | "es";
+  name: string;
+}
+
+export interface FoodGlycemicIndexesTable {
+  food_id: string;
+  fact_source: string;
+  glycemic_index: number;
+  from_release: number;
+  to_release: number | null;
+}
+
+export interface FoodCookingFactorsTable {
+  food_id: string;
+  multiplier: number;
+  fact_source: string;
 }
 
 export interface AnthropicApiKeyTable {
@@ -214,5 +275,14 @@ export interface Database {
   meal_traces: MealTracesTable;
   timeline: TimelineView;
   food_vocabulary: FoodVocabularyTable;
+  nutrients: NutrientsTable;
+  catalog_entries: CatalogEntriesTable;
+  entry_nutrients: EntryNutrientsTable;
+  entry_servings: EntryServingsTable;
+  foods: FoodsTable;
+  food_entries: FoodEntriesTable;
+  food_names: FoodNamesTable;
+  food_glycemic_indexes: FoodGlycemicIndexesTable;
+  food_cooking_factors: FoodCookingFactorsTable;
   anthropic_api_key: AnthropicApiKeyTable;
 }

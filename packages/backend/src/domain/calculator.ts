@@ -11,7 +11,7 @@ import {
   type Settings,
 } from "@tashi/shared";
 import type { Clock } from "./clock.js";
-import type { FoodLookup } from "./food-lookup.js";
+import type { FoodCatalog } from "./food-catalog.js";
 import type { FoodParser } from "./food-parser.js";
 import type { IdGenerator } from "./ids.js";
 
@@ -22,18 +22,18 @@ export type CalculateOutcome =
 
 export class Calculator {
   private parser: FoodParser;
-  private foodLookup: FoodLookup;
+  private foodCatalog: FoodCatalog;
   private clock: Clock;
   private newId: IdGenerator;
 
   constructor(
     parser: FoodParser,
-    foodLookup: FoodLookup,
+    foodCatalog: FoodCatalog,
     clock: Clock,
     newId: IdGenerator,
   ) {
     this.parser = parser;
-    this.foodLookup = foodLookup;
+    this.foodCatalog = foodCatalog;
     this.clock = clock;
     this.newId = newId;
   }
@@ -56,7 +56,7 @@ export class Calculator {
       return { status: outcome.status, message: outcome.message };
     }
     const { items: parsedItems, trace } = outcome;
-    const items = this.resolveItems(parsedItems);
+    const items = await this.resolveItems(parsedItems);
 
     const mealWindow = mealWindowOverride
       ? settings.meal_windows.find((w) => w.name === mealWindowOverride)
@@ -108,79 +108,86 @@ export class Calculator {
       : null;
   }
 
-  private resolveItems(parsedItems: ParsedFoodItem[]): CalculatedItem[] {
-    return parsedItems.map((parsed) => {
-      const match =
-        parsed.fdc_id !== null
-          ? this.foodLookup.getByFdcId(parsed.fdc_id)
-          : null;
+  private resolveItems(
+    parsedItems: ParsedFoodItem[],
+  ): Promise<CalculatedItem[]> {
+    return Promise.all(
+      parsedItems.map(async (parsed) => {
+        const match =
+          parsed.fdc_id !== null
+            ? await this.foodCatalog.getByFdcId(parsed.fdc_id)
+            : null;
 
-      let netCarbsPer100g: number;
-      let estimated = false;
-      let dataSource: string;
-      let foodItem: FoodItem | null = null;
-      let warning = parsed.warning;
+        let netCarbsPer100g: number;
+        let estimated = false;
+        let dataSource: string;
+        let foodItem: FoodItem | null = null;
+        let warning = parsed.warning;
 
-      const userPer100g = this.resolveUserCarbsPer100g(parsed);
+        const userPer100g = this.resolveUserCarbsPer100g(parsed);
 
-      if (userPer100g !== null) {
-        netCarbsPer100g = userPer100g;
-        dataSource = match ? match.data_type : "user";
-        if (match) {
-          foodItem = match;
-          const diff = Math.abs(userPer100g - match.net_carbs_per_100g);
-          if (diff > 5 || diff / Math.max(match.net_carbs_per_100g, 1) > 0.3) {
-            const usdaWarning = `USDA: ${match.net_carbs_per_100g}g HC netos/100g vs usuario: ${userPer100g}g`;
-            warning = warning ? `${warning}. ${usdaWarning}` : usdaWarning;
+        if (userPer100g !== null) {
+          netCarbsPer100g = userPer100g;
+          dataSource = match ? match.data_type : "user";
+          if (match) {
+            foodItem = match;
+            const diff = Math.abs(userPer100g - match.net_carbs_per_100g);
+            if (
+              diff > 5 ||
+              diff / Math.max(match.net_carbs_per_100g, 1) > 0.3
+            ) {
+              const usdaWarning = `USDA: ${match.net_carbs_per_100g}g HC netos/100g vs usuario: ${userPer100g}g`;
+              warning = warning ? `${warning}. ${usdaWarning}` : usdaWarning;
+            }
           }
+        } else if (match) {
+          foodItem = match;
+          netCarbsPer100g = match.net_carbs_per_100g;
+          dataSource = match.data_type;
+        } else if (
+          parsed.estimated_net_carbs_per_100g !== null &&
+          parsed.estimated_net_carbs_per_100g !== undefined
+        ) {
+          netCarbsPer100g = parsed.estimated_net_carbs_per_100g;
+          estimated = true;
+          dataSource = "LLM estimate";
+        } else {
+          netCarbsPer100g = 0;
+          dataSource = "unknown";
         }
-      } else if (match) {
-        foodItem = match;
-        netCarbsPer100g = match.net_carbs_per_100g;
-        dataSource = match.data_type;
-      } else if (
-        parsed.estimated_net_carbs_per_100g !== null &&
-        parsed.estimated_net_carbs_per_100g !== undefined
-      ) {
-        netCarbsPer100g = parsed.estimated_net_carbs_per_100g;
-        estimated = true;
-        dataSource = "LLM estimate";
-      } else {
-        netCarbsPer100g = 0;
-        dataSource = "unknown";
-      }
 
-      const netCarbsG = (netCarbsPer100g / 100) * parsed.weight_g;
-      const dbGi = foodItem?.glycemic_index ?? null;
-      const gi = dbGi ?? parsed.estimated_glycemic_index ?? null;
+        const netCarbsG = (netCarbsPer100g / 100) * parsed.weight_g;
+        const dbGi = foodItem?.glycemic_index ?? null;
+        const gi = dbGi ?? parsed.estimated_glycemic_index ?? null;
 
-      const fatPer100g =
-        foodItem?.fat_per_100g ?? parsed.estimated_fat_per_100g ?? 0;
-      const proteinPer100g =
-        foodItem?.protein_per_100g ?? parsed.estimated_protein_per_100g ?? 0;
-      const fatG = (fatPer100g / 100) * parsed.weight_g;
-      const proteinG = (proteinPer100g / 100) * parsed.weight_g;
+        const fatPer100g =
+          foodItem?.fat_per_100g ?? parsed.estimated_fat_per_100g ?? 0;
+        const proteinPer100g =
+          foodItem?.protein_per_100g ?? parsed.estimated_protein_per_100g ?? 0;
+        const fatG = (fatPer100g / 100) * parsed.weight_g;
+        const proteinG = (proteinPer100g / 100) * parsed.weight_g;
 
-      return {
-        description: parsed.description,
-        weight_g: parsed.weight_g,
-        net_carbs_per_100g: Math.round(netCarbsPer100g * 10) / 10,
-        net_carbs_g: Math.round(netCarbsG * 10) / 10,
-        fat_per_100g: Math.round(fatPer100g * 100) / 100,
-        protein_per_100g: Math.round(proteinPer100g * 100) / 100,
-        fat_g: Math.round(fatG * 10) / 10,
-        protein_g: Math.round(proteinG * 10) / 10,
-        assumed_cooked: parsed.assumed_cooked,
-        confidence: parsed.confidence,
-        notes: parsed.notes,
-        warning,
-        data_source: dataSource,
-        estimated,
-        glycemic_index: gi,
-        gi_estimated: dbGi === null && gi !== null,
-        food_item: foodItem,
-      };
-    });
+        return {
+          description: parsed.description,
+          weight_g: parsed.weight_g,
+          net_carbs_per_100g: Math.round(netCarbsPer100g * 10) / 10,
+          net_carbs_g: Math.round(netCarbsG * 10) / 10,
+          fat_per_100g: Math.round(fatPer100g * 100) / 100,
+          protein_per_100g: Math.round(proteinPer100g * 100) / 100,
+          fat_g: Math.round(fatG * 10) / 10,
+          protein_g: Math.round(proteinG * 10) / 10,
+          assumed_cooked: parsed.assumed_cooked,
+          confidence: parsed.confidence,
+          notes: parsed.notes,
+          warning,
+          data_source: dataSource,
+          estimated,
+          glycemic_index: gi,
+          gi_estimated: dbGi === null && gi !== null,
+          food_item: foodItem,
+        };
+      }),
+    );
   }
 
   private detectLanguage(text: string): "en" | "es" {

@@ -1,9 +1,5 @@
-import { mkdtemp, rm } from "node:fs/promises";
-import { tmpdir } from "node:os";
-import { join } from "node:path";
 import { type ApiKeyStatus, DEFAULT_SETTINGS } from "@tashi/shared";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import type { FoodDatabase } from "../data/food-db.js";
+import { beforeEach, describe, expect, it } from "vitest";
 import { ApiKeyStore } from "../domain/api-key-store.js";
 import { Calculator } from "../domain/calculator.js";
 import { systemClock } from "../domain/clock.js";
@@ -16,9 +12,10 @@ import { seal, unseal } from "../domain/secret-box.js";
 import { TimelineService } from "../domain/timeline-service.js";
 import { createRoutes } from "../http/routes.js";
 import { FakeFoodParser } from "./fake-food-parser.js";
+import { InMemoryFoodCatalog } from "./in-memory-food-catalog.js";
 import { createInMemoryRepositories } from "./in-memory-repositories.js";
 import { sequentialIds } from "./sequential-ids.js";
-import { createTestFoodDb } from "./test-food-db.js";
+import { testBuild } from "./test-catalog.js";
 
 const KEY = "sk-ant-test-key";
 
@@ -41,9 +38,8 @@ describe("secret box", () => {
 });
 
 describe("api key routes", () => {
-  let tmpDir: string;
   let repositories: Repositories;
-  let foodDb: FoodDatabase;
+  let foodCatalog: InMemoryFoodCatalog;
   let created: string[];
   let verified: string[];
   let accepted: boolean;
@@ -53,7 +49,7 @@ describe("api key routes", () => {
     return createRoutes({
       doses: new Doses(
         repositories,
-        new Calculator(parser, foodDb, systemClock, newId),
+        new Calculator(parser, foodCatalog, systemClock, newId),
         systemClock,
       ),
       timeline: new TimelineService(repositories, systemClock, newId),
@@ -107,7 +103,6 @@ describe("api key routes", () => {
   }
 
   beforeEach(async () => {
-    tmpDir = await mkdtemp(join(tmpdir(), "tashi-test-"));
     repositories = createInMemoryRepositories();
     await repositories.settings.save({
       ...DEFAULT_SETTINGS,
@@ -116,15 +111,10 @@ describe("api key routes", () => {
       ],
       bolus_insulin_id: "novorapid",
     });
-    foodDb = await createTestFoodDb(tmpDir);
+    foodCatalog = new InMemoryFoodCatalog(testBuild.records);
     created = [];
     verified = [];
     accepted = true;
-  });
-
-  afterEach(async () => {
-    foodDb.close();
-    await rm(tmpDir, { recursive: true });
   });
 
   it("starts without a key and says so when calculating", async () => {

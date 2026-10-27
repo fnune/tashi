@@ -10,10 +10,23 @@ export class PostgresVocabularyRepository implements VocabularyRepository {
   async list(): Promise<FoodVocabEntry[]> {
     const rows = await this.db
       .selectFrom("food_vocabulary")
-      .selectAll()
-      .orderBy("last_used_at", "desc")
-      .orderBy("description_key")
-      .orderBy("external_id")
+      .innerJoin("catalog_entries", (join) =>
+        join
+          .onRef("catalog_entries.source", "=", "food_vocabulary.source")
+          .onRef("catalog_entries.external_id", "=", "food_vocabulary.external_id"),
+      )
+      .select([
+        "food_vocabulary.description",
+        "food_vocabulary.source",
+        "food_vocabulary.external_id",
+        "food_vocabulary.last_weight_g",
+        "food_vocabulary.use_count",
+        "food_vocabulary.last_used_at",
+        "catalog_entries.name as catalog_name",
+      ])
+      .orderBy("food_vocabulary.last_used_at", "desc")
+      .orderBy("food_vocabulary.description_key")
+      .orderBy("food_vocabulary.external_id")
       .execute();
     try {
       return storedVocabularySchema.parse(
@@ -21,7 +34,7 @@ export class PostgresVocabularyRepository implements VocabularyRepository {
           description: row.description,
           source: row.source,
           fdc_id: Number(row.external_id),
-          usda_description: row.usda_description,
+          catalog_name: row.catalog_name,
           default_weight_g: row.last_weight_g,
           use_count: row.use_count,
           last_used: row.last_used_at.toISOString(),
@@ -42,7 +55,6 @@ export class PostgresVocabularyRepository implements VocabularyRepository {
           source: entry.source,
           external_id: String(entry.fdc_id),
           description: entry.description,
-          usda_description: entry.usda_description,
           last_weight_g: entry.default_weight_g,
           use_count: entry.use_count,
           last_used_at: entry.last_used,
@@ -53,7 +65,6 @@ export class PostgresVocabularyRepository implements VocabularyRepository {
           .columns(["description_key", "source", "external_id"])
           .doUpdateSet((eb) => ({
             description: eb.ref("excluded.description"),
-            usda_description: eb.ref("excluded.usda_description"),
             last_weight_g: eb.ref("excluded.last_weight_g"),
             use_count: eb.ref("excluded.use_count"),
             last_used_at: eb.ref("excluded.last_used_at"),

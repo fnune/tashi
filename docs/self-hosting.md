@@ -40,7 +40,12 @@ Progress:
   - [x] Server and API: `DATABASE_URL` required, cursor pagination, the zone taken from the browser.
   - [x] End-to-end tests with Playwright on Postgres, with a stand-in for the language model at the `FoodParser` seam: 21 new tests besides the 22 existing ones, on desktop and phone.
   - [x] The bilbo script re-run against the new schema: 384 entries, read back identical to the upgraded source, second run a no-op.
-- [ ] 5. Cut bilbo over. The backup and the script are done and tested on a throwaway database; what remains is under Cutover below.
+- [x] 5. Cut bilbo over. Done on 2026-10-27: see Cutover below.
+- [x] 5b. Foods catalog in the database (phase 2 of the schema, migration `0002-catalog`):
+  - [x] Entries, nutrients as rows, servings, release ranges and the curated foods layer; search by Postgres full text; `foods.db` imported at start by comparing it with the database.
+  - [x] Missing nutrients are unknown, not 0: no carbohydrate means no offer, no fibre means net carbohydrate equals carbohydrate, and net carbohydrate is never below 0.
+  - [x] Rehearsed against bilbo's backup: 528 meal items kept their entries, the timeline reads back identical, the import takes 1.8 s and 0.2 s when nothing changed.
+  - [ ] Deploy to bilbo: bump the `tashi` input, switch. The service dumps the database before starting, then the migration and the import run on that start.
 - [ ] 6. Find providers.
 
 Storage design. The tables below are the first cut, which mirrors the JSON files. The schema to build instead, with its review, is in [database-schema.md](database-schema.md); it replaces this list and the current migration.
@@ -72,8 +77,8 @@ Status of the plan above (the script and the backups live outside the repo, in `
 
 - Done: a backup of `/var/lib/tashi` was copied off bilbo and compared by checksum with the live files (`backups/20261027/`, read-only, plus a `.tar.gz` copy). Nothing on bilbo was changed beyond a copy in the home directory.
 - Done: `bilbo-migration/migrate.mts` reads the legacy files, upgrades and validates them, writes through the real repositories, and reads the target back to compare it with the source. It is a dry run by default, refuses a target holding timeline entries the source lacks, and was run twice against a throwaway Postgres: 384 entries, identical read-back, the second run inserting nothing. The server then served the migrated data and the app showed it correctly.
-- Not done: the cutover (Cutover below).
-- Not done: database backups on bilbo. The unit's `tashi-backup` step copies only `settings.json`, `history.json` and `timeline.json`, so it protects nothing once the data is in Postgres. Replace it with a `pg_dump` step before the cutover.
+- Done: the cutover (Cutover below).
+- Done: database backups on bilbo. The service runs `pg_dump` into `/var/lib/tashi/backups` on every start and daily at 23:30, before the midnight borg run.
 - bilbo has no `api-key.json`: it passes the key to the service as a credential, so the environment fallback keeps working after the move.
 
 Old data does not fit the current schemas. 96 of the 146 meals (Apr 14 to Jun 11, 2026) were logged before later features and lack fields the strict schemas require. Reading those files with the new code would fail, so the script upgrades them once on the way in, and the code stays strict. The rules, with the number of times each applied to bilbo's data:
@@ -92,12 +97,12 @@ The raw files stay in the backup. The legacy `history.json` is not migrated.
 
 Backward compatibility is not a goal while there is one instance and one person's data to keep. That changes once other people deploy this: schema changes then need migrations that carry their data, and this one-off upgrade is the kind of work that has to become a normal migration.
 
-Cutover. Everything below waits for you, because it changes bilbo:
+Cutover, done on 2026-10-27:
 
 1. Choose the database. The decision was a Postgres of its own for Tashi on bilbo, in the pattern of `nixos/sourceslist.nix`: Postgres 18, no TCP port (a Unix socket only), peer authentication so there is no password, a `tashi` role and database. The existing shared Postgres is Immich's and is version 14, which reaches end of life in November 2026.
 2. In the bilbo repo, in a workspace of its own: add that unit to `nixos/tashi.nix`, set `DATABASE_URL` for the service, and replace the `tashi-backup` pre-start step with a `pg_dump` into `/var/lib/tashi/backups` (borg already covers that directory), on start and from a daily timer before the borg run.
 3. The pnpm dependency hash in `nix/package.nix` is updated for `kysely`, `pg` and `@types/pg`, and the package was built and started from a clean copy against the migrated database. Bump the `tashi` flake input in bilbo once these commits are on `main`.
-4. Stop the service, take a final copy of `/var/lib/tashi`, run the script against the new database, start the service on `DATABASE_URL`, check the history, and keep the files and the backups for a while.
+4. Stopped the service, took a final copy of `/var/lib/tashi` and compared checksums, ran the script as the `tashi` user against the new database (384 timeline entries, 1 vocabulary entry, 4 meal windows, 4 profiles), started the service on `DATABASE_URL` and checked the history in the browser. The old files and the backups stay on bilbo for a while.
 
 ### Export and import
 

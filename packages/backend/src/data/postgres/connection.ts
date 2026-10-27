@@ -37,32 +37,3 @@ export async function migrate(db: Db): Promise<void> {
   const { error } = await migrator.migrateToLatest();
   if (error) throw error;
 }
-
-export async function ensureCatalogRelease(
-  db: Db,
-  label: string,
-): Promise<number> {
-  const existing = await db
-    .selectFrom("catalog_releases")
-    .select("id")
-    .where("label", "=", label)
-    .executeTakeFirst();
-  if (existing) return existing.id;
-  const latest = await db
-    .selectFrom("catalog_releases")
-    .select((eb) => eb.fn.max("id").as("id"))
-    .executeTakeFirst();
-  const id = (latest?.id ?? 0) + 1;
-  await db
-    .insertInto("catalog_releases")
-    .values({ id, label, imported_at: new Date() })
-    .onConflict((oc) => oc.doNothing())
-    .execute();
-  const stored = await db
-    .selectFrom("catalog_releases")
-    .select("id")
-    .where("label", "=", label)
-    .executeTakeFirst();
-  if (!stored) throw new Error(`Could not record catalog release ${label}`);
-  return stored.id;
-}

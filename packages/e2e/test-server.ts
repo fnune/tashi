@@ -6,8 +6,8 @@ import {
   type ApiKeyStoreOptions,
 } from "@tashi/backend/api-key-store";
 import { Calculator } from "@tashi/backend/calculator";
+import { readCatalogFile } from "@tashi/backend/catalog-file";
 import { Doses } from "@tashi/backend/doses";
-import { FoodDatabase } from "@tashi/backend/food-db";
 import type { FoodParser, ParseOutcome } from "@tashi/backend/food-parser";
 import { randomId } from "@tashi/backend/ids";
 import { KeyedFoodParser } from "@tashi/backend/keyed-food-parser";
@@ -141,13 +141,13 @@ async function startServer(): Promise<void> {
     process.on(signal, () => process.exit(0));
   }
 
-  const foodDb = await FoodDatabase.open(
+  const catalog = await readCatalogFile(
     join(import.meta.dirname, "../../data/foods.db"),
   );
-  const { repositories } = await openPostgresRepositories(database.url, {
-    newId: randomId,
-    catalogRelease: foodDb.release,
-  });
+  const { repositories, foodCatalog } = await openPostgresRepositories(
+    database.url,
+    { newId: randomId, catalog },
+  );
 
   const lunchtimeClock = () => {
     const now = new Date();
@@ -163,7 +163,12 @@ async function startServer(): Promise<void> {
   };
   const apiKeys = new ApiKeyStore(repositories.apiKey, keyOptions);
   const parser = new KeyedFoodParser(apiKeys, () => new FakeFoodParser());
-  const calculator = new Calculator(parser, foodDb, lunchtimeClock, randomId);
+  const calculator = new Calculator(
+    parser,
+    foodCatalog,
+    lunchtimeClock,
+    randomId,
+  );
 
   const routes = createRoutes({
     doses: new Doses(repositories, calculator, lunchtimeClock),

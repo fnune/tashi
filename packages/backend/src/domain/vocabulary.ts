@@ -36,8 +36,7 @@ export function learnVocabulary(
       description: previous?.description ?? item.description,
       source: key.source,
       fdc_id: key.fdc_id,
-      usda_description:
-        previous?.usda_description ?? item.food_item.description,
+      catalog_name: previous?.catalog_name ?? item.food_item.description,
       default_weight_g: item.weight_g,
       use_count: (previous?.use_count ?? 0) + 1,
       last_used: usedAt,

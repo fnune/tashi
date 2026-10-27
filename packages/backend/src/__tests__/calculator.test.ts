@@ -1,14 +1,11 @@
-import { mkdtemp, rm } from "node:fs/promises";
-import { tmpdir } from "node:os";
-import { join } from "node:path";
 import type { CalculationResult, Settings } from "@tashi/shared";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import type { FoodDatabase } from "../data/food-db.js";
+import { beforeEach, describe, expect, it } from "vitest";
 import { Calculator } from "../domain/calculator.js";
 import { systemClock } from "../domain/clock.js";
 import { FakeFoodParser } from "./fake-food-parser.js";
+import { InMemoryFoodCatalog } from "./in-memory-food-catalog.js";
 import { sequentialIds } from "./sequential-ids.js";
-import { createTestFoodDb } from "./test-food-db.js";
+import { testBuild } from "./test-catalog.js";
 
 async function calculateOk(
   calculator: Calculator,
@@ -47,19 +44,17 @@ const TEST_SETTINGS: Settings = {
 describe("Calculator", () => {
   let parser: FakeFoodParser;
   let calculator: Calculator;
-  let foodDb: FoodDatabase;
-  let tmpDir: string;
+  let foodCatalog: InMemoryFoodCatalog;
 
   beforeEach(async () => {
-    tmpDir = await mkdtemp(join(tmpdir(), "tashi-calc-test-"));
     parser = new FakeFoodParser();
-    foodDb = await createTestFoodDb(tmpDir);
-    calculator = new Calculator(parser, foodDb, systemClock, sequentialIds());
-  });
-
-  afterEach(async () => {
-    foodDb.close();
-    await rm(tmpDir, { recursive: true });
+    foodCatalog = new InMemoryFoodCatalog(testBuild.records);
+    calculator = new Calculator(
+      parser,
+      foodCatalog,
+      systemClock,
+      sequentialIds(),
+    );
   });
 
   it("calculates carbs and dose from DB match", async () => {
@@ -655,135 +650,88 @@ describe("Calculator", () => {
   });
 });
 
-describe("FoodDatabase search", () => {
-  let foodDb: FoodDatabase;
-  let tmpDir: string;
+describe("Calculator profiles", () => {
+  let parser: FakeFoodParser;
+  let calculator: Calculator;
+  let foodCatalog: InMemoryFoodCatalog;
 
   beforeEach(async () => {
-    tmpDir = await mkdtemp(join(tmpdir(), "tashi-search-test-"));
-    foodDb = await createTestFoodDb(tmpDir);
+    parser = new FakeFoodParser();
+    foodCatalog = new InMemoryFoodCatalog(testBuild.records);
+    calculator = new Calculator(
+      parser,
+      foodCatalog,
+      systemClock,
+      sequentialIds(),
+    );
   });
 
-  afterEach(async () => {
-    foodDb.close();
-    await rm(tmpDir, { recursive: true });
+  const fiftyGramsOfCarbs = () =>
+    parser.setResponse("pasta", [
+      {
+        description: "Pasta",
+        fdc_id: null,
+        weight_g: 100,
+        assumed_cooked: true,
+        confidence: "high",
+        notes: null,
+        estimated_net_carbs_per_100g: 50,
+        user_carbs: null,
+        estimated_glycemic_index: null,
+        estimated_fat_per_100g: null,
+        estimated_protein_per_100g: null,
+        warning: null,
+      },
+    ]);
+
+  function withProfile(
+    adjustment: Settings["profiles"][number]["adjustment"],
+  ): Settings {
+    return {
+      ...TEST_SETTINGS,
+      profiles: [{ id: "p", name: "Test", emoji: "⭐", adjustment }],
+      active_profile_id: "p",
+    };
+  }
+
+  it("scales only the final total by the profile's percentage", async () => {
+    fiftyGramsOfCarbs();
+    const result = await calculateOk(
+      calculator,
+      "pasta",
+      withProfile({ mode: "percent", percent: 20 }),
+      180,
+      "lunch",
+    );
+    expect(result.recommended_dose).toBe(5);
+    expect(result.correction?.correction_dose).toBe(2);
+    expect(result.total_dose).toBe(8.5);
+    expect(result.profile).toEqual({ id: "p", name: "Test", percent: 20 });
   });
 
-  it("finds foods by matching words", () => {
-    const results = foodDb.search("rice white cooked");
-    expect(results.length).toBeGreaterThan(0);
-    expect(results[0]!.fdc_id).toBe(169756);
+  it("uses the profile's own ratio for the meal window", async () => {
+    fiftyGramsOfCarbs();
+    const result = await calculateOk(
+      calculator,
+      "pasta",
+      withProfile({ mode: "per_window", ratios: { lunch: 5 } }),
+      undefined,
+      "lunch",
+    );
+    expect(result.meal_window.ratio).toBe(5);
+    expect(result.recommended_dose).toBe(10);
+    expect(result.total_dose).toBe(10);
   });
 
-  it("matches partial word sets (not all words required)", () => {
-    const results = foodDb.search("banana");
-    expect(results.length).toBeGreaterThan(0);
-    expect(results[0]!.description).toContain("Banana");
-  });
-
-  it("ranks results by number of matching words", () => {
-    const results = foodDb.search("chicken breast grilled cooked");
-    expect(results.length).toBeGreaterThan(0);
-    // Chicken should rank higher than rice (more word matches)
-    expect(results[0]!.fdc_id).toBe(171534);
-  });
-
-  it("returns empty array for no matches", () => {
-    const results = foodDb.search("xyznonexistent");
-    expect(results).toHaveLength(0);
-  });
-
-  it("stems words with porter tokenizer", () => {
-    const results = foodDb.search("cooking");
-    expect(results.length).toBeGreaterThan(0);
-    expect(results[0]!.fdc_id).toBe(169756);
-  });
-
-  describe("Calculator profiles", () => {
-    let parser: FakeFoodParser;
-    let calculator: Calculator;
-    let foodDb: FoodDatabase;
-    let tmpDir: string;
-
-    beforeEach(async () => {
-      tmpDir = await mkdtemp(join(tmpdir(), "tashi-profile-test-"));
-      parser = new FakeFoodParser();
-      foodDb = await createTestFoodDb(tmpDir);
-      calculator = new Calculator(parser, foodDb, systemClock, sequentialIds());
-    });
-
-    afterEach(async () => {
-      foodDb.close();
-      await rm(tmpDir, { recursive: true });
-    });
-
-    const fiftyGramsOfCarbs = () =>
-      parser.setResponse("pasta", [
-        {
-          description: "Pasta",
-          fdc_id: null,
-          weight_g: 100,
-          assumed_cooked: true,
-          confidence: "high",
-          notes: null,
-          estimated_net_carbs_per_100g: 50,
-          user_carbs: null,
-          estimated_glycemic_index: null,
-          estimated_fat_per_100g: null,
-          estimated_protein_per_100g: null,
-          warning: null,
-        },
-      ]);
-
-    function withProfile(
-      adjustment: Settings["profiles"][number]["adjustment"],
-    ): Settings {
-      return {
-        ...TEST_SETTINGS,
-        profiles: [{ id: "p", name: "Test", emoji: "⭐", adjustment }],
-        active_profile_id: "p",
-      };
-    }
-
-    it("scales only the final total by the profile's percentage", async () => {
-      fiftyGramsOfCarbs();
-      const result = await calculateOk(
-        calculator,
-        "pasta",
-        withProfile({ mode: "percent", percent: 20 }),
-        180,
-        "lunch",
-      );
-      expect(result.recommended_dose).toBe(5);
-      expect(result.correction?.correction_dose).toBe(2);
-      expect(result.total_dose).toBe(8.5);
-      expect(result.profile).toEqual({ id: "p", name: "Test", percent: 20 });
-    });
-
-    it("uses the profile's own ratio for the meal window", async () => {
-      fiftyGramsOfCarbs();
-      const result = await calculateOk(
-        calculator,
-        "pasta",
-        withProfile({ mode: "per_window", ratios: { lunch: 5 } }),
-        undefined,
-        "lunch",
-      );
-      expect(result.meal_window.ratio).toBe(5);
-      expect(result.recommended_dose).toBe(10);
-      expect(result.total_dose).toBe(10);
-    });
-
-    it("falls back to the window's ratio when the profile has none for it", async () => {
-      fiftyGramsOfCarbs();
-      const result = await calculateOk(
-        calculator,
-        "pasta",
-        withProfile({ mode: "per_window", ratios: { dinner: 5 } }),
-        undefined,
-        "lunch",
-      );
-      expect(result.meal_window.ratio).toBe(10);
-    });
+  it("falls back to the window's ratio when the profile has none for it", async () => {
+    fiftyGramsOfCarbs();
+    const result = await calculateOk(
+      calculator,
+      "pasta",
+      withProfile({ mode: "per_window", ratios: { dinner: 5 } }),
+      undefined,
+      "lunch",
+    );
+    expect(result.meal_window.ratio).toBe(10);
   });
 });
