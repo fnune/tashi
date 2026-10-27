@@ -6,6 +6,7 @@ import { Hono } from "hono";
 import { AnthropicFoodParser } from "./anthropic-food-parser.js";
 import { Calculator } from "./calculator.js";
 import { FoodDatabase } from "./db/food-db.js";
+import { passwordGate } from "./password-gate.js";
 import { createRoutes } from "./routes.js";
 import { FileStorage } from "./storage.js";
 
@@ -34,6 +35,10 @@ const calculator = new Calculator(parser, foodDb);
 const app = new Hono();
 
 app.get(`${basePath}/api/health`, (c) => c.json({ ok: true }));
+
+if (process.env.TASHI_PASSWORD) {
+  app.use("*", passwordGate(process.env.TASHI_PASSWORD));
+}
 
 const routes = createRoutes(calculator, storage);
 app.route(basePath || "/", routes);
