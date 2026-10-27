@@ -3,7 +3,6 @@ import { join } from "node:path";
 import { serve } from "@hono/node-server";
 import { serveStatic } from "@hono/node-server/serve-static";
 import { Hono } from "hono";
-import { cors } from "hono/cors";
 import { AnthropicFoodParser } from "./anthropic-food-parser.js";
 import { Calculator } from "./calculator.js";
 import { FoodDatabase } from "./db/food-db.js";
@@ -33,8 +32,6 @@ const parser = new AnthropicFoodParser(apiKey, foodDb, model);
 const calculator = new Calculator(parser, foodDb);
 
 const app = new Hono();
-
-app.use(`${basePath}/api/*`, cors());
 
 const routes = createRoutes(calculator, storage);
 app.route(basePath || "/", routes);
