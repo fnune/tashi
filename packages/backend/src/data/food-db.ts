@@ -1,24 +1,9 @@
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
+import type { FoodItem } from "@tashi/shared";
 import initSqlJs, { type Database } from "sql.js";
 
-export interface FoodMatch {
-  fdc_id: number;
-  description: string;
-  data_type: string;
-  category: string | null;
-  net_carbs_per_100g: number;
-  total_carbs_per_100g: number;
-  fiber_per_100g: number;
-  sugars_per_100g: number;
-  fat_per_100g: number;
-  protein_per_100g: number;
-  serving_g: number | null;
-  serving_desc: string | null;
-  name_es: string | null;
-  glycemic_index: number | null;
-  gi_source: string | null;
-  cooking_multiplier: number | null;
+export interface FoodMatch extends FoodItem {
   match_count: number;
 }
 
@@ -117,7 +102,7 @@ export class FoodDatabase {
     return results.slice(0, limit);
   }
 
-  getByFdcId(fdcId: number): FoodMatch | null {
+  getByFdcId(fdcId: number): FoodItem | null {
     const stmt = this.db.prepare(`
       SELECT
         f.fdc_id,
@@ -148,7 +133,8 @@ export class FoodDatabase {
     }
     const row = stmt.getAsObject();
     stmt.free();
-    return this.rowToMatch(row);
+    const { match_count: _, ...food } = this.rowToMatch(row);
+    return food;
   }
 
   private rowToMatch(row: Record<string, unknown>): FoodMatch {

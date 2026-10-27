@@ -10,8 +10,8 @@ import {
   findMealWindow,
   type Settings,
 } from "@tashi/shared";
-import type { FoodDatabase, FoodMatch } from "../data/food-db.js";
 import type { Clock } from "./clock.js";
+import type { FoodLookup } from "./food-lookup.js";
 import type { FoodParser } from "./food-parser.js";
 import type { IdGenerator } from "./ids.js";
 
@@ -20,41 +20,20 @@ export type CalculateOutcome =
   | { status: "needs_clarification"; message: string }
   | { status: "rejected"; message: string };
 
-function matchToFoodItem(match: FoodMatch): FoodItem {
-  return {
-    fdc_id: match.fdc_id,
-    description: match.description,
-    data_type: match.data_type,
-    category: match.category,
-    net_carbs_per_100g: match.net_carbs_per_100g,
-    total_carbs_per_100g: match.total_carbs_per_100g,
-    fiber_per_100g: match.fiber_per_100g,
-    sugars_per_100g: match.sugars_per_100g,
-    fat_per_100g: match.fat_per_100g,
-    protein_per_100g: match.protein_per_100g,
-    serving_g: match.serving_g,
-    serving_desc: match.serving_desc,
-    name_es: match.name_es,
-    glycemic_index: match.glycemic_index,
-    gi_source: match.gi_source,
-    cooking_multiplier: match.cooking_multiplier,
-  };
-}
-
 export class Calculator {
   private parser: FoodParser;
-  private foodDb: FoodDatabase;
+  private foodLookup: FoodLookup;
   private clock: Clock;
   private newId: IdGenerator;
 
   constructor(
     parser: FoodParser,
-    foodDb: FoodDatabase,
+    foodLookup: FoodLookup,
     clock: Clock,
     newId: IdGenerator,
   ) {
     this.parser = parser;
-    this.foodDb = foodDb;
+    this.foodLookup = foodLookup;
     this.clock = clock;
     this.newId = newId;
   }
@@ -132,7 +111,9 @@ export class Calculator {
   private resolveItems(parsedItems: ParsedFoodItem[]): CalculatedItem[] {
     return parsedItems.map((parsed) => {
       const match =
-        parsed.fdc_id !== null ? this.foodDb.getByFdcId(parsed.fdc_id) : null;
+        parsed.fdc_id !== null
+          ? this.foodLookup.getByFdcId(parsed.fdc_id)
+          : null;
 
       let netCarbsPer100g: number;
       let estimated = false;
@@ -146,7 +127,7 @@ export class Calculator {
         netCarbsPer100g = userPer100g;
         dataSource = match ? match.data_type : "user";
         if (match) {
-          foodItem = matchToFoodItem(match);
+          foodItem = match;
           const diff = Math.abs(userPer100g - match.net_carbs_per_100g);
           if (diff > 5 || diff / Math.max(match.net_carbs_per_100g, 1) > 0.3) {
             const usdaWarning = `USDA: ${match.net_carbs_per_100g}g HC netos/100g vs usuario: ${userPer100g}g`;
@@ -154,7 +135,7 @@ export class Calculator {
           }
         }
       } else if (match) {
-        foodItem = matchToFoodItem(match);
+        foodItem = match;
         netCarbsPer100g = match.net_carbs_per_100g;
         dataSource = match.data_type;
       } else if (

@@ -108,6 +108,7 @@ describe("Calculator", () => {
     expect(rice.net_carbs_g).toBeCloseTo(41.7, 0);
     expect(rice.food_item).not.toBeNull();
     expect(rice.food_item!.fdc_id).toBe(169756);
+    expect(rice.food_item).not.toHaveProperty("match_count");
     expect(rice.estimated).toBe(false);
 
     const chicken = result.items[1]!;
