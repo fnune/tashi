@@ -32,7 +32,8 @@ Reference: [Mark Seemann](https://blog.ploeh.dk/), [_Dependency Injection Princi
 
 ### Layered architecture and abstraction ownership
 
-- Split the backend into layers: HTTP (routes), domain (calculation, timeline rules, API key handling), data access (storage).
+- Split the backend into layers, one folder each under `packages/backend/src`: `http/` (routes, request schemas, error mapping), `domain/` (calculation, timeline rules, API key handling, the services the routes call, and the interfaces it needs), `data/` (file storage, the foods database, the Anthropic client).
+- `server.ts` and `config.ts` sit above the layers: they are the Composition Root. `__tests__/layers.test.ts` fails when a layer imports one it must not.
 - Each layer declares the abstractions it consumes. The interface belongs to the consumer, not the implementer.
 - The domain declares the storage interfaces it needs. Data access imports and implements them. The domain does not depend on data access.
 - Reject naive layering, where each layer depends on the next one down. That is not Dependency Inversion.
