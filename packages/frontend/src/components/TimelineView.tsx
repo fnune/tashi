@@ -468,7 +468,7 @@ export function TimelineView({
         <Button
           variant="danger"
           className="timeline-clear"
-          onClick={handleClear}
+          onClick={() => setClearing(true)}
         >
           {t(lang, "clearTimeline")}
         </Button>
