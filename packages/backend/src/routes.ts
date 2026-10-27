@@ -17,6 +17,7 @@ import {
   SecretUnavailableError,
 } from "./errors.js";
 import type { IdGenerator } from "./ids.js";
+import type { Repositories } from "./repositories.js";
 import {
   apiKeySchema,
   calculateSchema,
@@ -25,18 +26,18 @@ import {
   settingsSchema,
   updateTimelineSchema,
 } from "./schemas.js";
-import type { FileStorage } from "./storage.js";
 import {
   applyTimelineUpdate,
   fastInsulinEntries,
   logMeal,
 } from "./timeline.js";
+import { learnVocabulary } from "./vocabulary.js";
 
 const TIME_ZONE_HEADER = "X-Timezone";
 
 export interface RouteDependencies {
   calculator: Calculator;
-  storage: FileStorage;
+  repositories: Repositories;
   apiKeys: ApiKeyStore;
   clock: Clock;
   newId: IdGenerator;
@@ -44,7 +45,7 @@ export interface RouteDependencies {
 
 export function createRoutes({
   calculator,
-  storage,
+  repositories,
   apiKeys,
   clock,
   newId,
@@ -59,7 +60,7 @@ export function createRoutes({
     }
 
     const timeZone = c.req.header(TIME_ZONE_HEADER);
-    const settings = await storage.getSettings();
+    const settings = await repositories.settings.get();
     const bolusInsulinId = settings.bolus_insulin_id;
     if (bolusInsulinId === null) {
       return apiError(c, "bolus_insulin_not_configured", 400);
@@ -70,10 +71,10 @@ export function createRoutes({
     ) {
       return apiError(c, "no_meal_window", 400);
     }
-    const vocabulary = await storage.getVocabulary();
+    const vocabulary = await repositories.vocabulary.list();
 
     try {
-      const timeline = await storage.getTimeline();
+      const timeline = await repositories.timeline.list();
       const iobUnits =
         settings.insulin_action_minutes === null
           ? 0
@@ -141,7 +142,7 @@ export function createRoutes({
     if (!parsed.success) {
       return apiError(c, "validation_failed", 400, parsed.error.message);
     }
-    const settings = await storage.getSettings();
+    const settings = await repositories.settings.get();
     const bolusInsulinId = settings.bolus_insulin_id;
     if (bolusInsulinId === null) {
       return apiError(c, "bolus_insulin_not_configured", 400);
@@ -158,8 +159,14 @@ export function createRoutes({
     );
     const entries: TimelineEntry[] = insulin ? [meal, insulin] : [meal];
 
-    await storage.addTimelineEntries(entries);
-    await storage.learnFromItems(parsed.data.result.items, now);
+    await repositories.timeline.add(entries);
+    await repositories.vocabulary.upsert(
+      learnVocabulary(
+        await repositories.vocabulary.list(),
+        parsed.data.result.items,
+        now,
+      ),
+    );
 
     const response: LogMealResponse = {
       meal_entry_id: meal.id,
@@ -169,7 +176,7 @@ export function createRoutes({
   });
 
   api.get("/api/settings", async (c) => {
-    const settings = await storage.getSettings();
+    const settings = await repositories.settings.get();
     return c.json(settings);
   });
 
@@ -179,21 +186,21 @@ export function createRoutes({
     if (!parsed.success) {
       return apiError(c, "validation_failed", 400, parsed.error.message);
     }
-    await storage.saveSettings(parsed.data);
+    await repositories.settings.save(parsed.data);
     return c.json(parsed.data);
   });
 
   api.get("/api/timeline", async (c) => {
-    const timeline = await storage.getTimeline();
+    const timeline = await repositories.timeline.list();
     return c.json(timeline);
   });
 
   api.get("/api/iob", async (c) => {
-    const settings = await storage.getSettings();
+    const settings = await repositories.settings.get();
     if (settings.insulin_action_minutes === null) {
       return apiError(c, "insulin_action_not_configured", 400);
     }
-    const timeline = await storage.getTimeline();
+    const timeline = await repositories.timeline.list();
     try {
       return c.json(
         insulinOnBoard(fastInsulinEntries(timeline), settings, clock()),
@@ -216,7 +223,7 @@ export function createRoutes({
     const timestamp = clock().toISOString();
 
     if (data.type === "fast_insulin") {
-      const settings = await storage.getSettings();
+      const settings = await repositories.settings.get();
       const bolusInsulinId = settings.bolus_insulin_id;
       if (bolusInsulinId === null) {
         return apiError(c, "bolus_insulin_not_configured", 400);
@@ -229,12 +236,12 @@ export function createRoutes({
         insulin_id: bolusInsulinId,
         related_meal_id: null,
       };
-      await storage.addTimelineEntry(entry);
+      await repositories.timeline.add([entry]);
       return c.json(entry, 201);
     }
 
     if (data.type === "slow_insulin") {
-      const settings = await storage.getSettings();
+      const settings = await repositories.settings.get();
       const basalInsulinId = settings.basal_insulin_id;
       if (basalInsulinId === null) {
         return apiError(c, "basal_insulin_not_configured", 400);
@@ -246,7 +253,7 @@ export function createRoutes({
         units: data.units,
         insulin_id: basalInsulinId,
       };
-      await storage.addTimelineEntry(entry);
+      await repositories.timeline.add([entry]);
       return c.json(entry, 201);
     }
 
@@ -257,7 +264,7 @@ export function createRoutes({
       value: data.value,
       unit: data.unit,
     };
-    await storage.addTimelineEntry(entry);
+    await repositories.timeline.add([entry]);
     return c.json(entry, 201);
   });
 
@@ -267,7 +274,7 @@ export function createRoutes({
     if (!parsed.success) {
       return apiError(c, "validation_failed", 400, parsed.error.message);
     }
-    const existing = (await storage.getTimeline()).find((e) => e.id === id);
+    const existing = await repositories.timeline.get(id);
     if (!existing) {
       return apiError(c, "not_found", 404);
     }
@@ -278,13 +285,13 @@ export function createRoutes({
     if (update.status === "implausible_value") {
       return apiError(c, "validation_failed", 400);
     }
-    await storage.replaceTimelineEntry(update.entry);
+    await repositories.timeline.replace(update.entry);
     return c.json(update.entry);
   });
 
   api.delete("/api/timeline/:id", async (c) => {
     const id = c.req.param("id");
-    const deleted = await storage.deleteTimelineEntry(id);
+    const deleted = await repositories.timeline.delete(id);
     if (!deleted) {
       return apiError(c, "not_found", 404);
     }
@@ -292,7 +299,7 @@ export function createRoutes({
   });
 
   api.delete("/api/timeline", async (c) => {
-    await storage.clearTimeline();
+    await repositories.timeline.clear();
     return c.json({ ok: true });
   });
 

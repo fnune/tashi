@@ -16,8 +16,9 @@ import { ApiKeyStore } from "../api-key-store.js";
 import { Calculator } from "../calculator.js";
 import type { Clock } from "../clock.js";
 import type { FoodDatabase } from "../db/food-db.js";
+import { openFileRepositories } from "../file-repositories.js";
+import type { Repositories } from "../repositories.js";
 import { createRoutes } from "../routes.js";
-import { FileStorage } from "../storage.js";
 import { FakeFoodParser } from "./fake-food-parser.js";
 import { sequentialIds } from "./sequential-ids.js";
 import { createTestFoodDb } from "./test-food-db.js";
@@ -82,7 +83,7 @@ function expectOkResponse(body: CalculateResponse): CalculateOk {
 
 describe("API routes", () => {
   let app: ReturnType<typeof createRoutes>;
-  let storage: FileStorage;
+  let repositories: Repositories;
   let parser: FakeFoodParser;
   let foodDb: FoodDatabase;
   let tmpDir: string;
@@ -90,8 +91,7 @@ describe("API routes", () => {
 
   beforeEach(async () => {
     tmpDir = await mkdtemp(join(tmpdir(), "tashi-test-"));
-    storage = new FileStorage(tmpDir);
-    await storage.init();
+    repositories = await openFileRepositories(tmpDir);
     parser = new FakeFoodParser();
     foodDb = await createTestFoodDb(tmpDir);
     now = new Date("2026-06-13T12:00:00.000Z");
@@ -100,8 +100,8 @@ describe("API routes", () => {
     const calculator = new Calculator(parser, foodDb, clock, newId);
     app = createRoutes({
       calculator,
-      storage,
-      apiKeys: new ApiKeyStore(storage),
+      repositories,
+      apiKeys: new ApiKeyStore(repositories.apiKey),
       clock,
       newId,
     });
@@ -130,7 +130,7 @@ describe("API routes", () => {
       },
     ]);
 
-    await storage.saveSettings({
+    await repositories.settings.save({
       meal_windows: [{ name: "lunch", start_hour: 0, end_hour: 24, ratio: 10 }],
       correction_factor: null,
       target_blood_sugar: 6.0,
@@ -162,7 +162,7 @@ describe("API routes", () => {
 
   it("POST /api/meals logs the meal with the units actually injected", async () => {
     parser.setResponse("rice", [carbItem(30)]);
-    await storage.saveSettings(configured());
+    await repositories.settings.save(configured());
     const { result } = expectOkResponse(
       (await (
         await postJson(app, "/api/calculate", { food_description: "rice" })
@@ -201,7 +201,7 @@ describe("API routes", () => {
 
   it("POST /api/calculate rejects a time no meal window covers", async () => {
     parser.setResponse("rice", [carbItem(30)]);
-    await storage.saveSettings({
+    await repositories.settings.save({
       ...configured(),
       meal_windows: [
         {
@@ -227,7 +227,7 @@ describe("API routes", () => {
   async function calculateWindowAt(timeZone: string | undefined) {
     now = new Date("2026-06-13T04:30:00.000Z");
     parser.setResponse("rice", [carbItem(30)]);
-    await storage.saveSettings({
+    await repositories.settings.save({
       ...configured(),
       meal_windows: [
         { name: "morning", start_hour: 6, end_hour: 11, ratio: 8 },
@@ -274,7 +274,7 @@ describe("API routes", () => {
 
   it("POST /api/meals logs no injection for zero units", async () => {
     parser.setResponse("lettuce", [carbItem(0)]);
-    await storage.saveSettings(configured());
+    await repositories.settings.save(configured());
     const { result } = expectOkResponse(
       (await (
         await postJson(app, "/api/calculate", { food_description: "lettuce" })
@@ -293,15 +293,17 @@ describe("API routes", () => {
 
   it("POST /api/calculate reduces the correction by insulin on board", async () => {
     parser.setResponse("carbs", [carbItem(50)]);
-    await storage.saveSettings(configured({ correction_factor: 40 }));
-    await storage.addTimelineEntry({
-      id: crypto.randomUUID(),
-      timestamp: new Date(now.getTime() - 30 * 60_000).toISOString(),
-      type: "fast_insulin",
-      units: 10,
-      insulin_id: "novorapid",
-      related_meal_id: null,
-    });
+    await repositories.settings.save(configured({ correction_factor: 40 }));
+    await repositories.timeline.add([
+      {
+        id: crypto.randomUUID(),
+        timestamp: new Date(now.getTime() - 30 * 60_000).toISOString(),
+        type: "fast_insulin",
+        units: 10,
+        insulin_id: "novorapid",
+        related_meal_id: null,
+      },
+    ]);
 
     const res = await app.request("/api/calculate", {
       method: "POST",
@@ -331,15 +333,17 @@ describe("API routes", () => {
   });
 
   it("GET /api/iob sums active insulin from the timeline", async () => {
-    await storage.saveSettings(configured());
-    await storage.addTimelineEntry({
-      id: crypto.randomUUID(),
-      timestamp: new Date(now.getTime() - 60 * 60_000).toISOString(),
-      type: "fast_insulin",
-      units: 8,
-      insulin_id: "novorapid",
-      related_meal_id: null,
-    });
+    await repositories.settings.save(configured());
+    await repositories.timeline.add([
+      {
+        id: crypto.randomUUID(),
+        timestamp: new Date(now.getTime() - 60 * 60_000).toISOString(),
+        type: "fast_insulin",
+        units: 8,
+        insulin_id: "novorapid",
+        related_meal_id: null,
+      },
+    ]);
 
     const res = await app.request("/api/iob");
     expect(res.status).toBe(200);
@@ -352,7 +356,7 @@ describe("API routes", () => {
 
   it("POST /api/meals offsets the meal by pre_bolus_minutes", async () => {
     parser.setResponse("a banana", [carbItem(20, 120)]);
-    await storage.saveSettings(configured());
+    await repositories.settings.save(configured());
     const { result } = expectOkResponse(
       (await (
         await postJson(app, "/api/calculate", { food_description: "a banana" })
@@ -377,7 +381,7 @@ describe("API routes", () => {
   });
 
   it("POST /api/timeline creates manual entries", async () => {
-    await storage.saveSettings({
+    await repositories.settings.save({
       ...DEFAULT_SETTINGS,
       bolus_insulin_id: "novorapid",
       basal_insulin_id: "tresiba",
@@ -418,7 +422,7 @@ describe("API routes", () => {
   });
 
   it("DELETE /api/timeline/:id removes a single entry", async () => {
-    await storage.saveSettings({
+    await repositories.settings.save({
       ...DEFAULT_SETTINGS,
       basal_insulin_id: "tresiba",
     });
@@ -481,7 +485,7 @@ describe("API routes", () => {
       },
     ]);
 
-    await storage.saveSettings({
+    await repositories.settings.save({
       meal_windows: [{ name: "lunch", start_hour: 0, end_hour: 24, ratio: 10 }],
       correction_factor: null,
       target_blood_sugar: 6.0,
@@ -505,11 +509,11 @@ describe("API routes", () => {
         })
       ).json()) as CalculateResponse,
     );
-    expect(await storage.getVocabulary()).toHaveLength(0);
+    expect(await repositories.vocabulary.list()).toHaveLength(0);
 
     await postJson(app, "/api/meals", { result, units: 3 });
 
-    const vocab = await storage.getVocabulary();
+    const vocab = await repositories.vocabulary.list();
     expect(vocab).toHaveLength(1);
     expect(vocab[0]!.fdc_id).toBe(169756);
     expect(vocab[0]!.description).toBe("White rice (cooked)");
@@ -518,7 +522,7 @@ describe("API routes", () => {
 
     await postJson(app, "/api/meals", { result, units: 3 });
 
-    const vocab2 = await storage.getVocabulary();
+    const vocab2 = await repositories.vocabulary.list();
     expect(vocab2).toHaveLength(1);
     expect(vocab2[0]!.use_count).toBe(2);
     expect(vocab2[0]!.usda_description).toContain("Rice");
@@ -542,7 +546,7 @@ describe("API routes", () => {
       },
     ]);
 
-    await storage.saveSettings({
+    await repositories.settings.save({
       meal_windows: [{ name: "lunch", start_hour: 0, end_hour: 24, ratio: 10 }],
       correction_factor: null,
       target_blood_sugar: 6.0,
@@ -565,7 +569,7 @@ describe("API routes", () => {
       body: JSON.stringify({ food_description: "100g acai bowl" }),
     });
 
-    const vocab = await storage.getVocabulary();
+    const vocab = await repositories.vocabulary.list();
     expect(vocab).toHaveLength(0);
   });
 
@@ -596,19 +600,21 @@ describe("API routes", () => {
     expect((await put(withoutNormal)).status).toBe(400);
     expect((await put(missingActive)).status).toBe(400);
     expect((await put(sportActive)).status).toBe(200);
-    expect((await storage.getSettings()).active_profile_id).toBe("sport");
+    expect((await repositories.settings.get()).active_profile_id).toBe("sport");
   });
 
   it("PUT /api/timeline/:id rejects a body that is not an update", async () => {
-    await storage.saveSettings(configured());
-    await storage.addTimelineEntry({
-      id: "e1",
-      timestamp: "2026-06-13T11:00:00.000Z",
-      type: "fast_insulin",
-      units: 3,
-      insulin_id: "novorapid",
-      related_meal_id: null,
-    });
+    await repositories.settings.save(configured());
+    await repositories.timeline.add([
+      {
+        id: "e1",
+        timestamp: "2026-06-13T11:00:00.000Z",
+        type: "fast_insulin",
+        units: 3,
+        insulin_id: "novorapid",
+        related_meal_id: null,
+      },
+    ]);
     for (const body of [
       { type: "fast_insulin", units: "lots" },
       { type: "fast_insulin", units: -1 },
@@ -627,55 +633,10 @@ describe("API routes", () => {
 
   it("names the file when stored data is not in the expected shape", async () => {
     await writeFile(join(tmpDir, "timeline.json"), JSON.stringify([{ id: 1 }]));
-    await expect(storage.getTimeline()).rejects.toThrow(/timeline\.json/);
+    await expect(repositories.timeline.list()).rejects.toThrow(
+      /timeline\.json/,
+    );
     const res = await app.request("/api/timeline");
     expect(res.status).toBe(500);
-  });
-});
-
-describe("FileStorage error handling", () => {
-  let tmpDir: string;
-
-  beforeEach(async () => {
-    tmpDir = await mkdtemp(join(tmpdir(), "tashi-test-"));
-  });
-
-  afterEach(async () => {
-    await rm(tmpDir, { recursive: true });
-  });
-
-  it("returns defaults when settings.json does not exist", async () => {
-    const storage = new FileStorage(tmpDir);
-    await storage.init();
-    const settings = await storage.getSettings();
-    expect(settings.language).toBe("en");
-  });
-
-  it("throws on corrupt settings.json", async () => {
-    const storage = new FileStorage(tmpDir);
-    await storage.init();
-    await writeFile(join(tmpDir, "settings.json"), "not json{{{");
-    await expect(storage.getSettings()).rejects.toThrow();
-  });
-
-  it("returns empty vocabulary when food-vocab.json does not exist", async () => {
-    const storage = new FileStorage(tmpDir);
-    await storage.init();
-    const vocab = await storage.getVocabulary();
-    expect(vocab).toEqual([]);
-  });
-
-  it("returns empty array when timeline.json does not exist", async () => {
-    const storage = new FileStorage(tmpDir);
-    await storage.init();
-    const timeline = await storage.getTimeline();
-    expect(timeline).toEqual([]);
-  });
-
-  it("throws on corrupt timeline.json", async () => {
-    const storage = new FileStorage(tmpDir);
-    await storage.init();
-    await writeFile(join(tmpDir, "timeline.json"), "broken!");
-    await expect(storage.getTimeline()).rejects.toThrow();
   });
 });

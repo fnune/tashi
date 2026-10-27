@@ -7,10 +7,10 @@ import { ApiKeyStore } from "@tashi/backend/api-key-store";
 import { Calculator } from "@tashi/backend/calculator";
 // E2E tests use the real food database
 import { FoodDatabase } from "@tashi/backend/db/food-db";
+import { openFileRepositories } from "@tashi/backend/file-repositories";
 import type { FoodParser, ParseOutcome } from "@tashi/backend/food-parser";
 import { randomId } from "@tashi/backend/ids";
 import { createRoutes } from "@tashi/backend/routes";
-import { FileStorage } from "@tashi/backend/storage";
 import type { FoodVocabEntry, ParsedFoodItem } from "@tashi/shared";
 import { DEFAULT_SETTINGS } from "@tashi/shared";
 import { Hono } from "hono";
@@ -125,8 +125,7 @@ class FakeFoodParser implements FoodParser {
 
 async function startServer(): Promise<void> {
   const tmpDir = await mkdtemp(join(tmpdir(), "tashi-e2e-"));
-  const storage = new FileStorage(tmpDir);
-  await storage.init();
+  const repositories = await openFileRepositories(tmpDir);
 
   const foodDb = await FoodDatabase.open(
     join(import.meta.dirname, "../../data/foods.db"),
@@ -144,8 +143,8 @@ async function startServer(): Promise<void> {
   app.use("/api/*", cors());
 
   app.post("/api/__reset", async (c) => {
-    await storage.clearTimeline();
-    await storage.saveSettings({
+    await repositories.timeline.clear();
+    await repositories.settings.save({
       ...DEFAULT_SETTINGS,
       correction_factor: null,
       target_blood_sugar: 100,
@@ -162,8 +161,8 @@ async function startServer(): Promise<void> {
 
   const routes = createRoutes({
     calculator,
-    storage,
-    apiKeys: new ApiKeyStore(storage),
+    repositories,
+    apiKeys: new ApiKeyStore(repositories.apiKey),
     clock: lunchtimeClock,
     newId: randomId,
   });

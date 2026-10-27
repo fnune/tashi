@@ -1,12 +1,7 @@
 import type { ApiKeyStatus } from "@tashi/shared";
 import { InvalidApiKeyError, SecretUnavailableError } from "./errors.js";
-import { type SealedSecret, seal, unseal } from "./secret-box.js";
-
-export interface ApiKeyRecords {
-  getApiKeyRecord(): Promise<SealedSecret | null>;
-  saveApiKeyRecord(record: SealedSecret): Promise<void>;
-  deleteApiKeyRecord(): Promise<void>;
-}
+import type { ApiKeyRepository } from "./repositories.js";
+import { seal, unseal } from "./secret-box.js";
 
 export interface ApiKeyStoreOptions {
   encryptionPassphrase?: string;
@@ -18,7 +13,7 @@ export class ApiKeyStore {
   private decryptedKey: string | null | undefined;
 
   constructor(
-    private records: ApiKeyRecords,
+    private records: ApiKeyRepository,
     private options: ApiKeyStoreOptions = {},
   ) {}
 
@@ -41,18 +36,18 @@ export class ApiKeyStore {
     const { encryptionPassphrase, verify } = this.options;
     if (encryptionPassphrase === undefined) throw new SecretUnavailableError();
     if (verify && !(await verify(apiKey))) throw new InvalidApiKeyError();
-    await this.records.saveApiKeyRecord(seal(apiKey, encryptionPassphrase));
+    await this.records.save(seal(apiKey, encryptionPassphrase));
     this.decryptedKey = apiKey;
   }
 
   async clear(): Promise<void> {
-    await this.records.deleteApiKeyRecord();
+    await this.records.delete();
     this.decryptedKey = null;
   }
 
   private async stored(): Promise<string | null> {
     if (this.decryptedKey !== undefined) return this.decryptedKey;
-    const record = await this.records.getApiKeyRecord();
+    const record = await this.records.get();
     const { encryptionPassphrase } = this.options;
     this.decryptedKey =
       record && encryptionPassphrase !== undefined

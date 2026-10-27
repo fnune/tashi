@@ -9,7 +9,8 @@
     "./food-parser": "./src/food-parser.ts",
     "./ids": "./src/ids.ts",
     "./routes": "./src/routes.ts",
-    "./storage": "./src/storage.ts",
+    "./file-repositories": "./src/file-repositories.ts",
+    "./repositories": "./src/repositories.ts",
     "./db/food-db": "./src/db/food-db.ts"
   },
   "scripts": {

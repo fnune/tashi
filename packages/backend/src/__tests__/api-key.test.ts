@@ -8,11 +8,12 @@ import { Calculator } from "../calculator.js";
 import { systemClock } from "../clock.js";
 import type { FoodDatabase } from "../db/food-db.js";
 import { InvalidApiKeyError } from "../errors.js";
+import { openFileRepositories } from "../file-repositories.js";
 import type { FoodParser } from "../food-parser.js";
 import { KeyedFoodParser } from "../keyed-food-parser.js";
+import type { Repositories } from "../repositories.js";
 import { createRoutes } from "../routes.js";
 import { seal, unseal } from "../secret-box.js";
-import { FileStorage } from "../storage.js";
 import { FakeFoodParser } from "./fake-food-parser.js";
 import { sequentialIds } from "./sequential-ids.js";
 import { createTestFoodDb } from "./test-food-db.js";
@@ -39,7 +40,7 @@ describe("secret box", () => {
 
 describe("api key routes", () => {
   let tmpDir: string;
-  let storage: FileStorage;
+  let repositories: Repositories;
   let foodDb: FoodDatabase;
   let created: string[];
   let verified: string[];
@@ -49,7 +50,7 @@ describe("api key routes", () => {
     const newId = sequentialIds();
     return createRoutes({
       calculator: new Calculator(parser, foodDb, systemClock, newId),
-      storage,
+      repositories,
       apiKeys,
       clock: systemClock,
       newId,
@@ -60,7 +61,7 @@ describe("api key routes", () => {
     encryptionPassphrase?: string;
     environmentKey?: string;
   }) {
-    const keys = new ApiKeyStore(storage, {
+    const keys = new ApiKeyStore(repositories.apiKey, {
       ...options,
       verify: async (key) => {
         verified.push(key);
@@ -101,9 +102,8 @@ describe("api key routes", () => {
 
   beforeEach(async () => {
     tmpDir = await mkdtemp(join(tmpdir(), "tashi-test-"));
-    storage = new FileStorage(tmpDir);
-    await storage.init();
-    await storage.saveSettings({
+    repositories = await openFileRepositories(tmpDir);
+    await repositories.settings.save({
       ...DEFAULT_SETTINGS,
       meal_windows: [
         { name: "all-day", start_hour: 0, end_hour: 24, ratio: 10 },
@@ -167,12 +167,12 @@ describe("api key routes", () => {
     await putKey(appWith({ encryptionPassphrase: "pw" }), KEY);
     let reads = 0;
     const counting = {
-      getApiKeyRecord: () => {
+      get: () => {
         reads++;
-        return storage.getApiKeyRecord();
+        return repositories.apiKey.get();
       },
-      saveApiKeyRecord: storage.saveApiKeyRecord.bind(storage),
-      deleteApiKeyRecord: storage.deleteApiKeyRecord.bind(storage),
+      save: repositories.apiKey.save.bind(repositories.apiKey),
+      delete: repositories.apiKey.delete.bind(repositories.apiKey),
     };
     const keys = new ApiKeyStore(counting, { encryptionPassphrase: "pw" });
     await keys.get();
@@ -248,7 +248,7 @@ describe("api key routes", () => {
   });
 
   it("reports a rejected key from the provider as api_key_invalid", async () => {
-    const keys = new ApiKeyStore(storage, { environmentKey: KEY });
+    const keys = new ApiKeyStore(repositories.apiKey, { environmentKey: KEY });
     const parser = new KeyedFoodParser(keys, () => ({
       parse: async () => {
         throw new InvalidApiKeyError();

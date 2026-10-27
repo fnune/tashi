@@ -13,6 +13,7 @@ import type {
 import {
   basalInsulinProfiles,
   bolusInsulinProfiles,
+  DEFAULT_SETTINGS,
   isPlausibleGlucose,
   MAX_CYCLE_DAYS,
   MAX_DIA_MINUTES,
@@ -131,6 +132,13 @@ export const createTimelineSchema = z
       entry.type !== "glucose_reading" ||
       isPlausibleGlucose(entry.value, entry.unit),
   );
+
+export function parseStoredSettings(stored: unknown): Settings {
+  return settingsSchema.parse({
+    ...DEFAULT_SETTINGS,
+    ...z.record(z.string(), z.unknown()).parse(stored),
+  });
+}
 
 const glucoseUnitSchema = z.union([z.literal("mg/dL"), z.literal("mmol/L")]);
 const languageSchema = z.union([z.literal("en"), z.literal("es")]);

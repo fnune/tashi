@@ -9,24 +9,23 @@ import { Calculator } from "./calculator.js";
 import { systemClock } from "./clock.js";
 import { loadConfig } from "./config.js";
 import { FoodDatabase } from "./db/food-db.js";
+import { openFileRepositories } from "./file-repositories.js";
 import { randomId } from "./ids.js";
 import { anthropicAcceptsKey, KeyedFoodParser } from "./keyed-food-parser.js";
 import { passwordGate } from "./password-gate.js";
 import { createRoutes } from "./routes.js";
-import { FileStorage } from "./storage.js";
 
 const config = loadConfig(process.env);
 const foodsDbPath =
   config.foodsDbPath ?? join(import.meta.dirname, "../../../data/foods.db");
 const { basePath } = config;
 
-const storage = new FileStorage(config.dataDir);
-await storage.init();
+const repositories = await openFileRepositories(config.dataDir);
 
 const foodDb = await FoodDatabase.open(foodsDbPath);
 console.log(`Food database loaded: ${foodDb.foodCount()} foods`);
 
-const apiKeys = new ApiKeyStore(storage, {
+const apiKeys = new ApiKeyStore(repositories.apiKey, {
   encryptionPassphrase: config.encryptionPassphrase,
   environmentKey: config.anthropicApiKey,
   verify: anthropicAcceptsKey,
@@ -51,7 +50,7 @@ if (config.password) {
 
 const routes = createRoutes({
   calculator,
-  storage,
+  repositories,
   apiKeys,
   clock: systemClock,
   newId: randomId,
