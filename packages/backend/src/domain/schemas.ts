@@ -8,13 +8,11 @@ import type {
   ParseTrace,
   Settings,
   TimelineEntry,
-  UpdateTimelineRequest,
 } from "@tashi/shared";
 import {
   basalInsulinProfiles,
   bolusInsulinProfiles,
   DEFAULT_SETTINGS,
-  isPlausibleGlucose,
   MAX_CYCLE_DAYS,
   MAX_DIA_MINUTES,
   MIN_CYCLE_DAYS,
@@ -22,21 +20,7 @@ import {
   NORMAL_PROFILE_ID,
 } from "@tashi/shared";
 import { z } from "zod";
-import type { SealedSecret } from "./domain/secret-box.js";
-
-export const calculateSchema = z.object({
-  food_description: z.string().min(1),
-  current_blood_sugar: z.number().positive().optional(),
-  meal_window_override: z.string().optional(),
-});
-
-export const apiKeySchema = z.object({
-  api_key: z
-    .string()
-    .trim()
-    .min(1)
-    .refine((key) => !/\s/.test(key)),
-});
+import type { SealedSecret } from "./secret-box.js";
 
 export const bolusInsulinIdSchema = z.enum(
   bolusInsulinProfiles().map((p) => p.id) as [
@@ -111,28 +95,6 @@ export const settingsSchema = z
     message: "The active profile must exist",
   }) satisfies z.ZodType<Settings>;
 
-export const createTimelineSchema = z
-  .discriminatedUnion("type", [
-    z.object({
-      type: z.literal("fast_insulin"),
-      units: z.number().positive(),
-    }),
-    z.object({
-      type: z.literal("slow_insulin"),
-      units: z.number().positive(),
-    }),
-    z.object({
-      type: z.literal("glucose_reading"),
-      value: z.number().positive(),
-      unit: z.union([z.literal("mg/dL"), z.literal("mmol/L")]),
-    }),
-  ])
-  .refine(
-    (entry) =>
-      entry.type !== "glucose_reading" ||
-      isPlausibleGlucose(entry.value, entry.unit),
-  );
-
 export function parseStoredSettings(stored: unknown): Settings {
   return settingsSchema.parse({
     ...DEFAULT_SETTINGS,
@@ -140,22 +102,25 @@ export function parseStoredSettings(stored: unknown): Settings {
   });
 }
 
-const glucoseUnitSchema = z.union([z.literal("mg/dL"), z.literal("mmol/L")]);
-const languageSchema = z.union([z.literal("en"), z.literal("es")]);
-const isoTimestampSchema = z
+export const glucoseUnitSchema = z.union([
+  z.literal("mg/dL"),
+  z.literal("mmol/L"),
+]);
+export const languageSchema = z.union([z.literal("en"), z.literal("es")]);
+export const isoTimestampSchema = z
   .string()
   .refine((value) => !Number.isNaN(Date.parse(value)));
 const nullableNumber = z.number().nullable();
 const nullableString = z.string().nullable();
 
-const mealWindowSchema = z.object({
+export const mealWindowSchema = z.object({
   name: z.string(),
   start_hour: z.number(),
   end_hour: z.number(),
   ratio: z.number().positive(),
 });
 
-const foodItemSchema = z.object({
+export const foodItemSchema = z.object({
   fdc_id: z.number(),
   description: z.string(),
   data_type: z.string(),
@@ -174,9 +139,9 @@ const foodItemSchema = z.object({
   cooking_multiplier: nullableNumber,
 }) satisfies z.ZodType<FoodItem>;
 
-const confidenceSchema = z.enum(["high", "medium", "low"]);
+export const confidenceSchema = z.enum(["high", "medium", "low"]);
 
-const calculatedItemSchema = z.object({
+export const calculatedItemSchema = z.object({
   description: z.string(),
   weight_g: z.number(),
   net_carbs_per_100g: z.number(),
@@ -196,7 +161,7 @@ const calculatedItemSchema = z.object({
   food_item: foodItemSchema.nullable(),
 }) satisfies z.ZodType<CalculatedItem>;
 
-const parseTraceSchema = z.object({
+export const parseTraceSchema = z.object({
   searches: z.array(
     z.object({
       query: z.string(),
@@ -214,13 +179,13 @@ const parseTraceSchema = z.object({
   duration_ms: z.number(),
 }) satisfies z.ZodType<ParseTrace>;
 
-const appliedProfileSchema = z.object({
+export const appliedProfileSchema = z.object({
   id: z.string(),
   name: z.string(),
   percent: z.number(),
 });
 
-const correctionSchema = z.object({
+export const correctionSchema = z.object({
   current_blood_sugar: z.number(),
   target_blood_sugar: z.number(),
   correction_factor: z.number(),
@@ -230,7 +195,7 @@ const correctionSchema = z.object({
   total_dose: z.number(),
 }) satisfies z.ZodType<NonNullable<CalculationResult["correction"]>>;
 
-const fatProteinAdjustmentSchema = z.object({
+export const fatProteinAdjustmentSchema = z.object({
   total_fat_g: z.number(),
   total_protein_g: z.number(),
   threshold_met: z.string(),
@@ -241,23 +206,10 @@ const fatProteinAdjustmentSchema = z.object({
   NonNullable<CalculationResult["fat_protein_adjustment"]>
 >;
 
-export const logMealSchema = z.object({
-  result: z.object({
-    input_text: z.string(),
-    language: languageSchema,
-    meal_window: mealWindowSchema,
-    items: z.array(calculatedItemSchema),
-    total_net_carbs_g: z.number(),
-    recommended_dose: z.number(),
-    correction: correctionSchema.optional(),
-    fat_protein_adjustment: fatProteinAdjustmentSchema.optional(),
-    trace: parseTraceSchema.optional(),
-  }),
-  units: z.number().min(0),
-  pre_bolus_minutes: z.number().int().min(0).max(60).default(0),
-});
-
-const entryBase = { id: z.string().min(1), timestamp: isoTimestampSchema };
+export const entryBase = {
+  id: z.string().min(1),
+  timestamp: isoTimestampSchema,
+};
 
 export const storedTimelineSchema = z.array(
   z.discriminatedUnion("type", [
@@ -297,28 +249,6 @@ export const storedTimelineSchema = z.array(
     }),
   ]),
 ) satisfies z.ZodType<TimelineEntry[]>;
-
-export const updateTimelineSchema = z.discriminatedUnion("type", [
-  z.object({
-    type: z.literal("meal"),
-    timestamp: isoTimestampSchema.optional(),
-  }),
-  z.object({
-    type: z.literal("fast_insulin"),
-    timestamp: isoTimestampSchema.optional(),
-    units: z.number().positive().optional(),
-  }),
-  z.object({
-    type: z.literal("slow_insulin"),
-    timestamp: isoTimestampSchema.optional(),
-    units: z.number().positive().optional(),
-  }),
-  z.object({
-    type: z.literal("glucose_reading"),
-    timestamp: isoTimestampSchema.optional(),
-    value: z.number().positive().optional(),
-  }),
-]) satisfies z.ZodType<UpdateTimelineRequest>;
 
 export const storedVocabularySchema = z.array(
   z.object({

@@ -3,16 +3,16 @@ import type { ApiKeyStore } from "../domain/api-key-store.js";
 import type { Doses } from "../domain/doses.js";
 import { DomainError } from "../domain/errors.js";
 import type { Repositories } from "../domain/repositories.js";
+import { settingsSchema } from "../domain/schemas.js";
 import type { TimelineService } from "../domain/timeline-service.js";
+import { apiError } from "./api-error.js";
 import {
   apiKeySchema,
   calculateSchema,
   createTimelineSchema,
   logMealSchema,
-  settingsSchema,
   updateTimelineSchema,
-} from "../schemas.js";
-import { apiError } from "./api-error.js";
+} from "./request-schemas.js";
 
 const TIME_ZONE_HEADER = "X-Timezone";
 

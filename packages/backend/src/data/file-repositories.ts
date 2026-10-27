@@ -14,7 +14,7 @@ import {
   sealedSecretSchema,
   storedTimelineSchema,
   storedVocabularySchema,
-} from "../schemas.js";
+} from "../domain/schemas.js";
 import { StoredDataError } from "./stored-data-error.js";
 import type { SealedSecret } from "../domain/secret-box.js";
 import { newestFirst } from "../domain/timeline.js";
