@@ -2,7 +2,6 @@ import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import type { FoodVocabEntry, Settings, TimelineEntry } from "@tashi/shared";
 import type { z } from "zod";
-import { StoredDataError } from "../domain/errors.js";
 import type {
   ApiKeyRepository,
   Repositories,
@@ -16,6 +15,7 @@ import {
   storedTimelineSchema,
   storedVocabularySchema,
 } from "../schemas.js";
+import { StoredDataError } from "./stored-data-error.js";
 import type { SealedSecret } from "../domain/secret-box.js";
 import { newestFirst } from "../domain/timeline.js";
 import { sameVocabularyEntry } from "../domain/vocabulary.js";

@@ -3,7 +3,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { openFileRepositories } from "../data/file-repositories.js";
-import { StoredDataError } from "../domain/errors.js";
+import { StoredDataError } from "../data/stored-data-error.js";
 import { seal } from "../domain/secret-box.js";
 import { repositoryContract } from "./repository-contract.js";
 

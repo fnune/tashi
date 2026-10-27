@@ -11,7 +11,6 @@ import type { ApiKeyStore } from "../domain/api-key-store.js";
 import type { Calculator } from "../domain/calculator.js";
 import type { Clock } from "../domain/clock.js";
 import {
-  apiError,
   InvalidApiKeyError,
   MissingApiKeyError,
   SecretUnavailableError,
@@ -32,6 +31,7 @@ import {
   settingsSchema,
   updateTimelineSchema,
 } from "../schemas.js";
+import { apiError } from "./api-error.js";
 
 const TIME_ZONE_HEADER = "X-Timezone";
 

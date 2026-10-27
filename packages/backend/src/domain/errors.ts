@@ -1,37 +1,3 @@
-import type { ApiErrorCode, ErrorResponse } from "@tashi/shared";
-import type { Context } from "hono";
-
-const FALLBACK_MESSAGES: Record<ApiErrorCode, string> = {
-  bolus_insulin_not_configured:
-    "Choose which insulin you're using in settings before dosing.",
-  basal_insulin_not_configured:
-    "Choose which long-acting insulin you're using in settings first.",
-  insulin_action_not_configured:
-    "Choose which insulin you're using in settings to see insulin on board.",
-  no_meal_window: "No meal window covers the current time",
-  api_key_missing: "Add your Anthropic API key in settings to calculate doses.",
-  api_key_invalid:
-    "Anthropic rejected the API key. Check it in settings and try again.",
-  api_key_storage_unavailable:
-    "Saving a key needs a password set on the server (TASHI_PASSWORD).",
-  validation_failed: "Invalid request.",
-  not_found: "Not found.",
-  internal_error: "Something went wrong.",
-};
-
-export function apiError(
-  c: Context,
-  code: ApiErrorCode,
-  status: 400 | 404 | 500,
-  detail?: string,
-) {
-  const body: ErrorResponse = {
-    error: detail ?? FALLBACK_MESSAGES[code],
-    code,
-  };
-  return c.json(body, status);
-}
-
 export class MissingApiKeyError extends Error {
   constructor() {
     super("No API key configured");
@@ -47,12 +13,5 @@ export class InvalidApiKeyError extends Error {
 export class SecretUnavailableError extends Error {
   constructor() {
     super("No passphrase to encrypt the API key with");
-  }
-}
-
-export class StoredDataError extends Error {
-  constructor(source: string, cause: unknown) {
-    super(`Stored data in ${source} is not in the expected shape`, { cause });
-    this.name = "StoredDataError";
   }
 }
