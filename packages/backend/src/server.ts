@@ -33,6 +33,8 @@ const calculator = new Calculator(parser, foodDb);
 
 const app = new Hono();
 
+app.get(`${basePath}/api/health`, (c) => c.json({ ok: true }));
+
 const routes = createRoutes(calculator, storage);
 app.route(basePath || "/", routes);
 
