@@ -1,28 +1,9 @@
-import type {
-  FastInsulinEntry,
-  GlucoseEntry,
-  LogMealResponse,
-  SlowInsulinEntry,
-  TimelineEntry,
-} from "@tashi/shared";
-import { findMealWindow, insulinOnBoard } from "@tashi/shared";
 import { Hono } from "hono";
 import type { ApiKeyStore } from "../domain/api-key-store.js";
-import type { Calculator } from "../domain/calculator.js";
-import type { Clock } from "../domain/clock.js";
-import {
-  InvalidApiKeyError,
-  MissingApiKeyError,
-  SecretUnavailableError,
-} from "../domain/errors.js";
-import type { IdGenerator } from "../domain/ids.js";
+import type { Doses } from "../domain/doses.js";
+import { DomainError } from "../domain/errors.js";
 import type { Repositories } from "../domain/repositories.js";
-import {
-  applyTimelineUpdate,
-  fastInsulinEntries,
-  logMeal,
-} from "../domain/timeline.js";
-import { learnVocabulary } from "../domain/vocabulary.js";
+import type { TimelineService } from "../domain/timeline-service.js";
 import {
   apiKeySchema,
   calculateSchema,
@@ -36,79 +17,37 @@ import { apiError } from "./api-error.js";
 const TIME_ZONE_HEADER = "X-Timezone";
 
 export interface RouteDependencies {
-  calculator: Calculator;
+  doses: Doses;
+  timeline: TimelineService;
   repositories: Repositories;
   apiKeys: ApiKeyStore;
-  clock: Clock;
-  newId: IdGenerator;
 }
 
 export function createRoutes({
-  calculator,
+  doses,
+  timeline,
   repositories,
   apiKeys,
-  clock,
-  newId,
 }: RouteDependencies): Hono {
   const api = new Hono();
 
+  api.onError((error, c) => {
+    if (error instanceof DomainError) {
+      const status = error.code === "not_found" ? 404 : 400;
+      return apiError(c, error.code, status);
+    }
+    const message = error instanceof Error ? error.message : "Unknown error";
+    return apiError(c, "internal_error", 500, message);
+  });
+
   api.post("/api/calculate", async (c) => {
-    const body = await c.req.json();
-    const parsed = calculateSchema.safeParse(body);
+    const parsed = calculateSchema.safeParse(await c.req.json());
     if (!parsed.success) {
       return apiError(c, "validation_failed", 400, parsed.error.message);
     }
-
-    const timeZone = c.req.header(TIME_ZONE_HEADER);
-    const settings = await repositories.settings.get();
-    const bolusInsulinId = settings.bolus_insulin_id;
-    if (bolusInsulinId === null) {
-      return apiError(c, "bolus_insulin_not_configured", 400);
-    }
-    if (
-      !parsed.data.meal_window_override &&
-      findMealWindow(settings, clock(), timeZone) === null
-    ) {
-      return apiError(c, "no_meal_window", 400);
-    }
-    const vocabulary = await repositories.vocabulary.list();
-
-    try {
-      const timeline = await repositories.timeline.list();
-      const iobUnits =
-        settings.insulin_action_minutes === null
-          ? 0
-          : insulinOnBoard(fastInsulinEntries(timeline), settings, clock())
-              .total_units;
-
-      const outcome = await calculator.calculate(
-        parsed.data.food_description,
-        settings,
-        parsed.data.current_blood_sugar,
-        parsed.data.meal_window_override,
-        vocabulary,
-        iobUnits,
-        timeZone,
-      );
-
-      if (outcome.status !== "ok") {
-        return c.json({
-          status: outcome.status,
-          message: outcome.message,
-        });
-      }
-
-      return c.json({ status: "ok" as const, result: outcome.result });
-    } catch (e) {
-      if (e instanceof MissingApiKeyError) {
-        return apiError(c, "api_key_missing", 400);
-      }
-      if (e instanceof InvalidApiKeyError) {
-        return apiError(c, "api_key_invalid", 400);
-      }
-      const message = e instanceof Error ? e.message : "Unknown error";
-      return apiError(c, "internal_error", 500, message);
-    }
+    return c.json(
+      await doses.calculate(parsed.data, c.req.header(TIME_ZONE_HEADER)),
+    );
   });
 
   api.get("/api/api-key", async (c) => c.json(await apiKeys.status()));
@@ -118,17 +57,7 @@ export function createRoutes({
     if (!parsed.success) {
       return apiError(c, "validation_failed", 400, parsed.error.message);
     }
-    try {
-      await apiKeys.save(parsed.data.api_key);
-    } catch (e) {
-      if (e instanceof SecretUnavailableError) {
-        return apiError(c, "api_key_storage_unavailable", 400);
-      }
-      if (e instanceof InvalidApiKeyError) {
-        return apiError(c, "api_key_invalid", 400);
-      }
-      throw e;
-    }
+    await apiKeys.save(parsed.data.api_key);
     return c.json(await apiKeys.status());
   });
 
@@ -142,47 +71,15 @@ export function createRoutes({
     if (!parsed.success) {
       return apiError(c, "validation_failed", 400, parsed.error.message);
     }
-    const settings = await repositories.settings.get();
-    const bolusInsulinId = settings.bolus_insulin_id;
-    if (bolusInsulinId === null) {
-      return apiError(c, "bolus_insulin_not_configured", 400);
-    }
-
-    const now = clock();
-    const { meal, insulin } = logMeal(
-      parsed.data.result,
-      parsed.data.units,
-      parsed.data.pre_bolus_minutes,
-      bolusInsulinId,
-      now,
-      newId,
-    );
-    const entries: TimelineEntry[] = insulin ? [meal, insulin] : [meal];
-
-    await repositories.timeline.add(entries);
-    await repositories.vocabulary.upsert(
-      learnVocabulary(
-        await repositories.vocabulary.list(),
-        parsed.data.result.items,
-        now,
-      ),
-    );
-
-    const response: LogMealResponse = {
-      meal_entry_id: meal.id,
-      insulin_entry_id: insulin?.id ?? null,
-    };
-    return c.json(response);
+    return c.json(await timeline.logMeal(parsed.data));
   });
 
-  api.get("/api/settings", async (c) => {
-    const settings = await repositories.settings.get();
-    return c.json(settings);
-  });
+  api.get("/api/settings", async (c) =>
+    c.json(await repositories.settings.get()),
+  );
 
   api.put("/api/settings", async (c) => {
-    const body = await c.req.json();
-    const parsed = settingsSchema.safeParse(body);
+    const parsed = settingsSchema.safeParse(await c.req.json());
     if (!parsed.success) {
       return apiError(c, "validation_failed", 400, parsed.error.message);
     }
@@ -190,116 +87,35 @@ export function createRoutes({
     return c.json(parsed.data);
   });
 
-  api.get("/api/timeline", async (c) => {
-    const timeline = await repositories.timeline.list();
-    return c.json(timeline);
-  });
+  api.get("/api/timeline", async (c) =>
+    c.json(await repositories.timeline.list()),
+  );
 
-  api.get("/api/iob", async (c) => {
-    const settings = await repositories.settings.get();
-    if (settings.insulin_action_minutes === null) {
-      return apiError(c, "insulin_action_not_configured", 400);
-    }
-    const timeline = await repositories.timeline.list();
-    try {
-      return c.json(
-        insulinOnBoard(fastInsulinEntries(timeline), settings, clock()),
-      );
-    } catch (e) {
-      const message = e instanceof Error ? e.message : "Unknown error";
-      return apiError(c, "internal_error", 500, message);
-    }
-  });
+  api.get("/api/iob", async (c) => c.json(await doses.insulinOnBoard()));
 
   api.post("/api/timeline", async (c) => {
-    const body = await c.req.json();
-    const parsed = createTimelineSchema.safeParse(body);
+    const parsed = createTimelineSchema.safeParse(await c.req.json());
     if (!parsed.success) {
       return apiError(c, "validation_failed", 400, parsed.error.message);
     }
-
-    const data = parsed.data;
-    const id = newId();
-    const timestamp = clock().toISOString();
-
-    if (data.type === "fast_insulin") {
-      const settings = await repositories.settings.get();
-      const bolusInsulinId = settings.bolus_insulin_id;
-      if (bolusInsulinId === null) {
-        return apiError(c, "bolus_insulin_not_configured", 400);
-      }
-      const entry: FastInsulinEntry = {
-        id,
-        timestamp,
-        type: "fast_insulin",
-        units: data.units,
-        insulin_id: bolusInsulinId,
-        related_meal_id: null,
-      };
-      await repositories.timeline.add([entry]);
-      return c.json(entry, 201);
-    }
-
-    if (data.type === "slow_insulin") {
-      const settings = await repositories.settings.get();
-      const basalInsulinId = settings.basal_insulin_id;
-      if (basalInsulinId === null) {
-        return apiError(c, "basal_insulin_not_configured", 400);
-      }
-      const entry: SlowInsulinEntry = {
-        id,
-        timestamp,
-        type: "slow_insulin",
-        units: data.units,
-        insulin_id: basalInsulinId,
-      };
-      await repositories.timeline.add([entry]);
-      return c.json(entry, 201);
-    }
-
-    const entry: GlucoseEntry = {
-      id,
-      timestamp,
-      type: "glucose_reading",
-      value: data.value,
-      unit: data.unit,
-    };
-    await repositories.timeline.add([entry]);
-    return c.json(entry, 201);
+    return c.json(await timeline.addEntry(parsed.data), 201);
   });
 
   api.put("/api/timeline/:id", async (c) => {
-    const id = c.req.param("id");
     const parsed = updateTimelineSchema.safeParse(await c.req.json());
     if (!parsed.success) {
       return apiError(c, "validation_failed", 400, parsed.error.message);
     }
-    const existing = await repositories.timeline.get(id);
-    if (!existing) {
-      return apiError(c, "not_found", 404);
-    }
-    const update = applyTimelineUpdate(existing, parsed.data);
-    if (update.status === "type_mismatch") {
-      return apiError(c, "not_found", 404);
-    }
-    if (update.status === "implausible_value") {
-      return apiError(c, "validation_failed", 400);
-    }
-    await repositories.timeline.replace(update.entry);
-    return c.json(update.entry);
+    return c.json(await timeline.updateEntry(c.req.param("id"), parsed.data));
   });
 
   api.delete("/api/timeline/:id", async (c) => {
-    const id = c.req.param("id");
-    const deleted = await repositories.timeline.delete(id);
-    if (!deleted) {
-      return apiError(c, "not_found", 404);
-    }
+    await timeline.deleteEntry(c.req.param("id"));
     return c.json({ ok: true });
   });
 
   api.delete("/api/timeline", async (c) => {
-    await repositories.timeline.clear();
+    await timeline.clear();
     return c.json({ ok: true });
   });
 

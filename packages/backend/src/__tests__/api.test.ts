@@ -17,7 +17,9 @@ import type { FoodDatabase } from "../data/food-db.js";
 import { ApiKeyStore } from "../domain/api-key-store.js";
 import { Calculator } from "../domain/calculator.js";
 import type { Clock } from "../domain/clock.js";
+import { Doses } from "../domain/doses.js";
 import type { Repositories } from "../domain/repositories.js";
+import { TimelineService } from "../domain/timeline-service.js";
 import { createRoutes } from "../http/routes.js";
 import { FakeFoodParser } from "./fake-food-parser.js";
 import { sequentialIds } from "./sequential-ids.js";
@@ -99,11 +101,10 @@ describe("API routes", () => {
     const newId = sequentialIds();
     const calculator = new Calculator(parser, foodDb, clock, newId);
     app = createRoutes({
-      calculator,
+      doses: new Doses(repositories, calculator, clock),
+      timeline: new TimelineService(repositories, clock, newId),
       repositories,
       apiKeys: new ApiKeyStore(repositories.apiKey),
-      clock,
-      newId,
     });
   });
 

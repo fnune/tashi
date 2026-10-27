@@ -8,11 +8,13 @@ import type { FoodDatabase } from "../data/food-db.js";
 import { ApiKeyStore } from "../domain/api-key-store.js";
 import { Calculator } from "../domain/calculator.js";
 import { systemClock } from "../domain/clock.js";
+import { Doses } from "../domain/doses.js";
 import { InvalidApiKeyError } from "../domain/errors.js";
 import type { FoodParser } from "../domain/food-parser.js";
 import { KeyedFoodParser } from "../domain/keyed-food-parser.js";
 import type { Repositories } from "../domain/repositories.js";
 import { seal, unseal } from "../domain/secret-box.js";
+import { TimelineService } from "../domain/timeline-service.js";
 import { createRoutes } from "../http/routes.js";
 import { FakeFoodParser } from "./fake-food-parser.js";
 import { sequentialIds } from "./sequential-ids.js";
@@ -49,11 +51,14 @@ describe("api key routes", () => {
   function routesFor(parser: FoodParser, apiKeys: ApiKeyStore) {
     const newId = sequentialIds();
     return createRoutes({
-      calculator: new Calculator(parser, foodDb, systemClock, newId),
+      doses: new Doses(
+        repositories,
+        new Calculator(parser, foodDb, systemClock, newId),
+        systemClock,
+      ),
+      timeline: new TimelineService(repositories, systemClock, newId),
       repositories,
       apiKeys,
-      clock: systemClock,
-      newId,
     });
   }
 

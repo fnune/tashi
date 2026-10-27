@@ -64,19 +64,21 @@ export interface LoggedMeal {
   insulin: FastInsulinEntry | null;
 }
 
+export type LoggableMeal = Pick<
+  CalculationResult,
+  | "input_text"
+  | "language"
+  | "meal_window"
+  | "items"
+  | "total_net_carbs_g"
+  | "recommended_dose"
+  | "correction"
+  | "fat_protein_adjustment"
+  | "trace"
+>;
+
 export function logMeal(
-  result: Pick<
-    CalculationResult,
-    | "input_text"
-    | "language"
-    | "meal_window"
-    | "items"
-    | "total_net_carbs_g"
-    | "recommended_dose"
-    | "correction"
-    | "fat_protein_adjustment"
-    | "trace"
-  >,
+  result: LoggableMeal,
   units: number,
   preBolusMinutes: number,
   bolusInsulinId: BolusInsulinId,

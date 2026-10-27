@@ -5,12 +5,14 @@ import { serve } from "@hono/node-server";
 import { serveStatic } from "@hono/node-server/serve-static";
 import { ApiKeyStore } from "@tashi/backend/api-key-store";
 import { Calculator } from "@tashi/backend/calculator";
+import { Doses } from "@tashi/backend/doses";
 import { openFileRepositories } from "@tashi/backend/file-repositories";
 // E2E tests use the real food database
 import { FoodDatabase } from "@tashi/backend/food-db";
 import type { FoodParser, ParseOutcome } from "@tashi/backend/food-parser";
 import { randomId } from "@tashi/backend/ids";
 import { createRoutes } from "@tashi/backend/routes";
+import { TimelineService } from "@tashi/backend/timeline-service";
 import type { FoodVocabEntry, ParsedFoodItem } from "@tashi/shared";
 import { DEFAULT_SETTINGS } from "@tashi/shared";
 import { Hono } from "hono";
@@ -160,11 +162,10 @@ async function startServer(): Promise<void> {
   });
 
   const routes = createRoutes({
-    calculator,
+    doses: new Doses(repositories, calculator, lunchtimeClock),
+    timeline: new TimelineService(repositories, lunchtimeClock, randomId),
     repositories,
     apiKeys: new ApiKeyStore(repositories.apiKey),
-    clock: lunchtimeClock,
-    newId: randomId,
   });
   app.route("/", routes);
 

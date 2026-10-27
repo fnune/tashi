@@ -10,11 +10,13 @@ import { FoodDatabase } from "./data/food-db.js";
 import { ApiKeyStore } from "./domain/api-key-store.js";
 import { Calculator } from "./domain/calculator.js";
 import { systemClock } from "./domain/clock.js";
+import { Doses } from "./domain/doses.js";
 import { randomId } from "./domain/ids.js";
 import {
   anthropicAcceptsKey,
   KeyedFoodParser,
 } from "./domain/keyed-food-parser.js";
+import { TimelineService } from "./domain/timeline-service.js";
 import { passwordGate } from "./http/password-gate.js";
 import { createRoutes } from "./http/routes.js";
 
@@ -52,11 +54,10 @@ if (config.password) {
 }
 
 const routes = createRoutes({
-  calculator,
+  doses: new Doses(repositories, calculator, systemClock),
+  timeline: new TimelineService(repositories, systemClock, randomId),
   repositories,
   apiKeys,
-  clock: systemClock,
-  newId: randomId,
 });
 app.route(basePath || "/", routes);
 
