@@ -4,17 +4,13 @@ import { serve } from "@hono/node-server";
 import { serveStatic } from "@hono/node-server/serve-static";
 import { Hono } from "hono";
 import { AnthropicFoodParser } from "./anthropic-food-parser.js";
+import { ApiKeyStore } from "./api-key-store.js";
 import { Calculator } from "./calculator.js";
 import { FoodDatabase } from "./db/food-db.js";
+import { anthropicAcceptsKey, KeyedFoodParser } from "./keyed-food-parser.js";
 import { passwordGate } from "./password-gate.js";
 import { createRoutes } from "./routes.js";
 import { FileStorage } from "./storage.js";
-
-const apiKey = process.env.ANTHROPIC_API_KEY;
-if (!apiKey) {
-  console.error("ANTHROPIC_API_KEY environment variable is required");
-  process.exit(1);
-}
 
 const model = process.env.LLM_MODEL ?? "claude-haiku-4-5-20251001";
 const port = Number(process.env.PORT ?? "3000");
@@ -29,7 +25,19 @@ await storage.init();
 const foodDb = await FoodDatabase.open(foodsDbPath);
 console.log(`Food database loaded: ${foodDb.foodCount()} foods`);
 
-const parser = new AnthropicFoodParser(apiKey, foodDb, model);
+const apiKeys = new ApiKeyStore(storage, {
+  passphrase: process.env.TASHI_SECRET_KEY ?? process.env.TASHI_PASSWORD,
+  environmentKey: process.env.ANTHROPIC_API_KEY,
+  verify: anthropicAcceptsKey,
+});
+if (!(await apiKeys.status()).configured) {
+  console.warn("No Anthropic API key yet: add one in the settings");
+}
+
+const parser = new KeyedFoodParser(
+  apiKeys,
+  (apiKey) => new AnthropicFoodParser(apiKey, foodDb, model),
+);
 const calculator = new Calculator(parser, foodDb);
 
 const app = new Hono();
@@ -40,7 +48,7 @@ if (process.env.TASHI_PASSWORD) {
   app.use("*", passwordGate(process.env.TASHI_PASSWORD));
 }
 
-const routes = createRoutes(calculator, storage);
+const routes = createRoutes(calculator, storage, undefined, apiKeys);
 app.route(basePath || "/", routes);
 
 if (existsSync("./public")) {

@@ -28,15 +28,29 @@ import {
 } from "@tashi/shared";
 import { Hono } from "hono";
 import { z } from "zod";
+import { ApiKeyStore } from "./api-key-store.js";
 import type { Calculator } from "./calculator.js";
 import { type Clock, systemClock } from "./clock.js";
-import { apiError } from "./errors.js";
+import {
+  apiError,
+  InvalidApiKeyError,
+  MissingApiKeyError,
+  SecretUnavailableError,
+} from "./errors.js";
 import type { FileStorage } from "./storage.js";
 
 const calculateSchema = z.object({
   food_description: z.string().min(1),
   current_blood_sugar: z.number().positive().optional(),
   meal_window_override: z.string().optional(),
+});
+
+const apiKeySchema = z.object({
+  api_key: z
+    .string()
+    .trim()
+    .min(1)
+    .refine((key) => !/\s/.test(key)),
 });
 
 const bolusInsulinIdSchema = z.enum(
@@ -163,6 +177,7 @@ export function createRoutes(
   calculator: Calculator,
   storage: FileStorage,
   clock: Clock = systemClock,
+  apiKeys: ApiKeyStore = new ApiKeyStore(storage),
 ): Hono {
   const api = new Hono();
 
@@ -216,9 +231,41 @@ export function createRoutes(
 
       return c.json({ status: "ok" as const, result: outcome.result });
     } catch (e) {
+      if (e instanceof MissingApiKeyError) {
+        return apiError(c, "api_key_missing", 400);
+      }
+      if (e instanceof InvalidApiKeyError) {
+        return apiError(c, "api_key_invalid", 400);
+      }
       const message = e instanceof Error ? e.message : "Unknown error";
       return apiError(c, "internal_error", 500, message);
     }
+  });
+
+  api.get("/api/api-key", async (c) => c.json(await apiKeys.status()));
+
+  api.put("/api/api-key", async (c) => {
+    const parsed = apiKeySchema.safeParse(await c.req.json());
+    if (!parsed.success) {
+      return apiError(c, "validation_failed", 400, parsed.error.message);
+    }
+    try {
+      await apiKeys.save(parsed.data.api_key);
+    } catch (e) {
+      if (e instanceof SecretUnavailableError) {
+        return apiError(c, "api_key_storage_unavailable", 400);
+      }
+      if (e instanceof InvalidApiKeyError) {
+        return apiError(c, "api_key_invalid", 400);
+      }
+      throw e;
+    }
+    return c.json(await apiKeys.status());
+  });
+
+  api.delete("/api/api-key", async (c) => {
+    await apiKeys.clear();
+    return c.json(await apiKeys.status());
   });
 
   api.post("/api/meals", async (c) => {

@@ -53,6 +53,12 @@ const translations = {
       "Choose which long-acting insulin you're using in settings first.",
     insulin_action_not_configured:
       "Choose which insulin you're using in settings to see insulin on board.",
+    api_key_missing:
+      "Add your Anthropic API key in settings to calculate doses.",
+    api_key_invalid:
+      "Anthropic rejected the API key. Check it in settings and try again.",
+    api_key_storage_unavailable:
+      "To save a key here, set a password on the server first (TASHI_PASSWORD).",
     today: "Today",
     yesterday: "Yesterday",
     addTitle: "Add",
@@ -316,6 +322,12 @@ const translations = {
       "Elige qué insulina lenta usas en ajustes primero.",
     insulin_action_not_configured:
       "Elige qué insulina usas en ajustes para ver la insulina activa.",
+    api_key_missing:
+      "Añade tu clave de API de Anthropic en ajustes para calcular dosis.",
+    api_key_invalid:
+      "Anthropic ha rechazado la clave de API. Revísala en ajustes e inténtalo de nuevo.",
+    api_key_storage_unavailable:
+      "Para guardar una clave aquí, primero define una contraseña en el servidor (TASHI_PASSWORD).",
     today: "Hoy",
     yesterday: "Ayer",
     addTitle: "Añadir",

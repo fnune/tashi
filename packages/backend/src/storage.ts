@@ -1,4 +1,4 @@
-import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import type {
   CalculatedItem,
@@ -8,12 +8,14 @@ import type {
   UpdateTimelineRequest,
 } from "@tashi/shared";
 import { DEFAULT_SETTINGS } from "@tashi/shared";
+import type { ApiKeyRecords } from "./api-key-store.js";
+import type { SealedSecret } from "./secret-box.js";
 
 function isFileNotFound(e: unknown): boolean {
   return e instanceof Error && "code" in e && e.code === "ENOENT";
 }
 
-export class FileStorage {
+export class FileStorage implements ApiKeyRecords {
   private dataDir: string;
 
   constructor(dataDir: string) {
@@ -43,6 +45,26 @@ export class FileStorage {
       this.path("settings.json"),
       JSON.stringify(settings, null, 2),
     );
+  }
+
+  async getApiKeyRecord(): Promise<SealedSecret | null> {
+    try {
+      const raw = await readFile(this.path("api-key.json"), "utf-8");
+      return JSON.parse(raw) as SealedSecret;
+    } catch (e: unknown) {
+      if (isFileNotFound(e)) return null;
+      throw e;
+    }
+  }
+
+  async saveApiKeyRecord(record: SealedSecret): Promise<void> {
+    await writeFile(this.path("api-key.json"), JSON.stringify(record), {
+      mode: 0o600,
+    });
+  }
+
+  async deleteApiKeyRecord(): Promise<void> {
+    await rm(this.path("api-key.json"), { force: true });
   }
 
   async getTimeline(): Promise<TimelineEntry[]> {

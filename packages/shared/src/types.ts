@@ -242,9 +242,22 @@ export type ApiErrorCode =
   | "basal_insulin_not_configured"
   | "insulin_action_not_configured"
   | "no_meal_window"
+  | "api_key_missing"
+  | "api_key_invalid"
+  | "api_key_storage_unavailable"
   | "validation_failed"
   | "not_found"
   | "internal_error";
+
+export interface ApiKeyStatus {
+  configured: boolean;
+  source: "settings" | "environment" | null;
+  can_save: boolean;
+}
+
+export interface SetApiKeyRequest {
+  api_key: string;
+}
 
 export interface ErrorResponse {
   error: string;

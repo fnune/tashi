@@ -86,6 +86,7 @@ export {
 export { fromDisplayRatio, toDisplayRatio } from "./ratio-format.js";
 export type {
   ApiErrorCode,
+  ApiKeyStatus,
   AppliedProfile,
   CalculatedItem,
   CalculateRequest,
@@ -109,6 +110,7 @@ export type {
   ProfileAdjustment,
   RatioFormat,
   SearchTraceEntry,
+  SetApiKeyRequest,
   Settings,
   SlowInsulinEntry,
   TimelineEntry,
