@@ -26,6 +26,10 @@ const translations = {
     eatingIn: "Eating in",
     noTimeline:
       "Your meals, doses and glucose readings will appear here. Add the first one with the buttons above.",
+    loadingMore: "Loading…",
+    loadMore: "Load more",
+    loadMoreFailed: "Could not load more.",
+    tryAgain: "Try again",
     clearTimeline: "Clear history",
     confirmClearTimeline: "Delete the whole history?",
     dateTime: "Date and time",
@@ -305,6 +309,10 @@ const translations = {
     eatingIn: "Voy a comer en",
     noTimeline:
       "Aquí verás tus comidas, dosis y glucemias. Añade la primera con los botones de arriba.",
+    loadingMore: "Cargando…",
+    loadMore: "Cargar más",
+    loadMoreFailed: "No se pudo cargar más.",
+    tryAgain: "Reintentar",
     clearTimeline: "Borrar historial",
     confirmClearTimeline: "¿Borrar todo el historial?",
     dateTime: "Fecha y hora",

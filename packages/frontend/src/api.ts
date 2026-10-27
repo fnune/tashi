@@ -14,6 +14,7 @@ import type {
   TimelinePageResponse,
   UpdateTimelineRequest,
 } from "@tashi/shared";
+import type { Page } from "./paging/paged-list.js";
 
 declare const __BASE_PATH__: string;
 const BASE = __BASE_PATH__;
@@ -82,23 +83,17 @@ export function logMeal(req: LogMealRequest): Promise<LogMealResponse> {
   });
 }
 
-const TIMELINE_PAGE_SIZE = 200;
+const TIMELINE_PAGE_SIZE = 50;
 
-export async function getTimeline(): Promise<TimelineEntry[]> {
-  const entries: TimelineEntry[] = [];
-  let cursor: string | null = null;
-  do {
-    const query: string = new URLSearchParams({
-      limit: String(TIMELINE_PAGE_SIZE),
-      ...(cursor ? { cursor } : {}),
-    }).toString();
-    const page: TimelinePageResponse = await request<TimelinePageResponse>(
-      `/api/timeline?${query}`,
-    );
-    entries.push(...page.entries);
-    cursor = page.next_cursor;
-  } while (cursor);
-  return entries;
+export async function getTimelinePage(
+  cursor: string | null,
+): Promise<Page<TimelineEntry>> {
+  const query = new URLSearchParams({
+    limit: String(TIMELINE_PAGE_SIZE),
+    ...(cursor ? { cursor } : {}),
+  }).toString();
+  const page = await request<TimelinePageResponse>(`/api/timeline?${query}`);
+  return { items: page.entries, next: page.next_cursor };
 }
 
 export function getIob(): Promise<InsulinOnBoard> {

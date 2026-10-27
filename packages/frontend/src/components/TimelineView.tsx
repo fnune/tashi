@@ -7,7 +7,7 @@ import type {
   TimelineEntry,
 } from "@tashi/shared";
 import { getBasalInsulinProfile, getBolusInsulinProfile } from "@tashi/shared";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import * as api from "../api.js";
 import { parseGlucoseInput } from "../glucoseLabels.js";
 import { apiErrorText, type Language, t } from "../i18n.js";
@@ -16,14 +16,25 @@ import { Button } from "./ui/Button.js";
 import { ConfirmDelete } from "./ui/ConfirmDelete.js";
 import { DateTimeField, NumberField } from "./ui/Field.js";
 import { Icon, type IconName } from "./ui/Icon.js";
+import { LoadMore } from "./ui/LoadMore.js";
 import { Notice } from "./ui/Notice.js";
 import { Sheet } from "./ui/Sheet.js";
 import { Stepper } from "./ui/Stepper.js";
 import "./TimelineView.css";
 import { numberFormat } from "../numberFormat.js";
 
+export interface TimelinePaging {
+  hasMore: boolean;
+  loading: boolean;
+  loaded: boolean;
+  error: Error | null;
+  loadMore: () => void;
+  loadUntil: (found: (entries: TimelineEntry[]) => boolean) => Promise<void>;
+}
+
 interface TimelineViewProps {
   timeline: TimelineEntry[];
+  paging: TimelinePaging;
   settings: Settings;
   lang: Language;
   onRefresh: () => void;
@@ -378,6 +389,7 @@ function MealDetails({
 
 export function TimelineView({
   timeline,
+  paging,
   settings,
   lang,
   onRefresh,
@@ -391,6 +403,15 @@ export function TimelineView({
     (a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime(),
   );
   const open = sorted.find((e) => e.id === expandedId) ?? null;
+
+  // A link to an entry far down the history opens it once its page is there.
+  const { loadUntil } = paging;
+  const wantsUnloaded = expandedId !== undefined && open === null;
+  useEffect(() => {
+    if (wantsUnloaded) {
+      void loadUntil((entries) => entries.some((e) => e.id === expandedId));
+    }
+  }, [wantsUnloaded, expandedId, loadUntil]);
 
   function close() {
     setAdding(null);
@@ -443,7 +464,7 @@ export function TimelineView({
         </div>
       </section>
 
-      {sorted.length === 0 && (
+      {paging.loaded && !paging.hasMore && sorted.length === 0 && (
         <p className="timeline-empty">{t(lang, "noTimeline")}</p>
       )}
 
@@ -464,7 +485,15 @@ export function TimelineView({
         </section>
       ))}
 
-      {sorted.length > 0 && (
+      <LoadMore
+        hasMore={paging.hasMore}
+        loading={paging.loading}
+        error={paging.error}
+        onLoadMore={paging.loadMore}
+        lang={lang}
+      />
+
+      {sorted.length > 0 && !paging.hasMore && (
         <Button
           variant="danger"
           className="timeline-clear"

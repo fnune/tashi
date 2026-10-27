@@ -21,6 +21,7 @@ import { TabBar } from "./components/TabBar.js";
 import { TimelineView } from "./components/TimelineView.js";
 import { Notice } from "./components/ui/Notice.js";
 import type { Language } from "./i18n.js";
+import { type PagedListHandle, usePagedList } from "./paging/use-paged-list.js";
 
 const INITIAL_FORM: CalculatorFormState = {
   foodText: "",
@@ -44,7 +45,7 @@ function AppShell() {
     language: getSavedLanguage(),
   });
   const [settingsLoaded, setSettingsLoaded] = useState(false);
-  const [timeline, setTimeline] = useState<TimelineEntry[]>([]);
+  const timeline = usePagedList(api.getTimelinePage, (entry) => entry.id);
   const [iob, setIob] = useState<InsulinOnBoard | null>(null);
   const [calcForm, setCalcForm] = useState<CalculatorFormState>(INITIAL_FORM);
 
@@ -65,16 +66,16 @@ function AppShell() {
           e instanceof Error ? e.message : "Failed to load settings",
         );
       });
-    api.getTimeline().then(setTimeline).catch(console.error);
     api
       .getIob()
       .then(setIob)
       .catch(() => setIob(null));
   }, []);
 
+  const { list: timelineList } = timeline;
   const refreshTimeline = useCallback(() => {
-    api.getTimeline().then(setTimeline).catch(console.error);
-  }, []);
+    void timelineList.reload();
+  }, [timelineList]);
 
   const refreshIob = useCallback(() => {
     api
@@ -126,7 +127,7 @@ function AppShell() {
               onSettingsSaved={handleSaveSettings}
               lang={lang}
               iob={iob}
-              timeline={timeline}
+              timeline={timeline.items}
               onDataChanged={handleDataChanged}
               formState={calcForm}
               onFormChange={setCalcForm}
@@ -191,7 +192,7 @@ function TimelineRoute({
   onRefresh,
   onReuse,
 }: {
-  timeline: TimelineEntry[];
+  timeline: PagedListHandle<TimelineEntry>;
   lang: Language;
   settings: Settings;
   onRefresh: () => void;
@@ -199,6 +200,12 @@ function TimelineRoute({
 }) {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { list } = timeline;
+  const loadMore = useCallback(() => void list.loadMore(), [list]);
+  const loadUntil = useCallback(
+    (found: (entries: TimelineEntry[]) => boolean) => list.loadUntil(found),
+    [list],
+  );
 
   function handleExpand(expandedId: string | undefined) {
     navigate(expandedId ? `/timeline/${expandedId}` : "/timeline", {
@@ -208,7 +215,15 @@ function TimelineRoute({
 
   return (
     <TimelineView
-      timeline={timeline}
+      timeline={timeline.items}
+      paging={{
+        hasMore: timeline.hasMore,
+        loading: timeline.loading,
+        loaded: timeline.loaded,
+        error: timeline.error,
+        loadMore,
+        loadUntil,
+      }}
       settings={settings}
       lang={lang}
       onRefresh={onRefresh}
