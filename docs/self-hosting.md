@@ -30,7 +30,7 @@ This is a cross-cutting change, so it follows [engineering.md](engineering.md). 
 Progress:
 
 - [x] 1. Assess tests and dependency injection in the backend: [storage-assessment.md](storage-assessment.md).
-- [ ] 2. Fix what the assessment found, one commit each, listed at the end of that document.
+- [x] 2. Fix what the assessment found, one commit each, listed at the end of that document.
 - [ ] 3. Storage abstraction that survives a change of technology. The interface is declared by the domain, covers settings, timeline, vocabulary and the API key record, and exposes the operations the app needs, not generic CRUD. File storage implements it and runs a shared contract test suite. To discuss before building: one interface or one per concern, and whether it is async-only.
 - [ ] 4. Pick the storage technology and implement it against the contract suite. Informed by the deployment targets, so it may wait on a first look at providers.
 - [ ] 5. Write the bilbo migration script (backup with checksums, idempotent, counts per table, dry run), then cut over as described below.

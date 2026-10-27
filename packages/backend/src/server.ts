@@ -7,6 +7,7 @@ import { AnthropicFoodParser } from "./anthropic-food-parser.js";
 import { ApiKeyStore } from "./api-key-store.js";
 import { Calculator } from "./calculator.js";
 import { systemClock } from "./clock.js";
+import { loadConfig } from "./config.js";
 import { FoodDatabase } from "./db/food-db.js";
 import { randomId } from "./ids.js";
 import { anthropicAcceptsKey, KeyedFoodParser } from "./keyed-food-parser.js";
@@ -14,23 +15,20 @@ import { passwordGate } from "./password-gate.js";
 import { createRoutes } from "./routes.js";
 import { FileStorage } from "./storage.js";
 
-const model = process.env.LLM_MODEL ?? "claude-haiku-4-5-20251001";
-const port = Number(process.env.PORT ?? "3000");
-const dataDir = process.env.DATA_DIR ?? "./data";
-const basePath = process.env.BASE_PATH ?? "";
+const config = loadConfig(process.env);
 const foodsDbPath =
-  process.env.FOODS_DB ?? join(import.meta.dirname, "../../../data/foods.db");
+  config.foodsDbPath ?? join(import.meta.dirname, "../../../data/foods.db");
+const { basePath } = config;
 
-const storage = new FileStorage(dataDir);
+const storage = new FileStorage(config.dataDir);
 await storage.init();
 
 const foodDb = await FoodDatabase.open(foodsDbPath);
 console.log(`Food database loaded: ${foodDb.foodCount()} foods`);
 
 const apiKeys = new ApiKeyStore(storage, {
-  encryptionPassphrase:
-    process.env.TASHI_SECRET_KEY ?? process.env.TASHI_PASSWORD,
-  environmentKey: process.env.ANTHROPIC_API_KEY,
+  encryptionPassphrase: config.encryptionPassphrase,
+  environmentKey: config.anthropicApiKey,
   verify: anthropicAcceptsKey,
 });
 if (!(await apiKeys.status()).configured) {
@@ -39,7 +37,7 @@ if (!(await apiKeys.status()).configured) {
 
 const parser = new KeyedFoodParser(
   apiKeys,
-  (apiKey) => new AnthropicFoodParser(apiKey, foodDb, model),
+  (apiKey) => new AnthropicFoodParser(apiKey, foodDb, config.model),
 );
 const calculator = new Calculator(parser, foodDb, systemClock, randomId);
 
@@ -47,8 +45,8 @@ const app = new Hono();
 
 app.get(`${basePath}/api/health`, (c) => c.json({ ok: true }));
 
-if (process.env.TASHI_PASSWORD) {
-  app.use("*", passwordGate(process.env.TASHI_PASSWORD));
+if (config.password) {
+  app.use("*", passwordGate(config.password));
 }
 
 const routes = createRoutes({
@@ -77,5 +75,5 @@ if (existsSync("./public")) {
   });
 }
 
-console.log(`Listening on http://localhost:${port}`);
-serve({ fetch: app.fetch, port });
+console.log(`Listening on http://localhost:${config.port}`);
+serve({ fetch: app.fetch, port: config.port });
