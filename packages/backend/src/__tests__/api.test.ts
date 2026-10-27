@@ -215,6 +215,54 @@ describe("API routes", () => {
     expect(body.code).toBe("no_meal_window");
   });
 
+  async function calculateWindowAt(timeZone: string | undefined) {
+    now = new Date("2026-06-13T04:30:00.000Z");
+    parser.setResponse("rice", [carbItem(30)]);
+    await storage.saveSettings({
+      ...configured(),
+      meal_windows: [
+        { name: "morning", start_hour: 6, end_hour: 11, ratio: 8 },
+        { name: "lunch", start_hour: 11, end_hour: 16, ratio: 10 },
+        { name: "dinner", start_hour: 16, end_hour: 6, ratio: 12 },
+      ],
+    });
+    const res = await app.request("/api/calculate", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...(timeZone === undefined ? {} : { "X-Timezone": timeZone }),
+      },
+      body: JSON.stringify({ food_description: "rice" }),
+    });
+    const { result } = expectOkResponse(
+      (await res.json()) as CalculateResponse,
+    );
+    return result.meal_window.name;
+  }
+
+  it.each([
+    ["UTC", "dinner"],
+    ["Europe/Berlin", "morning"],
+    ["Europe/Madrid", "morning"],
+    ["America/New_York", "dinner"],
+  ])("POST /api/calculate uses the X-Timezone %s for the meal window", async (timeZone, expected) => {
+    expect(await calculateWindowAt(timeZone)).toBe(expected);
+  });
+
+  it.each([
+    undefined,
+    "Not/AZone",
+  ])("POST /api/calculate falls back to the server clock for X-Timezone %s", async (timeZone) => {
+    const serverHour = new Date("2026-06-13T04:30:00.000Z").getHours();
+    const expected =
+      serverHour >= 16 || serverHour < 6
+        ? "dinner"
+        : serverHour < 11
+          ? "morning"
+          : "lunch";
+    expect(await calculateWindowAt(timeZone)).toBe(expected);
+  });
+
   it("POST /api/meals logs no injection for zero units", async () => {
     parser.setResponse("lettuce", [carbItem(0)]);
     await storage.saveSettings(configured());

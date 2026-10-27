@@ -62,6 +62,7 @@ export class Calculator {
     mealWindowOverride?: string,
     vocabulary: FoodVocabEntry[] = [],
     iob = 0,
+    timeZone?: string,
   ): Promise<CalculateOutcome> {
     const outcome = await this.parser.parse(
       foodDescription,
@@ -76,7 +77,7 @@ export class Calculator {
 
     const mealWindow = mealWindowOverride
       ? settings.meal_windows.find((w) => w.name === mealWindowOverride)
-      : findMealWindow(settings, this.clock());
+      : findMealWindow(settings, this.clock(), timeZone);
 
     if (!mealWindow) {
       throw new Error("No meal window matches the current time");

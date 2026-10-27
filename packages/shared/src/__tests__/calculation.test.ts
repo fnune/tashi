@@ -4,6 +4,7 @@ import {
   correctionComponents,
   evaluateFatProteinThreshold,
   findMealWindow,
+  localHour,
   recalculateResult,
   uncoveredHours,
   withWeight,
@@ -397,5 +398,63 @@ describe("recalculateResult", () => {
     );
     expect(corrected.correction?.correction_dose).toBe(2);
     expect(corrected.total_dose).toBe(6);
+  });
+});
+
+describe("localHour", () => {
+  const utc = (iso: string) => new Date(`${iso}Z`);
+
+  it("reads the hour in the given zone regardless of the machine zone", () => {
+    const instant = utc("2026-06-13T12:30:00");
+    expect(localHour(instant, "UTC")).toBe(12);
+    expect(localHour(instant, "Europe/Berlin")).toBe(14);
+    expect(localHour(instant, "Europe/Madrid")).toBe(14);
+    expect(localHour(instant, "America/New_York")).toBe(8);
+  });
+
+  it("wraps past midnight", () => {
+    expect(localHour(utc("2026-06-13T22:30:00"), "Europe/Berlin")).toBe(0);
+    expect(localHour(utc("2026-06-13T03:30:00"), "America/New_York")).toBe(23);
+  });
+
+  it("follows daylight saving changes", () => {
+    expect(localHour(utc("2026-03-29T00:59:00"), "Europe/Berlin")).toBe(1);
+    expect(localHour(utc("2026-03-29T01:00:00"), "Europe/Berlin")).toBe(3);
+    expect(localHour(utc("2026-03-08T06:59:00"), "America/New_York")).toBe(1);
+    expect(localHour(utc("2026-03-08T07:00:00"), "America/New_York")).toBe(3);
+    expect(localHour(utc("2026-11-01T05:30:00"), "America/New_York")).toBe(1);
+    expect(localHour(utc("2026-11-01T06:30:00"), "America/New_York")).toBe(1);
+  });
+
+  it("falls back to the machine zone without or with an invalid zone", () => {
+    const instant = utc("2026-06-13T12:30:00");
+    expect(localHour(instant)).toBe(instant.getHours());
+    expect(localHour(instant, "")).toBe(instant.getHours());
+    expect(localHour(instant, "Not/AZone")).toBe(instant.getHours());
+  });
+});
+
+describe("findMealWindow with a time zone", () => {
+  const settings: Settings = {
+    ...BASE_SETTINGS,
+    meal_windows: [
+      { name: "morning", start_hour: 6, end_hour: 11, ratio: 8 },
+      { name: "lunch", start_hour: 11, end_hour: 16, ratio: 10 },
+      { name: "dinner", start_hour: 16, end_hour: 6, ratio: 12 },
+    ],
+  };
+  const instant = new Date("2026-06-13T04:30:00Z");
+
+  it("picks the window of the user's zone, including the wrap past midnight", () => {
+    expect(findMealWindow(settings, instant, "UTC")?.name).toBe("dinner");
+    expect(findMealWindow(settings, instant, "Europe/Berlin")?.name).toBe(
+      "morning",
+    );
+    expect(findMealWindow(settings, instant, "Europe/Madrid")?.name).toBe(
+      "morning",
+    );
+    expect(findMealWindow(settings, instant, "America/New_York")?.name).toBe(
+      "dinner",
+    );
   });
 });

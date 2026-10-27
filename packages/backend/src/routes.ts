@@ -157,6 +157,8 @@ const timelineEntrySchema = z
       isPlausibleGlucose(entry.value, entry.unit),
   );
 
+const TIME_ZONE_HEADER = "X-Timezone";
+
 export function createRoutes(
   calculator: Calculator,
   storage: FileStorage,
@@ -171,6 +173,7 @@ export function createRoutes(
       return apiError(c, "validation_failed", 400, parsed.error.message);
     }
 
+    const timeZone = c.req.header(TIME_ZONE_HEADER);
     const settings = await storage.getSettings();
     const bolusInsulinId = settings.bolus_insulin_id;
     if (bolusInsulinId === null) {
@@ -178,7 +181,7 @@ export function createRoutes(
     }
     if (
       !parsed.data.meal_window_override &&
-      findMealWindow(settings, clock()) === null
+      findMealWindow(settings, clock(), timeZone) === null
     ) {
       return apiError(c, "no_meal_window", 400);
     }
@@ -201,6 +204,7 @@ export function createRoutes(
         parsed.data.meal_window_override,
         vocabulary,
         iobUnits,
+        timeZone,
       );
 
       if (outcome.status !== "ok") {

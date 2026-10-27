@@ -4,6 +4,7 @@ export {
   correctionComponents,
   evaluateFatProteinThreshold,
   findMealWindow,
+  localHour,
   recalculateResult,
   roundToIncrement,
   uncoveredHours,

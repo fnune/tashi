@@ -5,11 +5,27 @@ import type {
   Settings,
 } from "./types.js";
 
+export function localHour(date: Date, timeZone?: string): number {
+  if (!timeZone) return date.getHours();
+  try {
+    const formatter = new Intl.DateTimeFormat("en-US", {
+      timeZone,
+      hour: "numeric",
+      hourCycle: "h23",
+    });
+    const hour = Number(formatter.format(date));
+    return Number.isInteger(hour) ? hour % 24 : date.getHours();
+  } catch {
+    return date.getHours();
+  }
+}
+
 export function findMealWindow(
   settings: Settings,
   date: Date = new Date(),
+  timeZone?: string,
 ): MealWindow | null {
-  const hour = date.getHours();
+  const hour = localHour(date, timeZone);
   return settings.meal_windows.find((w) => windowCovers(w, hour)) ?? null;
 }
 
