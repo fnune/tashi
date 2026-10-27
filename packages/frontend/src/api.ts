@@ -1,5 +1,6 @@
 import type {
   ApiErrorCode,
+  ApiKeyStatus,
   CalculateRequest,
   CalculateResponse,
   CreateTimelineRequest,
@@ -7,6 +8,7 @@ import type {
   InsulinOnBoard,
   LogMealRequest,
   LogMealResponse,
+  SetApiKeyRequest,
   Settings,
   TimelineEntry,
   UpdateTimelineRequest,
@@ -112,4 +114,20 @@ export function deleteTimelineEntry(id: string): Promise<void> {
 
 export function clearTimeline(): Promise<void> {
   return request("/api/timeline", { method: "DELETE" });
+}
+
+export function getApiKeyStatus(): Promise<ApiKeyStatus> {
+  return request<ApiKeyStatus>("/api/api-key");
+}
+
+export function saveApiKey(apiKey: string): Promise<ApiKeyStatus> {
+  const body: SetApiKeyRequest = { api_key: apiKey };
+  return request<ApiKeyStatus>("/api/api-key", {
+    method: "PUT",
+    body: JSON.stringify(body),
+  });
+}
+
+export function deleteApiKey(): Promise<ApiKeyStatus> {
+  return request<ApiKeyStatus>("/api/api-key", { method: "DELETE" });
 }

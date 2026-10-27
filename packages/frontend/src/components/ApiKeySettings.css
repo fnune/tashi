@@ -1,0 +1,15 @@
+.api-key-settings {
+  scroll-margin-top: var(--space-4);
+}
+
+.api-key-editor {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.api-key-explainer {
+  font-size: var(--text-sm);
+  line-height: var(--leading-normal);
+  color: var(--color-fg-muted);
+}

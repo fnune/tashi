@@ -42,6 +42,7 @@ import {
   ratioUnit,
 } from "../ratioLabels.js";
 import { savedTheme, saveTheme, type ThemePreference } from "../theme.js";
+import { ApiKeySettings } from "./ApiKeySettings.js";
 import { RATIOS_ANCHOR } from "./AppHeader.js";
 import { CycleSettings } from "./CycleSettings.js";
 import { DataSources } from "./DataSources.js";
@@ -444,6 +445,8 @@ export function SettingsView({ settings, onSave, lang }: SettingsViewProps) {
         lang={lang}
         onChange={(cycle) => persist({ ...settings, cycle })}
       />
+
+      <ApiKeySettings id="api-key" lang={lang} />
 
       <DataSources lang={lang} />
 

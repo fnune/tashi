@@ -50,7 +50,11 @@ const SETUP_ERRORS = new Set([
   "bolus_insulin_not_configured",
   "insulin_action_not_configured",
   "no_meal_window",
+  "api_key_missing",
+  "api_key_invalid",
 ]);
+
+const API_KEY_ERRORS = new Set(["api_key_missing", "api_key_invalid"]);
 
 export function CalculatorView({
   settings,
@@ -71,7 +75,10 @@ export function CalculatorView({
     kind: "needs_clarification" | "rejected";
     message: string;
   } | null>(null);
-  const [setupPrompt, setSetupPrompt] = useState<string | null>(null);
+  const [setupPrompt, setSetupPrompt] = useState<{
+    message: string;
+    to: string;
+  } | null>(null);
   const [logging, setLogging] = useState(false);
   const [logged, setLogged] = useState<string | null>(null);
   const [switchingProfile, setSwitchingProfile] = useState(false);
@@ -127,7 +134,10 @@ export function CalculatorView({
         err.code &&
         SETUP_ERRORS.has(err.code)
       ) {
-        setSetupPrompt(apiErrorText(lang, err));
+        setSetupPrompt({
+          message: apiErrorText(lang, err),
+          to: API_KEY_ERRORS.has(err.code) ? "/settings#api-key" : "/settings",
+        });
       } else {
         setError(apiErrorText(lang, err));
       }
@@ -287,9 +297,9 @@ export function CalculatorView({
       {setupPrompt && (
         <Notice
           tone="info"
-          action={{ label: t(lang, "goToSettings"), to: "/settings" }}
+          action={{ label: t(lang, "goToSettings"), to: setupPrompt.to }}
         >
-          {setupPrompt}
+          {setupPrompt.message}
         </Notice>
       )}
 

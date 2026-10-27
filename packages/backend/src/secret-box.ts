@@ -25,7 +25,6 @@ export function seal(secret: string, passphrase: string): SealedSecret {
   };
 }
 
-/** Returns null when the passphrase is wrong or the record was tampered with. */
 export function unseal(
   sealed: SealedSecret,
   passphrase: string,

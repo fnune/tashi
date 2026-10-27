@@ -26,7 +26,8 @@ const foodDb = await FoodDatabase.open(foodsDbPath);
 console.log(`Food database loaded: ${foodDb.foodCount()} foods`);
 
 const apiKeys = new ApiKeyStore(storage, {
-  passphrase: process.env.TASHI_SECRET_KEY ?? process.env.TASHI_PASSWORD,
+  encryptionPassphrase:
+    process.env.TASHI_SECRET_KEY ?? process.env.TASHI_PASSWORD,
   environmentKey: process.env.ANTHROPIC_API_KEY,
   verify: anthropicAcceptsKey,
 });

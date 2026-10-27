@@ -32,6 +32,13 @@ describe("password gate", () => {
     }
   });
 
+  it("rejects a password of another length instead of failing", async () => {
+    const res = await appWith("hunter2").request("/base/api/settings", {
+      headers: basic("me", "a-much-longer-wrong-password"),
+    });
+    expect(res.status).toBe(401);
+  });
+
   it("rejects a wrong password", async () => {
     const res = await appWith("hunter2").request("/base/api/settings", {
       headers: basic("me", "nope"),

@@ -40,12 +40,14 @@ export function TextField({
   hint,
   value,
   placeholder,
+  secret,
   onChange,
 }: {
   label: string;
   hint?: ReactNode;
   value: string;
   placeholder?: string;
+  secret?: boolean;
   onChange: (value: string) => void;
 }) {
   return (
@@ -54,6 +56,9 @@ export function TextField({
         <input
           id={id}
           className="field-input"
+          type={secret ? "password" : undefined}
+          autoComplete={secret ? "off" : undefined}
+          spellCheck={secret ? false : undefined}
           value={value}
           placeholder={placeholder}
           onChange={(e) => onChange(e.target.value)}

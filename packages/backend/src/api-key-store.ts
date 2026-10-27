@@ -9,15 +9,13 @@ export interface ApiKeyRecords {
 }
 
 export interface ApiKeyStoreOptions {
-  /** Encrypts the saved key. Without it the key can only come from the environment. */
-  passphrase?: string;
+  encryptionPassphrase?: string;
   environmentKey?: string;
   verify?: (apiKey: string) => Promise<boolean>;
 }
 
 export class ApiKeyStore {
-  // Decrypting derives a key with scrypt, which is too slow to repeat per request.
-  private cached: string | null | undefined;
+  private decryptedKey: string | null | undefined;
 
   constructor(
     private records: ApiKeyRecords,
@@ -29,7 +27,7 @@ export class ApiKeyStore {
   }
 
   async status(): Promise<ApiKeyStatus> {
-    const can_save = this.options.passphrase !== undefined;
+    const can_save = this.options.encryptionPassphrase !== undefined;
     if ((await this.stored()) !== null) {
       return { configured: true, source: "settings", can_save };
     }
@@ -40,24 +38,26 @@ export class ApiKeyStore {
   }
 
   async save(apiKey: string): Promise<void> {
-    const { passphrase, verify } = this.options;
-    if (passphrase === undefined) throw new SecretUnavailableError();
+    const { encryptionPassphrase, verify } = this.options;
+    if (encryptionPassphrase === undefined) throw new SecretUnavailableError();
     if (verify && !(await verify(apiKey))) throw new InvalidApiKeyError();
-    await this.records.saveApiKeyRecord(seal(apiKey, passphrase));
-    this.cached = apiKey;
+    await this.records.saveApiKeyRecord(seal(apiKey, encryptionPassphrase));
+    this.decryptedKey = apiKey;
   }
 
   async clear(): Promise<void> {
     await this.records.deleteApiKeyRecord();
-    this.cached = null;
+    this.decryptedKey = null;
   }
 
   private async stored(): Promise<string | null> {
-    if (this.cached !== undefined) return this.cached;
+    if (this.decryptedKey !== undefined) return this.decryptedKey;
     const record = await this.records.getApiKeyRecord();
-    const { passphrase } = this.options;
-    this.cached =
-      record && passphrase !== undefined ? unseal(record, passphrase) : null;
-    return this.cached;
+    const { encryptionPassphrase } = this.options;
+    this.decryptedKey =
+      record && encryptionPassphrase !== undefined
+        ? unseal(record, encryptionPassphrase)
+        : null;
+    return this.decryptedKey;
   }
 }

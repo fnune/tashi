@@ -53,6 +53,17 @@ const translations = {
       "Choose which long-acting insulin you're using in settings first.",
     insulin_action_not_configured:
       "Choose which insulin you're using in settings to see insulin on board.",
+    apiKeyTitle: "AI food reading",
+    apiKeyLabel: "Anthropic API key",
+    apiKeyDetail: "Reads the foods and weights in your meal descriptions",
+    apiKeySaved: "Saved",
+    apiKeyFromServer: "Set on the server",
+    apiKeyExplainer:
+      "Tashi sends each meal description to Anthropic to read the foods and weights, and you pay Anthropic for that use. The key stays on your server, encrypted, and is never shown again.",
+    apiKeyGet: "Get a key at console.anthropic.com",
+    apiKeyPlaceholder: "sk-ant-...",
+    apiKeyChecking: "Checking...",
+    apiKeyRemove: "Remove saved key",
     api_key_missing:
       "Add your Anthropic API key in settings to calculate doses.",
     api_key_invalid:
@@ -322,6 +333,17 @@ const translations = {
       "Elige qué insulina lenta usas en ajustes primero.",
     insulin_action_not_configured:
       "Elige qué insulina usas en ajustes para ver la insulina activa.",
+    apiKeyTitle: "Lectura de alimentos con IA",
+    apiKeyLabel: "Clave de API de Anthropic",
+    apiKeyDetail: "Lee los alimentos y pesos de tus descripciones de comidas",
+    apiKeySaved: "Guardada",
+    apiKeyFromServer: "Definida en el servidor",
+    apiKeyExplainer:
+      "Tashi envía cada descripción de comida a Anthropic para leer los alimentos y pesos, y pagas a Anthropic por ese uso. La clave se queda en tu servidor, cifrada, y no se vuelve a mostrar.",
+    apiKeyGet: "Consigue una clave en console.anthropic.com",
+    apiKeyPlaceholder: "sk-ant-...",
+    apiKeyChecking: "Comprobando...",
+    apiKeyRemove: "Quitar la clave guardada",
     api_key_missing:
       "Añade tu clave de API de Anthropic en ajustes para calcular dosis.",
     api_key_invalid:
