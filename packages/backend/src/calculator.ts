@@ -10,9 +10,10 @@ import {
   findMealWindow,
   type Settings,
 } from "@tashi/shared";
-import { type Clock, systemClock } from "./clock.js";
+import type { Clock } from "./clock.js";
 import type { FoodDatabase, FoodMatch } from "./db/food-db.js";
 import type { FoodParser } from "./food-parser.js";
+import type { IdGenerator } from "./ids.js";
 
 export type CalculateOutcome =
   | { status: "ok"; result: CalculationResult }
@@ -44,15 +45,18 @@ export class Calculator {
   private parser: FoodParser;
   private foodDb: FoodDatabase;
   private clock: Clock;
+  private newId: IdGenerator;
 
   constructor(
     parser: FoodParser,
     foodDb: FoodDatabase,
-    clock: Clock = systemClock,
+    clock: Clock,
+    newId: IdGenerator,
   ) {
     this.parser = parser;
     this.foodDb = foodDb;
     this.clock = clock;
+    this.newId = newId;
   }
 
   async calculate(
@@ -99,7 +103,7 @@ export class Calculator {
     return {
       status: "ok",
       result: {
-        id: crypto.randomUUID(),
+        id: this.newId(),
         timestamp: this.clock().toISOString(),
         input_text: foodDescription,
         language: inputLang,

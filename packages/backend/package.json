@@ -5,7 +5,9 @@
   "type": "module",
   "exports": {
     "./calculator": "./src/calculator.ts",
+    "./api-key-store": "./src/api-key-store.ts",
     "./food-parser": "./src/food-parser.ts",
+    "./ids": "./src/ids.ts",
     "./routes": "./src/routes.ts",
     "./storage": "./src/storage.ts",
     "./db/food-db": "./src/db/food-db.ts"

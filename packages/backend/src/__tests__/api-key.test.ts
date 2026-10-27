@@ -5,13 +5,16 @@ import { type ApiKeyStatus, DEFAULT_SETTINGS } from "@tashi/shared";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { ApiKeyStore } from "../api-key-store.js";
 import { Calculator } from "../calculator.js";
+import { systemClock } from "../clock.js";
 import type { FoodDatabase } from "../db/food-db.js";
 import { InvalidApiKeyError } from "../errors.js";
+import type { FoodParser } from "../food-parser.js";
 import { KeyedFoodParser } from "../keyed-food-parser.js";
 import { createRoutes } from "../routes.js";
 import { seal, unseal } from "../secret-box.js";
 import { FileStorage } from "../storage.js";
 import { FakeFoodParser } from "./fake-food-parser.js";
+import { sequentialIds } from "./sequential-ids.js";
 import { createTestFoodDb } from "./test-food-db.js";
 
 const KEY = "sk-ant-test-key";
@@ -42,6 +45,17 @@ describe("api key routes", () => {
   let verified: string[];
   let accepted: boolean;
 
+  function routesFor(parser: FoodParser, apiKeys: ApiKeyStore) {
+    const newId = sequentialIds();
+    return createRoutes({
+      calculator: new Calculator(parser, foodDb, systemClock, newId),
+      storage,
+      apiKeys,
+      clock: systemClock,
+      newId,
+    });
+  }
+
   function appWith(options: {
     encryptionPassphrase?: string;
     environmentKey?: string;
@@ -57,8 +71,7 @@ describe("api key routes", () => {
       created.push(apiKey);
       return new FakeFoodParser();
     });
-    const calculator = new Calculator(parser, foodDb);
-    return createRoutes(calculator, storage, undefined, keys);
+    return routesFor(parser, keys);
   }
 
   async function putKey(
@@ -241,12 +254,7 @@ describe("api key routes", () => {
         throw new InvalidApiKeyError();
       },
     }));
-    const app = createRoutes(
-      new Calculator(parser, foodDb),
-      storage,
-      undefined,
-      keys,
-    );
+    const app = routesFor(parser, keys);
     const res = await calculate(app);
     expect(((await res.json()) as { code: string }).code).toBe(
       "api_key_invalid",

@@ -12,12 +12,14 @@ import {
   type TimelineEntry,
 } from "@tashi/shared";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { ApiKeyStore } from "../api-key-store.js";
 import { Calculator } from "../calculator.js";
 import type { Clock } from "../clock.js";
 import type { FoodDatabase } from "../db/food-db.js";
 import { createRoutes } from "../routes.js";
 import { FileStorage } from "../storage.js";
 import { FakeFoodParser } from "./fake-food-parser.js";
+import { sequentialIds } from "./sequential-ids.js";
 import { createTestFoodDb } from "./test-food-db.js";
 
 function configured(overrides: Partial<Settings> = {}): Settings {
@@ -94,8 +96,15 @@ describe("API routes", () => {
     foodDb = await createTestFoodDb(tmpDir);
     now = new Date("2026-06-13T12:00:00.000Z");
     const clock: Clock = () => now;
-    const calculator = new Calculator(parser, foodDb, clock);
-    app = createRoutes(calculator, storage, clock);
+    const newId = sequentialIds();
+    const calculator = new Calculator(parser, foodDb, clock, newId);
+    app = createRoutes({
+      calculator,
+      storage,
+      apiKeys: new ApiKeyStore(storage),
+      clock,
+      newId,
+    });
   });
 
   afterEach(async () => {
@@ -505,6 +514,7 @@ describe("API routes", () => {
     expect(vocab[0]!.fdc_id).toBe(169756);
     expect(vocab[0]!.description).toBe("White rice (cooked)");
     expect(vocab[0]!.use_count).toBe(1);
+    expect(vocab[0]!.last_used).toBe(now.toISOString());
 
     await postJson(app, "/api/meals", { result, units: 3 });
 

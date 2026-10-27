@@ -4,8 +4,10 @@ import { join } from "node:path";
 import type { CalculationResult, Settings } from "@tashi/shared";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { Calculator } from "../calculator.js";
+import { systemClock } from "../clock.js";
 import type { FoodDatabase } from "../db/food-db.js";
 import { FakeFoodParser } from "./fake-food-parser.js";
+import { sequentialIds } from "./sequential-ids.js";
 import { createTestFoodDb } from "./test-food-db.js";
 
 async function calculateOk(
@@ -52,7 +54,7 @@ describe("Calculator", () => {
     tmpDir = await mkdtemp(join(tmpdir(), "tashi-calc-test-"));
     parser = new FakeFoodParser();
     foodDb = await createTestFoodDb(tmpDir);
-    calculator = new Calculator(parser, foodDb);
+    calculator = new Calculator(parser, foodDb, systemClock, sequentialIds());
   });
 
   afterEach(async () => {
@@ -706,7 +708,7 @@ describe("FoodDatabase search", () => {
       tmpDir = await mkdtemp(join(tmpdir(), "tashi-profile-test-"));
       parser = new FakeFoodParser();
       foodDb = await createTestFoodDb(tmpDir);
-      calculator = new Calculator(parser, foodDb);
+      calculator = new Calculator(parser, foodDb, systemClock, sequentialIds());
     });
 
     afterEach(async () => {

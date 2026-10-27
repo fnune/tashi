@@ -167,9 +167,9 @@ export class FileStorage implements ApiKeyRecords {
     }
   }
 
-  async learnFromItems(items: CalculatedItem[]): Promise<void> {
+  async learnFromItems(items: CalculatedItem[], now: Date): Promise<void> {
     const vocab = await this.getVocabulary();
-    const now = new Date().toISOString();
+    const usedAt = now.toISOString();
 
     for (const item of items) {
       if (!item.food_item || item.estimated) continue;
@@ -183,7 +183,7 @@ export class FileStorage implements ApiKeyRecords {
 
       if (existing) {
         existing.use_count++;
-        existing.last_used = now;
+        existing.last_used = usedAt;
         existing.default_weight_g = item.weight_g;
       } else {
         vocab.push({
@@ -192,7 +192,7 @@ export class FileStorage implements ApiKeyRecords {
           usda_description: item.food_item.description,
           default_weight_g: item.weight_g,
           use_count: 1,
-          last_used: now,
+          last_used: usedAt,
         });
       }
     }

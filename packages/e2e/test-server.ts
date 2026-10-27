@@ -3,10 +3,12 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { serve } from "@hono/node-server";
 import { serveStatic } from "@hono/node-server/serve-static";
+import { ApiKeyStore } from "@tashi/backend/api-key-store";
 import { Calculator } from "@tashi/backend/calculator";
 // E2E tests use the real food database
 import { FoodDatabase } from "@tashi/backend/db/food-db";
 import type { FoodParser, ParseOutcome } from "@tashi/backend/food-parser";
+import { randomId } from "@tashi/backend/ids";
 import { createRoutes } from "@tashi/backend/routes";
 import { FileStorage } from "@tashi/backend/storage";
 import type { FoodVocabEntry, ParsedFoodItem } from "@tashi/shared";
@@ -136,7 +138,7 @@ async function startServer(): Promise<void> {
     now.setHours(13, 0, 0, 0);
     return now;
   };
-  const calculator = new Calculator(parser, foodDb, lunchtimeClock);
+  const calculator = new Calculator(parser, foodDb, lunchtimeClock, randomId);
 
   const app = new Hono();
   app.use("/api/*", cors());
@@ -158,7 +160,13 @@ async function startServer(): Promise<void> {
     return c.json({ ok: true });
   });
 
-  const routes = createRoutes(calculator, storage, lunchtimeClock);
+  const routes = createRoutes({
+    calculator,
+    storage,
+    apiKeys: new ApiKeyStore(storage),
+    clock: lunchtimeClock,
+    newId: randomId,
+  });
   app.route("/", routes);
 
   app.use("/*", serveStatic({ root: "../frontend/dist" }));

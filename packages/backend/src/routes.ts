@@ -28,15 +28,16 @@ import {
 } from "@tashi/shared";
 import { Hono } from "hono";
 import { z } from "zod";
-import { ApiKeyStore } from "./api-key-store.js";
+import type { ApiKeyStore } from "./api-key-store.js";
 import type { Calculator } from "./calculator.js";
-import { type Clock, systemClock } from "./clock.js";
+import type { Clock } from "./clock.js";
 import {
   apiError,
   InvalidApiKeyError,
   MissingApiKeyError,
   SecretUnavailableError,
 } from "./errors.js";
+import type { IdGenerator } from "./ids.js";
 import type { FileStorage } from "./storage.js";
 
 const calculateSchema = z.object({
@@ -173,12 +174,21 @@ const timelineEntrySchema = z
 
 const TIME_ZONE_HEADER = "X-Timezone";
 
-export function createRoutes(
-  calculator: Calculator,
-  storage: FileStorage,
-  clock: Clock = systemClock,
-  apiKeys: ApiKeyStore = new ApiKeyStore(storage),
-): Hono {
+export interface RouteDependencies {
+  calculator: Calculator;
+  storage: FileStorage;
+  apiKeys: ApiKeyStore;
+  clock: Clock;
+  newId: IdGenerator;
+}
+
+export function createRoutes({
+  calculator,
+  storage,
+  apiKeys,
+  clock,
+  newId,
+}: RouteDependencies): Hono {
   const api = new Hono();
 
   api.post("/api/calculate", async (c) => {
@@ -283,7 +293,7 @@ export function createRoutes(
     const now = clock();
     const preBolusMs = parsed.data.pre_bolus_minutes * 60_000;
     const mealEntry: MealEntry = {
-      id: crypto.randomUUID(),
+      id: newId(),
       timestamp: new Date(now.getTime() + preBolusMs).toISOString(),
       type: "meal",
       input_text: result.input_text,
@@ -301,7 +311,7 @@ export function createRoutes(
     let insulinEntryId: string | null = null;
     if (parsed.data.units > 0) {
       const insulinEntry: FastInsulinEntry = {
-        id: crypto.randomUUID(),
+        id: newId(),
         timestamp: now.toISOString(),
         type: "fast_insulin",
         units: parsed.data.units,
@@ -313,7 +323,7 @@ export function createRoutes(
     }
 
     await storage.addTimelineEntries(entries);
-    await storage.learnFromItems(result.items);
+    await storage.learnFromItems(result.items, now);
 
     const response: LogMealResponse = {
       meal_entry_id: mealEntry.id,
@@ -367,7 +377,7 @@ export function createRoutes(
     }
 
     const data = parsed.data;
-    const id = crypto.randomUUID();
+    const id = newId();
     const timestamp = clock().toISOString();
 
     if (data.type === "fast_insulin") {

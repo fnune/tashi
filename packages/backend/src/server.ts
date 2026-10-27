@@ -6,7 +6,9 @@ import { Hono } from "hono";
 import { AnthropicFoodParser } from "./anthropic-food-parser.js";
 import { ApiKeyStore } from "./api-key-store.js";
 import { Calculator } from "./calculator.js";
+import { systemClock } from "./clock.js";
 import { FoodDatabase } from "./db/food-db.js";
+import { randomId } from "./ids.js";
 import { anthropicAcceptsKey, KeyedFoodParser } from "./keyed-food-parser.js";
 import { passwordGate } from "./password-gate.js";
 import { createRoutes } from "./routes.js";
@@ -39,7 +41,7 @@ const parser = new KeyedFoodParser(
   apiKeys,
   (apiKey) => new AnthropicFoodParser(apiKey, foodDb, model),
 );
-const calculator = new Calculator(parser, foodDb);
+const calculator = new Calculator(parser, foodDb, systemClock, randomId);
 
 const app = new Hono();
 
@@ -49,7 +51,13 @@ if (process.env.TASHI_PASSWORD) {
   app.use("*", passwordGate(process.env.TASHI_PASSWORD));
 }
 
-const routes = createRoutes(calculator, storage, undefined, apiKeys);
+const routes = createRoutes({
+  calculator,
+  storage,
+  apiKeys,
+  clock: systemClock,
+  newId: randomId,
+});
 app.route(basePath || "/", routes);
 
 if (existsSync("./public")) {
