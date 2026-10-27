@@ -96,7 +96,11 @@ export class PostgresTimelineRepository implements TimelineRepository {
     if (entries.length === 0) return;
     await this.db.transaction().execute(async (trx) => {
       const display = await displayOf(trx);
-      for (const entry of entries) {
+      const mealsFirst = [
+        ...entries.filter((entry) => entry.type === "meal"),
+        ...entries.filter((entry) => entry.type !== "meal"),
+      ];
+      for (const entry of mealsFirst) {
         await this.insert(trx, entry, display);
       }
     });

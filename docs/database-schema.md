@@ -220,7 +220,7 @@ CREATE TABLE meal_entries (
   input_text text NOT NULL,
   input_language text NOT NULL CHECK (input_language IN ('en', 'es')),
   ratio_version_id uuid NOT NULL REFERENCES ratio_versions (id) ON DELETE RESTRICT,
-  total_carbs_g double precision NOT NULL CHECK (total_carbs_g >= 0),
+  total_carbs_g double precision NOT NULL,
   carb_dose_units double precision NOT NULL CHECK (carb_dose_units >= 0),
   total_dose_units double precision NOT NULL CHECK (total_dose_units >= 0),
   catalog_release smallint NOT NULL REFERENCES catalog_releases (id)
@@ -235,8 +235,8 @@ CREATE TABLE meal_items (
   assumed_cooked boolean NOT NULL,
   confidence confidence NOT NULL,
   source text NOT NULL REFERENCES food_sources (id),
-  carbs_per_100g double precision NOT NULL CHECK (carbs_per_100g >= 0),
-  carbs_g double precision NOT NULL CHECK (carbs_g >= 0),
+  carbs_per_100g double precision NOT NULL,
+  carbs_g double precision NOT NULL,
   fat_per_100g double precision NOT NULL CHECK (fat_per_100g >= 0),
   fat_g double precision NOT NULL CHECK (fat_g >= 0),
   protein_per_100g double precision NOT NULL CHECK (protein_per_100g >= 0),
@@ -342,7 +342,7 @@ CREATE TABLE entry_nutrients (
   source text NOT NULL,
   external_id text NOT NULL,
   nutrient_id text NOT NULL REFERENCES nutrients (id),
-  amount_per_100g double precision NOT NULL CHECK (amount_per_100g >= 0),
+  amount_per_100g double precision NOT NULL,
   from_release smallint NOT NULL REFERENCES catalog_releases (id),
   to_release smallint REFERENCES catalog_releases (id),
   CHECK (to_release IS NULL OR to_release > from_release),
@@ -506,6 +506,7 @@ Real violations:
 
 - **Glucose has one unit in storage: mg/dL.** Settings, corrections and readings all store mg/dL, the unit bilbo's data already uses, so switching the display unit writes nothing and old records stay readable. Values entered in mmol/L are converted on input and kept as doubles, so they convert back to the same figure once rounded for display (decision 3).
 - Weight is grams, doses are insulin units, durations are minutes (`insulin_action_minutes`) or milliseconds (`duration_ms`), the cycle is in days. Hours are local hours of the day, and each entry stores the zone it happened in (occurred\_tz). Instants are UTC.
+- Carbohydrate is the one figure allowed to be negative. USDA derives it by difference, and for ten foods in the catalog (raw chicken, raw pork) it comes out slightly below zero. A meal records what was calculated, so those values are stored as they were, and a meal total can be below zero. Whether the catalog build should clamp them at zero is a separate decision; it would change doses.
 - `weight_g = 0` means "weight not given" for three legacy items whose carbs were already 0. For new items a weight of 0 is not meaningful; make weight nullable if it ever matters.
 - `correction_dose_units` has no lower bound: it is negative when glucose is below target.
 - Doubles hold ratios such as 6.66 and round-trip exactly. Do not switch them to `numeric` without handling the string the driver returns.

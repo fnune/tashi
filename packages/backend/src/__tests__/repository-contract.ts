@@ -228,6 +228,16 @@ export function repositoryContract(
         }
       });
 
+      it("takes an insulin entry together with its meal, whichever is listed first", async () => {
+        await repositories.timeline.add([
+          fastInsulin(2, 11, 1),
+          fullMeal(1, 10),
+        ]);
+        expect(await repositories.timeline.get(uuidNumber(2))).toMatchObject({
+          related_meal_id: uuidNumber(1),
+        });
+      });
+
       it("replaces an entry and reorders it by its new time", async () => {
         await repositories.timeline.add([glucose(1, 10), glucose(2, 20)]);
         const moved = { ...glucose(1, 30, 99) };
