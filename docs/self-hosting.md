@@ -1,6 +1,6 @@
 # Self-hosting
 
-Goal: someone non-technical forks the repo, connects a hosting platform that builds from it, adds a free database, sets one password, and pastes their Anthropic API key in the settings.
+Goal: someone non-technical installs Tashi entirely online, with nothing installed on their computer, using three free accounts of their own: GitHub, Cloudflare and Anthropic. They fork the repository, let Cloudflare build their fork, set a password and their Anthropic key, and open their own address. Everything runs in their accounts.
 Tashi ships as source only: no prebuilt image, no hosted instance, no deploy button.
 Non-goal for now: multiple users. One instance serves one person.
 
@@ -17,6 +17,30 @@ This tracks what stands between the repo and that setup.
 - Root `pnpm build` and `pnpm start` produce a runnable app on plain Node 22 (Nix build unchanged). `engines` and `packageManager` are pinned.
 
 ## Open
+
+### Installing on Cloudflare (draft guide)
+
+Decided on 2026-10-31: the person installing has a GitHub account, a Cloudflare account and an Anthropic account, and does everything in a browser. Cloudflare's dashboard can only build code from a GitHub or GitLab repository the person controls (its other choices are its own templates and plain static files), so a fork is the way in.
+
+Not chosen: a hosted installer, a page of ours that would deploy a ready-built Tashi into their account through Cloudflare's API with a short-lived token they paste. It would spare them the GitHub account, but it means publishing ready-built releases and running a service whose purpose is putting a dose calculator on patients' phones, which is much closer to distributing the app; whether that matters under medical device rules (the EU MDR, the FDA's rules on software) needs advice first. Installing from their own fork keeps Tashi source that each person builds in their own accounts.
+
+The guide below is a draft: it gets corrected by following it on a fresh Cloudflare account, with a screenshot for each step that shows a GitHub or Cloudflare screen.
+
+1. Create a free GitHub account at github.com.
+2. Open the Tashi repository on GitHub, press **Fork**, then **Create fork**. This makes their own copy, `their-name/tashi`.
+3. Create a free Cloudflare account at dash.cloudflare.com (no card). When asked, choose a name for the free address; it becomes `tashi.that-name.workers.dev`.
+4. In Cloudflare: **Workers & Pages**, **Create application**, **Connect GitHub**. GitHub asks which repositories Cloudflare may see: choose only `tashi`. Back in Cloudflare, pick it, keep the name `tashi`, leave every setting as it is, and press **Create and deploy**.
+    - Workers Builds clones the fork, installs the dependencies and runs `wrangler deploy` from the root. `wrangler.jsonc` holds the build command (`pnpm build:cloudflare`: shared code, frontend, food catalog, static files), so no field needs filling in. Wrangler creates the D1 database on the first deploy because its binding has no id.
+5. Wait for the build, a few minutes, then open the address Cloudflare shows. The page says "Tashi needs one more step".
+6. In the Worker: **Settings**, **Variables and Secrets**, **Add**. Type **Secret**, name `TASHI_PASSWORD`, value a password of their choice. Add a second secret, `ANTHROPIC_API_KEY`, with a key from console.anthropic.com (an Anthropic account with a little prepaid credit; each calculation costs a fraction of a cent).
+    - Secrets are encrypted by Cloudflare and given to the Worker at runtime. Without `TASHI_PASSWORD` the Worker shows only the setup page, so an instance is never open to the internet. `TASHI_SECRET_KEY` is not needed on Cloudflare: the key is already a Cloudflare secret.
+7. Open the address again. The browser asks for a username (anything) and the password. Add the page to the phone's home screen.
+    - On the first visit Tashi creates its tables in the database (`migrateD1`); later versions apply their own migrations the same way.
+8. Optional, before step 4: keep the data in the EU. To be settled on a real account: whether creating a D1 database named `tashi` in the EU in the dashboard first (**Storage & Databases**, **D1**, **Create**, data location **European Union**) makes Wrangler use it instead of creating one, or what else does it without editing a file.
+9. Updates: on their fork's GitHub page, a notice says the branch is behind. Press **Sync fork**, then **Update branch**; Cloudflare builds and deploys the new version within minutes, and the data stays.
+10. Backups: Tashi's **Settings**, **Your data**, **Download a copy**, from time to time. Cloudflare also keeps 7 days of point-in-time recovery of the database.
+
+To verify on the first real install: that Workers Builds installs with pnpm from `packageManager` and which Node it uses; that the build stays within the Free plan's build time; whether the Worker name must match `wrangler.jsonc` (`tashi`) when someone names it differently; the EU step; and the CPU and query counts per request in the Worker's metrics.
 
 ### Cloudflare Workers and D1
 
@@ -70,13 +94,7 @@ Open questions:
 
 ### Sign-in and user management basics
 
-Basic auth with one shared password is the placeholder.
-
-- Real sign-in page for an account with email and password, a session cookie and logout.
-- Password change and reset without losing the saved API key: give the encryption secret its own env var or generated secret instead of reusing the login password.
-- Rate limiting or lockout on failed sign-ins.
-- HTTPS-only cookies and a note on what platforms terminate TLS for the user.
-- Decide whether the instance stays single-account. More than one account and sharing a person with a caregiver are out of scope until then.
+Planned in [authentication.md](authentication.md): setup from a link in the build log, accounts with sign-in methods, sessions, the Anthropic key wrapped per account, and later invitations and a second factor.
 
 ### Connecting data to users
 
