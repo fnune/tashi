@@ -13,3 +13,10 @@
   line-height: var(--leading-normal);
   color: var(--color-fg-muted);
 }
+
+.api-key-steps {
+  padding-left: var(--space-5);
+  font-size: var(--text-sm);
+  line-height: var(--leading-normal);
+  color: var(--color-fg-muted);
+}

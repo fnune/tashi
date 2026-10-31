@@ -72,6 +72,11 @@ const translations = {
     apiKeyExplainer:
       "Tashi sends each meal description to Anthropic to read the foods and weights, and you pay Anthropic for that use. The key stays on your server, encrypted, and is never shown again.",
     apiKeyGet: "Get a key at console.anthropic.com",
+    apiKeyStep1: "Create an account at console.anthropic.com.",
+    apiKeyStep2:
+      "Under Billing, add a little credit. A calculation costs a fraction of a cent.",
+    apiKeyStep3: "Under API keys, create a key, copy it and paste it here.",
+    apiKeyGuide: "Step-by-step guide",
     apiKeyPlaceholder: "sk-ant-...",
     apiKeyChecking: "Checking...",
     apiKeyRemove: "Remove saved key",
@@ -416,6 +421,11 @@ const translations = {
     apiKeyExplainer:
       "Tashi envía cada descripción de comida a Anthropic para leer los alimentos y pesos, y pagas a Anthropic por ese uso. La clave se queda en tu servidor, cifrada, y no se vuelve a mostrar.",
     apiKeyGet: "Consigue una clave en console.anthropic.com",
+    apiKeyStep1: "Crea una cuenta en console.anthropic.com.",
+    apiKeyStep2:
+      "En Billing, añade un poco de crédito. Un cálculo cuesta una fracción de céntimo.",
+    apiKeyStep3: "En API keys, crea una clave, cópiala y pégala aquí.",
+    apiKeyGuide: "Guía paso a paso",
     apiKeyPlaceholder: "sk-ant-...",
     apiKeyChecking: "Comprobando...",
     apiKeyRemove: "Quitar la clave guardada",

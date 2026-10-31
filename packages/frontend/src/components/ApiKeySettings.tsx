@@ -11,6 +11,8 @@ import { Sheet } from "./ui/Sheet.js";
 import "./ApiKeySettings.css";
 
 const CONSOLE_URL = "https://console.anthropic.com/settings/keys";
+const GUIDE_URL =
+  "https://github.com/fnune/tashi/blob/main/docs/self-hosting.md#installing-on-cloudflare";
 
 export function ApiKeySettings({ id, lang }: { id: string; lang: Language }) {
   const [status, setStatus] = useState<AiConnectionStatus | null>(null);
@@ -162,8 +164,16 @@ function KeyEditor({
   return (
     <div className="api-key-editor">
       <p className="api-key-explainer">{t(lang, "apiKeyExplainer")}</p>
+      <ol className="api-key-steps">
+        <li>{t(lang, "apiKeyStep1")}</li>
+        <li>{t(lang, "apiKeyStep2")}</li>
+        <li>{t(lang, "apiKeyStep3")}</li>
+      </ol>
       <a href={CONSOLE_URL} target="_blank" rel="noreferrer">
         {t(lang, "apiKeyGet")}
+      </a>
+      <a href={GUIDE_URL} target="_blank" rel="noreferrer">
+        {t(lang, "apiKeyGuide")}
       </a>
       <TextField
         label={t(lang, "apiKeyLabel")}
