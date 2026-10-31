@@ -5,8 +5,8 @@ import {
   type SealedSecret,
   toBase64,
 } from "../../domain/secret-box.js";
+import type { Db } from "../database.js";
 import { StoredDataError } from "../stored-data-error.js";
-import type { Db } from "./connection.js";
 
 export class SqliteApiKeyRepository implements ApiKeyRepository {
   constructor(private db: Db) {}

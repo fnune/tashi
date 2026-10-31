@@ -29,7 +29,7 @@ export async function openSqliteRepositories(
           options.newId,
           options.catalogRelease,
         ),
-        vocabulary: new SqliteVocabularyRepository(db),
+        vocabulary: new SqliteVocabularyRepository(db, batch),
         apiKey: new SqliteApiKeyRepository(db),
       },
       close: () => db.destroy(),

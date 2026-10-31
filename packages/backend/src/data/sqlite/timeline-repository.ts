@@ -27,10 +27,10 @@ import {
   parseTraceSchema,
   storedTimelineSchema,
 } from "../../domain/schemas.js";
+import type { Db, Executor } from "../database.js";
 import { StoredDataError } from "../stored-data-error.js";
 import type { WriteBatch, WriteQuery } from "../write-batch.js";
-import { flagOf, instantOf } from "./columns.js";
-import type { Db, Executor } from "./connection.js";
+import { flagOf, inStatements, instantOf } from "./columns.js";
 import { fromMgDl, toMgDl } from "./glucose-units.js";
 
 const entrySchema = storedTimelineSchema.element;
@@ -268,44 +268,37 @@ export class SqliteTimelineRepository implements TimelineRepository {
       }),
     );
 
-    if (meal.items.length > 0) {
-      writes.push(
-        this.db.insertInto("meal_items").values(
-          meal.items.map((item, position) => {
-            const source = foodSourceOfDataSource(item.data_source);
-            if (item.estimated !== FOOD_SOURCES[source].estimate) {
-              throw new Error(
-                `Item "${item.description}" disagrees with its source ${source} about being an estimate`,
-              );
-            }
-            return {
-              meal_entry_id: meal.id,
-              position,
-              description: item.description,
-              weight_g: item.weight_g,
-              assumed_cooked: flagOf(item.assumed_cooked),
-              confidence: item.confidence,
-              source,
-              carbs_per_100g: item.net_carbs_per_100g,
-              carbs_g: item.net_carbs_g,
-              fat_per_100g: item.fat_per_100g,
-              fat_g: item.fat_g,
-              protein_per_100g: item.protein_per_100g,
-              protein_g: item.protein_g,
-              glycemic_index: item.glycemic_index,
-              gi_estimated: flagOf(item.gi_estimated),
-              notes: item.notes,
-              warning: item.warning,
-              external_id: item.food_item
-                ? String(item.food_item.fdc_id)
-                : null,
-              food_snapshot: item.food_item
-                ? JSON.stringify(item.food_item)
-                : null,
-            };
-          }),
-        ),
-      );
+    const itemRows = meal.items.map((item, position) => {
+      const source = foodSourceOfDataSource(item.data_source);
+      if (item.estimated !== FOOD_SOURCES[source].estimate) {
+        throw new Error(
+          `Item "${item.description}" disagrees with its source ${source} about being an estimate`,
+        );
+      }
+      return {
+        meal_entry_id: meal.id,
+        position,
+        description: item.description,
+        weight_g: item.weight_g,
+        assumed_cooked: flagOf(item.assumed_cooked),
+        confidence: item.confidence,
+        source,
+        carbs_per_100g: item.net_carbs_per_100g,
+        carbs_g: item.net_carbs_g,
+        fat_per_100g: item.fat_per_100g,
+        fat_g: item.fat_g,
+        protein_per_100g: item.protein_per_100g,
+        protein_g: item.protein_g,
+        glycemic_index: item.glycemic_index,
+        gi_estimated: flagOf(item.gi_estimated),
+        notes: item.notes,
+        warning: item.warning,
+        external_id: item.food_item ? String(item.food_item.fdc_id) : null,
+        food_snapshot: item.food_item ? JSON.stringify(item.food_item) : null,
+      };
+    });
+    for (const rows of inStatements(itemRows)) {
+      writes.push(this.db.insertInto("meal_items").values(rows));
     }
 
     const unit = display.unit;

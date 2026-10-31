@@ -228,6 +228,21 @@ export function repositoryContract(
         }
       });
 
+      it("keeps a meal of many items, each in its place", async () => {
+        const meal = fullMeal(1, 10);
+        const [item] = meal.items;
+        if (!item) throw new Error("fullMeal has items");
+        const many = {
+          ...meal,
+          items: Array.from({ length: 15 }, (_, i) => ({
+            ...item,
+            description: `Item ${i}`,
+          })),
+        };
+        await repositories.timeline.add([many]);
+        expect(await repositories.timeline.get(meal.id)).toEqual(many);
+      });
+
       it("takes an insulin entry together with its meal, whichever is listed first", async () => {
         await repositories.timeline.add([
           fastInsulin(2, 11, 1),
@@ -323,6 +338,13 @@ export function repositoryContract(
         await repositories.vocabulary.upsert([vocabEntry("Rice", 1)]);
         await repositories.vocabulary.upsert([vocabEntry("Rice", 2)]);
         expect(await repositories.vocabulary.list()).toHaveLength(2);
+      });
+
+      it("keeps many entries saved at once", async () => {
+        await repositories.vocabulary.upsert(
+          Array.from({ length: 40 }, (_, i) => vocabEntry(`Food ${i}`, i + 1)),
+        );
+        expect(await repositories.vocabulary.list()).toHaveLength(40);
       });
 
       it("clears every entry", async () => {

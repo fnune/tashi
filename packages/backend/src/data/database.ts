@@ -1,4 +1,6 @@
-import type { Generated } from "kysely";
+import type { Generated, Kysely, Transaction } from "kysely";
+
+export const MAX_PARAMETERS_PER_STATEMENT = 100;
 
 export type Instant = string;
 export type Flag = 0 | 1;
@@ -212,3 +214,6 @@ export interface Database {
   food_vocabulary: FoodVocabularyTable;
   anthropic_api_key: AnthropicApiKeyTable;
 }
+
+export type Db = Kysely<Database>;
+export type Executor = Db | Transaction<Database>;

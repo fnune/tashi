@@ -11,10 +11,10 @@ import { profileIdOfUuid, profileUuid } from "../../domain/builtin-profiles.js";
 import type { IdGenerator } from "../../domain/ids.js";
 import type { SettingsRepository } from "../../domain/repositories.js";
 import { settingsSchema } from "../../domain/schemas.js";
+import type { Db, Executor } from "../database.js";
 import { StoredDataError } from "../stored-data-error.js";
 import type { WriteBatch, WriteQuery } from "../write-batch.js";
 import { flagOf } from "./columns.js";
-import type { Db, Executor } from "./connection.js";
 import { fromMgDl, toMgDl } from "./glucose-units.js";
 
 export async function readSettings(db: Executor): Promise<Settings> {

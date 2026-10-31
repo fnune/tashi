@@ -1,0 +1,7 @@
+{
+  "name": "tashi-d1-tests",
+  "compatibility_date": "2026-10-01",
+  "d1_databases": [
+    { "binding": "DB", "database_name": "tashi-tests", "database_id": "local" }
+  ]
+}

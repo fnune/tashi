@@ -82,7 +82,7 @@ CREATE TABLE ratio_versions (
   adjustment_mode TEXT CHECK (adjustment_mode IN ('percent', 'per_window')),
   percent_adjustment REAL CHECK (percent_adjustment > -100),
   carbs_g_per_unit REAL NOT NULL CHECK (carbs_g_per_unit > 0),
-  first_used_at TEXT NOT NULL CHECK (first_used_at GLOB '[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]T[0-9][0-9]:[0-9][0-9]:[0-9][0-9].[0-9][0-9][0-9]Z'),
+  first_used_at TEXT NOT NULL CHECK (first_used_at IS strftime('%Y-%m-%dT%H:%M:%fZ', first_used_at)),
   CHECK ((profile_id IS NULL) = (adjustment_mode IS NULL)),
   CHECK (profile_id IS NOT NULL OR profile_name IS NULL),
   CHECK (ifnull(adjustment_mode = 'percent', 0) = (percent_adjustment IS NOT NULL))
@@ -97,7 +97,7 @@ CREATE TABLE catalog_releases (
 
 CREATE TABLE glucose_entries (
   id TEXT PRIMARY KEY,
-  occurred_at TEXT NOT NULL CHECK (occurred_at GLOB '[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]T[0-9][0-9]:[0-9][0-9]:[0-9][0-9].[0-9][0-9][0-9]Z'),
+  occurred_at TEXT NOT NULL CHECK (occurred_at IS strftime('%Y-%m-%dT%H:%M:%fZ', occurred_at)),
   occurred_tz TEXT NOT NULL CHECK (occurred_tz <> ''),
   glucose_mg_dl REAL NOT NULL CHECK (glucose_mg_dl > 0)
 ) STRICT;
@@ -105,7 +105,7 @@ CREATE INDEX glucose_entries_newest_first ON glucose_entries (occurred_at DESC, 
 
 CREATE TABLE slow_insulin_entries (
   id TEXT PRIMARY KEY,
-  occurred_at TEXT NOT NULL CHECK (occurred_at GLOB '[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]T[0-9][0-9]:[0-9][0-9]:[0-9][0-9].[0-9][0-9][0-9]Z'),
+  occurred_at TEXT NOT NULL CHECK (occurred_at IS strftime('%Y-%m-%dT%H:%M:%fZ', occurred_at)),
   occurred_tz TEXT NOT NULL CHECK (occurred_tz <> ''),
   insulin TEXT NOT NULL,
   action TEXT NOT NULL DEFAULT 'basal' CHECK (action = 'basal'),
@@ -116,7 +116,7 @@ CREATE INDEX slow_insulin_entries_newest_first ON slow_insulin_entries (occurred
 
 CREATE TABLE meal_entries (
   id TEXT PRIMARY KEY,
-  occurred_at TEXT NOT NULL CHECK (occurred_at GLOB '[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]T[0-9][0-9]:[0-9][0-9]:[0-9][0-9].[0-9][0-9][0-9]Z'),
+  occurred_at TEXT NOT NULL CHECK (occurred_at IS strftime('%Y-%m-%dT%H:%M:%fZ', occurred_at)),
   occurred_tz TEXT NOT NULL CHECK (occurred_tz <> ''),
   input_text TEXT NOT NULL,
   input_language TEXT NOT NULL CHECK (input_language IN ('en', 'es')),
@@ -181,7 +181,7 @@ CREATE TABLE meal_traces (
 
 CREATE TABLE fast_insulin_entries (
   id TEXT PRIMARY KEY,
-  occurred_at TEXT NOT NULL CHECK (occurred_at GLOB '[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]T[0-9][0-9]:[0-9][0-9]:[0-9][0-9].[0-9][0-9][0-9]Z'),
+  occurred_at TEXT NOT NULL CHECK (occurred_at IS strftime('%Y-%m-%dT%H:%M:%fZ', occurred_at)),
   occurred_tz TEXT NOT NULL CHECK (occurred_tz <> ''),
   insulin TEXT NOT NULL,
   action TEXT NOT NULL DEFAULT 'bolus' CHECK (action = 'bolus'),
@@ -206,7 +206,7 @@ CREATE TABLE food_vocabulary (
   catalog_name TEXT NOT NULL CHECK (catalog_name <> ''),
   last_weight_g REAL NOT NULL CHECK (last_weight_g > 0),
   use_count INTEGER NOT NULL CHECK (use_count >= 1),
-  last_used_at TEXT NOT NULL CHECK (last_used_at GLOB '[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]T[0-9][0-9]:[0-9][0-9]:[0-9][0-9].[0-9][0-9][0-9]Z'),
+  last_used_at TEXT NOT NULL CHECK (last_used_at IS strftime('%Y-%m-%dT%H:%M:%fZ', last_used_at)),
   PRIMARY KEY (description_key, source, external_id)
 ) STRICT;
 

@@ -1,11 +1,8 @@
-import { Kysely, SqliteDialect, type Transaction } from "kysely";
+import { Kysely, SqliteDialect } from "kysely";
 import { Migrator } from "kysely/migration";
-import type { Database } from "../database.js";
+import type { Database, Db } from "../database.js";
 import { migrations } from "../migrations/index.js";
 import { nodeSqlite } from "./node-sqlite.js";
-
-export type Db = Kysely<Database>;
-export type Executor = Db | Transaction<Database>;
 
 export function openSqlite(path: string): Db {
   return new Kysely<Database>({

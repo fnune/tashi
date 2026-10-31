@@ -17,7 +17,7 @@ Tashi stores one person's diary in SQLite: Cloudflare D1 on Workers, and a file 
     - A closed set from the code is `TEXT` with a `CHECK (… IN (…))`.
     - A boolean is `INTEGER` with `CHECK (… IN (0, 1))`; the repositories turn it into `true` and `false`.
     - An id is `TEXT` holding a uuid.
-    - An instant is `TEXT` in one format, `YYYY-MM-DDTHH:MM:SS.sssZ` (UTC, milliseconds), which a `GLOB` check enforces. In that format text order is time order, so indexes and cursors compare text. The repositories write every instant through `toISOString()`, whatever offset the domain gave it.
+    - An instant is `TEXT` in one format, `YYYY-MM-DDTHH:MM:SS.sssZ` (UTC, milliseconds), which a check enforces by comparing each value with `strftime('%Y-%m-%dT%H:%M:%fZ', …)` of itself; `IS` makes a value that is not a date fail instead of passing as null. (D1 refuses `GLOB` patterns over 50 characters, which a pattern for this format needs.) In that format text order is time order, so indexes and cursors compare text. The repositories write every instant through `toISOString()`, whatever offset the domain gave it.
     - A fraction is `REAL`; JSON is `TEXT` with `CHECK (json_valid(…))`; bytes are `BLOB`.
 - The food catalog is not in the database. It ships with the build as static files (see [Catalog and snapshots](#catalog-and-snapshots)); a meal keeps a copy of the figures it was dosed with.
 
@@ -124,7 +124,7 @@ CREATE TABLE ratio_versions (
   adjustment_mode TEXT CHECK (adjustment_mode IN ('percent', 'per_window')),
   percent_adjustment REAL CHECK (percent_adjustment > -100),
   carbs_g_per_unit REAL NOT NULL CHECK (carbs_g_per_unit > 0),
-  first_used_at TEXT NOT NULL CHECK (first_used_at GLOB '[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]T[0-9][0-9]:[0-9][0-9]:[0-9][0-9].[0-9][0-9][0-9]Z'),
+  first_used_at TEXT NOT NULL CHECK (first_used_at IS strftime('%Y-%m-%dT%H:%M:%fZ', first_used_at)),
   CHECK ((profile_id IS NULL) = (adjustment_mode IS NULL)),
   CHECK (profile_id IS NOT NULL OR profile_name IS NULL),
   CHECK (ifnull(adjustment_mode = 'percent', 0) = (percent_adjustment IS NOT NULL))
@@ -161,7 +161,7 @@ Every entry has an id and a time; what else it has depends on the kind, so each 
 ```sql
 CREATE TABLE glucose_entries (
   id TEXT PRIMARY KEY,
-  occurred_at TEXT NOT NULL CHECK (occurred_at GLOB '[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]T[0-9][0-9]:[0-9][0-9]:[0-9][0-9].[0-9][0-9][0-9]Z'),
+  occurred_at TEXT NOT NULL CHECK (occurred_at IS strftime('%Y-%m-%dT%H:%M:%fZ', occurred_at)),
   occurred_tz TEXT NOT NULL CHECK (occurred_tz <> ''),
   glucose_mg_dl REAL NOT NULL CHECK (glucose_mg_dl > 0)
 ) STRICT;
@@ -169,7 +169,7 @@ CREATE INDEX glucose_entries_newest_first ON glucose_entries (occurred_at DESC, 
 
 CREATE TABLE slow_insulin_entries (
   id TEXT PRIMARY KEY,
-  occurred_at TEXT NOT NULL CHECK (occurred_at GLOB '[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]T[0-9][0-9]:[0-9][0-9]:[0-9][0-9].[0-9][0-9][0-9]Z'),
+  occurred_at TEXT NOT NULL CHECK (occurred_at IS strftime('%Y-%m-%dT%H:%M:%fZ', occurred_at)),
   occurred_tz TEXT NOT NULL CHECK (occurred_tz <> ''),
   insulin TEXT NOT NULL,
   action TEXT NOT NULL DEFAULT 'basal' CHECK (action = 'basal'),
@@ -189,7 +189,7 @@ A meal is a record of what was calculated and logged. It is never recalculated, 
 ```sql
 CREATE TABLE meal_entries (
   id TEXT PRIMARY KEY,
-  occurred_at TEXT NOT NULL CHECK (occurred_at GLOB '[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]T[0-9][0-9]:[0-9][0-9]:[0-9][0-9].[0-9][0-9][0-9]Z'),
+  occurred_at TEXT NOT NULL CHECK (occurred_at IS strftime('%Y-%m-%dT%H:%M:%fZ', occurred_at)),
   occurred_tz TEXT NOT NULL CHECK (occurred_tz <> ''),
   input_text TEXT NOT NULL,
   input_language TEXT NOT NULL CHECK (input_language IN ('en', 'es')),
@@ -263,7 +263,7 @@ Fast insulin comes after meals because a dose can belong to one, and the timelin
 ```sql
 CREATE TABLE fast_insulin_entries (
   id TEXT PRIMARY KEY,
-  occurred_at TEXT NOT NULL CHECK (occurred_at GLOB '[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]T[0-9][0-9]:[0-9][0-9]:[0-9][0-9].[0-9][0-9][0-9]Z'),
+  occurred_at TEXT NOT NULL CHECK (occurred_at IS strftime('%Y-%m-%dT%H:%M:%fZ', occurred_at)),
   occurred_tz TEXT NOT NULL CHECK (occurred_tz <> ''),
   insulin TEXT NOT NULL,
   action TEXT NOT NULL DEFAULT 'bolus' CHECK (action = 'bolus'),
@@ -296,7 +296,7 @@ CREATE TABLE food_vocabulary (
   catalog_name TEXT NOT NULL CHECK (catalog_name <> ''),
   last_weight_g REAL NOT NULL CHECK (last_weight_g > 0),
   use_count INTEGER NOT NULL CHECK (use_count >= 1),
-  last_used_at TEXT NOT NULL CHECK (last_used_at GLOB '[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]T[0-9][0-9]:[0-9][0-9]:[0-9][0-9].[0-9][0-9][0-9]Z'),
+  last_used_at TEXT NOT NULL CHECK (last_used_at IS strftime('%Y-%m-%dT%H:%M:%fZ', last_used_at)),
   PRIMARY KEY (description_key, source, external_id)
 ) STRICT;
 
@@ -385,7 +385,7 @@ Deliberate denormalisation, kept because a meal is a record of what was shown, n
 | The whole timeline is read on every call                            | Pages are cursor-based from the start; insulin on board reads only the last hours                                                                              |
 | `meal_traces.raw_response` grows without bound and is personal data | Keep it for a limited time (say 90 days) and delete older rows, or do not store it                                                                             |
 | Deleting is not erasing                                             | A deleted entry stays in every backup and, on D1, in 7 days of point-in-time recovery; an erasure promise has to say so                                        |
-| An instant written in another format                                | The `GLOB` check refuses it, because a second format would break text ordering silently                                                                        |
+| An instant written in another format                                | The `strftime` check refuses it, because a second format would break text ordering silently                                                                        |
 | `uuid` v4 keys scatter inserts                                      | Irrelevant at the size of one person's diary                                                                                                                   |
 
 ## Decisions
