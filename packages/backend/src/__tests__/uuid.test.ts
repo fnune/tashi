@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { profileIdOfUuid, profileUuid } from "../domain/builtin-profiles.js";
-import { uuidV5 } from "../domain/uuid.js";
+import {
+  BUILTIN_PROFILE_UUIDS,
+  profileIdOfUuid,
+  profileUuid,
+} from "../domain/builtin-profiles.js";
+import { uuidV5 } from "./uuid-v5.js";
 
 describe("uuid v5", () => {
   it("matches the published example", () => {
@@ -9,9 +13,10 @@ describe("uuid v5", () => {
     ).toBe("2ed6657d-e927-568b-95e1-2665a8aea6a2");
   });
 
-  it("gives the same answer every time", () => {
-    expect(profileUuid("normal")).toBe(profileUuid("normal"));
-    expect(profileUuid("normal")).not.toBe(profileUuid("sport"));
+  it("keeps each built-in profile at the v5 uuid of its old id, which stored settings refer to", () => {
+    for (const [id, uuid] of BUILTIN_PROFILE_UUIDS) {
+      expect(uuid).toBe(uuidV5(id, "5d0a8f4e-3b6c-4d1e-9a27-8c4f1e2b7d90"));
+    }
   });
 });
 

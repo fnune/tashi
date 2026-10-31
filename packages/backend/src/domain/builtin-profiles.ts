@@ -1,18 +1,16 @@
-import { uuidV5 } from "./uuid.js";
+export const BUILTIN_PROFILE_UUIDS: ReadonlyMap<string, string> = new Map([
+  ["normal", "075b7f05-9adb-5183-83f5-5f9d5b7adea0"],
+  ["sport", "1f2c4f92-2b6a-577e-b546-408716e74468"],
+  ["sick", "7a6339cd-b29c-5eee-b408-38ba393440a5"],
+  ["menstruation", "1b7dc38e-770f-504e-be22-0a66b07922c6"],
+]);
 
-const NAMESPACE = "5d0a8f4e-3b6c-4d1e-9a27-8c4f1e2b7d90";
-
-const BUILTIN_IDS = ["normal", "sport", "sick", "menstruation"];
-
-const uuidOfBuiltin = new Map(
-  BUILTIN_IDS.map((id) => [id, uuidV5(id, NAMESPACE)]),
-);
 const builtinOfUuid = new Map(
-  [...uuidOfBuiltin].map(([id, uuid]) => [uuid, id]),
+  [...BUILTIN_PROFILE_UUIDS].map(([id, uuid]) => [uuid, id]),
 );
 
 export function profileUuid(id: string): string {
-  return uuidOfBuiltin.get(id) ?? id;
+  return BUILTIN_PROFILE_UUIDS.get(id) ?? id;
 }
 
 export function profileIdOfUuid(uuid: string): string {
