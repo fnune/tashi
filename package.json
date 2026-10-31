@@ -3,7 +3,7 @@
   "license": "AGPL-3.0-only",
   "packageManager": "pnpm@10.33.0",
   "engines": {
-    "node": "22.x"
+    "node": ">=22"
   },
   "scripts": {
     "dev": "concurrently -k --names sh,be,fe --prefix-colors gray,blue,magenta \"pnpm --filter @tashi/shared dev\" \"pnpm --filter @tashi/backend dev\" \"pnpm --filter @tashi/frontend dev\"",
@@ -23,5 +23,11 @@
     "concurrently": "^9.2.1",
     "stylelint": "^17.16.0",
     "wrangler": "4.152.0"
+  },
+  "pnpm": {
+    "ignoredBuiltDependencies": [
+      "esbuild",
+      "workerd"
+    ]
   }
 }

@@ -3,6 +3,8 @@
   "name": "tashi",
   "main": "packages/backend/src/worker.ts",
   "compatibility_date": "2026-10-01",
+  "workers_dev": true,
+  "preview_urls": false,
   "build": { "command": "pnpm build:cloudflare" },
   "alias": { "tashi-search-index": "./packages/backend/catalog/search.json" },
   "assets": {
