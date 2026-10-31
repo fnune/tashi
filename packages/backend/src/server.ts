@@ -69,7 +69,7 @@ if (!(await apiKeys.status()).configured) {
 
 const parser = new KeyedFoodParser(
   apiKeys,
-  (apiKey) => new AnthropicFoodParser(apiKey, foodCatalog, config.model),
+  (apiKey) => new AnthropicFoodParser(apiKey, foodCatalog, fetch, config.model),
 );
 const calculator = new Calculator(parser, foodCatalog, systemClock, randomId);
 

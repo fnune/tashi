@@ -158,9 +158,10 @@ export class AnthropicFoodParser implements FoodParser {
   constructor(
     apiKey: string,
     foodCatalog: FoodCatalog,
+    fetch: typeof globalThis.fetch,
     model = "claude-haiku-4-5-20251001",
   ) {
-    this.client = new Anthropic({ apiKey });
+    this.client = new Anthropic({ apiKey, fetch });
     this.model = model;
     this.foodCatalog = foodCatalog;
   }
