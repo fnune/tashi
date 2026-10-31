@@ -76,13 +76,15 @@ export function logMeal(
   units: number,
   preBolusMinutes: number,
   bolusInsulinId: BolusInsulinId,
-  now: Date,
+  injectedAt: Date,
   newId: IdGenerator,
   timeZone: string,
 ): LoggedMeal {
   const meal: MealEntry = {
     id: newId(),
-    timestamp: new Date(now.getTime() + preBolusMinutes * 60_000).toISOString(),
+    timestamp: new Date(
+      injectedAt.getTime() + preBolusMinutes * 60_000,
+    ).toISOString(),
     time_zone: timeZone,
     type: "meal",
     input_text: result.input_text,
@@ -100,7 +102,7 @@ export function logMeal(
     units > 0
       ? {
           id: newId(),
-          timestamp: now.toISOString(),
+          timestamp: injectedAt.toISOString(),
           time_zone: timeZone,
           type: "fast_insulin",
           units,

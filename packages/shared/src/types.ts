@@ -231,6 +231,7 @@ export interface LogMealRequest {
   result: CalculationResult;
   units: number;
   pre_bolus_minutes?: number;
+  injected_at?: string;
 }
 
 export interface TimelinePageResponse {
@@ -270,6 +271,7 @@ export type ApiErrorCode =
   | "basal_insulin_not_configured"
   | "insulin_action_not_configured"
   | "no_meal_window"
+  | "injection_in_future"
   | "api_key_missing"
   | "api_key_invalid"
   | "api_key_storage_unavailable"

@@ -21,6 +21,7 @@ import { Notice } from "./ui/Notice.js";
 import { Sheet } from "./ui/Sheet.js";
 import { Stepper } from "./ui/Stepper.js";
 import "./TimelineView.css";
+import { toLocalDatetime } from "../localDateTime.js";
 import { numberFormat } from "../numberFormat.js";
 
 export interface TimelinePaging {
@@ -50,11 +51,6 @@ const DEFAULT_NEW_UNITS: Record<"fast_insulin" | "slow_insulin", number> = {
   fast_insulin: 1,
   slow_insulin: 10,
 };
-
-function toLocalDatetime(date: Date): string {
-  const pad = (n: number) => String(n).padStart(2, "0");
-  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
-}
 
 function startOfDay(date: Date): number {
   return new Date(

@@ -184,6 +184,56 @@ describe("API routes", () => {
     );
   });
 
+  it("POST /api/meals logged late puts the dose and the meal at the injection time", async () => {
+    parser.setResponse("rice", [carbItem(30)]);
+    await repositories.settings.save(configured());
+    const { result } = expectOkResponse(
+      (await (
+        await postJson(app, "/api/calculate", { food_description: "rice" })
+      ).json()) as CalculateResponse,
+    );
+    const injectedAt = new Date(now.getTime() - 45 * 60_000).toISOString();
+
+    const ids = (await (
+      await postJson(app, "/api/meals", {
+        result,
+        units: 2,
+        pre_bolus_minutes: 15,
+        injected_at: injectedAt,
+      })
+    ).json()) as LogMealResponse;
+
+    const timeline = await readTimeline(app);
+    const insulin = timeline.find((e) => e.id === ids.insulin_entry_id);
+    const meal = timeline.find((e) => e.id === ids.meal_entry_id);
+    expect(insulin?.timestamp).toBe(injectedAt);
+    expect(meal?.timestamp).toBe(
+      new Date(now.getTime() - 30 * 60_000).toISOString(),
+    );
+  });
+
+  it("POST /api/meals refuses an injection time in the future", async () => {
+    parser.setResponse("rice", [carbItem(30)]);
+    await repositories.settings.save(configured());
+    const { result } = expectOkResponse(
+      (await (
+        await postJson(app, "/api/calculate", { food_description: "rice" })
+      ).json()) as CalculateResponse,
+    );
+
+    const res = await postJson(app, "/api/meals", {
+      result,
+      units: 2,
+      injected_at: new Date(now.getTime() + 60_000).toISOString(),
+    });
+
+    expect(res.status).toBe(400);
+    expect(((await res.json()) as { code?: string }).code).toBe(
+      "injection_in_future",
+    );
+    expect(await readTimeline(app)).toHaveLength(0);
+  });
+
   it("POST /api/calculate errors with a code when no insulin is configured", async () => {
     parser.setResponse("carbs", [carbItem(50)]);
 

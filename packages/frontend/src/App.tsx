@@ -22,13 +22,28 @@ import { TimelineView } from "./components/TimelineView.js";
 import { Notice } from "./components/ui/Notice.js";
 import type { Language } from "./i18n.js";
 import { type PagedListHandle, usePagedList } from "./paging/use-paged-list.js";
+import {
+  type KeyValueStore,
+  restorePendingCalculation,
+  savePendingCalculation,
+} from "./pending-calculation.js";
 
 const INITIAL_FORM: CalculatorFormState = {
   foodText: "",
   preBolusMinutes: 0,
   result: null,
   units: 0,
+  calculatedAt: null,
+  injectedAt: null,
 };
+
+function deviceStore(): KeyValueStore | null {
+  try {
+    return window.localStorage;
+  } catch {
+    return null;
+  }
+}
 
 const IOB_REFRESH_INTERVAL_MS = 30_000;
 
@@ -47,7 +62,22 @@ function AppShell() {
   const [settingsLoaded, setSettingsLoaded] = useState(false);
   const timeline = usePagedList(api.getTimelinePage, (entry) => entry.id);
   const [iob, setIob] = useState<InsulinOnBoard | null>(null);
-  const [calcForm, setCalcForm] = useState<CalculatorFormState>(INITIAL_FORM);
+  const [calcForm, setCalcForm] = useState<CalculatorFormState>(() => {
+    const store = deviceStore();
+    return (
+      (store && restorePendingCalculation(store, new Date())) ?? INITIAL_FORM
+    );
+  });
+
+  useEffect(() => {
+    const store = deviceStore();
+    if (!store) return;
+    try {
+      savePendingCalculation(store, calcForm);
+    } catch (error) {
+      console.warn("Could not keep the calculation on this device", error);
+    }
+  }, [calcForm]);
 
   const lang = settings.language;
 
@@ -183,6 +213,7 @@ function AppShell() {
       </Routes>
       <TabBar
         lang={lang}
+        pendingDose={calcForm.result !== null}
         onNavigate={(to) => {
           if (to === "/timeline") refreshTimeline();
         }}

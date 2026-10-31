@@ -154,10 +154,12 @@ export function SelectField<T extends string | number>({
 export function DateTimeField({
   label,
   value,
+  max,
   onChange,
 }: {
   label: string;
   value: string;
+  max?: string;
   onChange: (value: string) => void;
 }) {
   return (
@@ -168,6 +170,7 @@ export function DateTimeField({
           className="field-input"
           type="datetime-local"
           value={value}
+          max={max}
           onChange={(e) => onChange(e.target.value)}
         />
       )}

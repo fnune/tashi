@@ -16,9 +16,11 @@ const TABS: {
 
 export function TabBar({
   lang,
+  pendingDose,
   onNavigate,
 }: {
   lang: Language;
+  pendingDose: boolean;
   onNavigate: (to: string) => void;
 }) {
   return (
@@ -32,7 +34,16 @@ export function TabBar({
             className="tab-bar-item"
             onClick={() => onNavigate(tab.to)}
           >
-            <Icon name={tab.icon} size="lg" />
+            <span className="tab-bar-icon">
+              <Icon name={tab.icon} size="lg" />
+              {tab.to === "/" && pendingDose && (
+                <span className="tab-bar-dot" role="status">
+                  <span className="visually-hidden">
+                    {t(lang, "pendingDose")}
+                  </span>
+                </span>
+              )}
+            </span>
             {t(lang, tab.label)}
           </NavLink>
         ))}

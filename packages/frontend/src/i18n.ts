@@ -244,6 +244,11 @@ const translations = {
     sourceGiLink: "glycemicindex.com",
     no_meal_window:
       "No meal window covers this time. Add one in settings to calculate a dose.",
+    calculatedLate:
+      "Calculated {time} and not logged yet. Set when you injected before logging it.",
+    injectedAt: "Injected at",
+    pendingDose: "A dose is waiting to be logged",
+    injection_in_future: "The injection time is in the future.",
     validation_failed: "Please check the values you entered.",
     not_found: "Not found.",
     internal_error: "Something went wrong. Please try again.",
@@ -550,6 +555,11 @@ const translations = {
     sourceGiLink: "glycemicindex.com",
     no_meal_window:
       "Ninguna franja cubre esta hora. Añade una en ajustes para calcular la dosis.",
+    calculatedLate:
+      "Calculado {time} y aún sin registrar. Indica cuándo te inyectaste antes de registrarlo.",
+    injectedAt: "Inyectado a las",
+    pendingDose: "Hay una dosis sin registrar",
+    injection_in_future: "La hora de la inyección está en el futuro.",
     validation_failed: "Revisa los valores introducidos.",
     not_found: "No encontrado.",
     internal_error: "Algo salió mal. Inténtalo de nuevo.",

@@ -9,6 +9,7 @@ const FALLBACK_MESSAGES: Record<ApiErrorCode, string> = {
   insulin_action_not_configured:
     "Choose which insulin you're using in settings to see insulin on board.",
   no_meal_window: "No meal window covers the current time",
+  injection_in_future: "The injection time is in the future.",
   api_key_missing: "Add your Anthropic API key in settings to calculate doses.",
   api_key_invalid:
     "Anthropic rejected the API key. Check it in settings and try again.",

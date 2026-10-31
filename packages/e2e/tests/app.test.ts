@@ -386,6 +386,7 @@ test.describe("full user flow", () => {
     await logPeriodStart(page, (sheet) => sheet.getByText("Today").click());
 
     await page.getByRole("navigation").getByText("Calculate").click();
+    await page.getByRole("button", { name: "Change meal" }).click();
     await page.locator("textarea").fill("a banana");
     await page.getByRole("button", { name: "Calculate dose" }).click();
     await expect(page.locator(".dose-total b")).toHaveText(before ?? "");

@@ -23,6 +23,7 @@ export interface MealToLog {
   result: LoggableMeal;
   units: number;
   pre_bolus_minutes: number;
+  injected_at?: string | undefined;
 }
 
 export class TimelineService {
@@ -38,12 +39,16 @@ export class TimelineService {
       throw new DomainError("bolus_insulin_not_configured");
     }
     const now = this.clock();
+    const injectedAt = meal.injected_at ? new Date(meal.injected_at) : now;
+    if (injectedAt.getTime() > now.getTime()) {
+      throw new DomainError("injection_in_future");
+    }
     const logged = logMeal(
       meal.result,
       meal.units,
       meal.pre_bolus_minutes,
       settings.bolus_insulin_id,
-      now,
+      injectedAt,
       this.newId,
       timeZone,
     );

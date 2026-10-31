@@ -69,6 +69,7 @@ export const logMealSchema = z.object({
   }),
   units: z.number().min(0),
   pre_bolus_minutes: z.number().int().min(0).max(60).default(0),
+  injected_at: isoTimestampSchema.optional(),
 });
 
 export const updateTimelineSchema = z.discriminatedUnion("type", [

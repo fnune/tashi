@@ -20,10 +20,12 @@ import { ProfileChips } from "./ProfileChips.js";
 import { ProfileSwitcher } from "./ProfileSwitcher.js";
 import { SensorCard } from "./SensorCard.js";
 import { Button } from "./ui/Button.js";
+import { DateTimeField } from "./ui/Field.js";
 import { Notice } from "./ui/Notice.js";
 import { Segmented } from "./ui/Segmented.js";
 import { Sheet } from "./ui/Sheet.js";
 import "./CalculatorView.css";
+import { toLocalDatetime } from "../localDateTime.js";
 import { numberFormat } from "../numberFormat.js";
 
 export interface CalculatorFormState {
@@ -31,6 +33,8 @@ export interface CalculatorFormState {
   preBolusMinutes: number;
   result: CalculationResult | null;
   units: number;
+  calculatedAt: string | null;
+  injectedAt: string | null;
 }
 
 interface CalculatorViewProps {
@@ -45,6 +49,7 @@ interface CalculatorViewProps {
 }
 
 const PRE_BOLUS_OPTIONS = [0, 10, 20, 30];
+const LOGGED_LATE_AFTER_MINUTES = 10;
 
 const SETUP_ERRORS = new Set([
   "bolus_insulin_not_configured",
@@ -66,7 +71,11 @@ export function CalculatorView({
   formState,
   onFormChange,
 }: CalculatorViewProps) {
-  const { foodText, preBolusMinutes, result, units } = formState;
+  const { foodText, preBolusMinutes, result, units, calculatedAt, injectedAt } =
+    formState;
+  const loggedLate =
+    calculatedAt !== null &&
+    Date.now() - Date.parse(calculatedAt) >= LOGGED_LATE_AFTER_MINUTES * 60_000;
   const update = (patch: Partial<CalculatorFormState>) =>
     onFormChange((current) => ({ ...current, ...patch }));
   const [loading, setLoading] = useState(false);
@@ -124,7 +133,12 @@ export function CalculatorView({
     try {
       const res = await api.calculate(req);
       if (res.status === "ok") {
-        update({ result: res.result, units: totalDose(res.result) ?? 0 });
+        update({
+          result: res.result,
+          units: totalDose(res.result) ?? 0,
+          calculatedAt: new Date().toISOString(),
+          injectedAt: null,
+        });
       } else {
         setClarification({ kind: res.status, message: res.message });
       }
@@ -154,6 +168,7 @@ export function CalculatorView({
         result: meal,
         units,
         pre_bolus_minutes: preBolusMinutes,
+        ...(loggedLate ? { injected_at: injectedAt ?? calculatedAt } : {}),
       });
       const decimal = numberFormat(lang);
       setLogged(
@@ -164,7 +179,12 @@ export function CalculatorView({
             )
           : t(lang, "loggedMealOnly"),
       );
-      update({ result: null, foodText: "" });
+      update({
+        result: null,
+        foodText: "",
+        calculatedAt: null,
+        injectedAt: null,
+      });
       onDataChanged();
     } catch (err) {
       setError(apiErrorText(lang, err));
@@ -221,6 +241,27 @@ export function CalculatorView({
             units={units}
             onUnitsChange={(next) => update({ units: next })}
           />
+          {loggedLate && calculatedAt && (
+            <div className="calculator-late">
+              <Notice tone="info">
+                {t(lang, "calculatedLate").replace(
+                  "{time}",
+                  new Date(calculatedAt).toLocaleString(lang, {
+                    dateStyle: "short",
+                    timeStyle: "short",
+                  }),
+                )}
+              </Notice>
+              <DateTimeField
+                label={t(lang, "injectedAt")}
+                value={toLocalDatetime(new Date(injectedAt ?? calculatedAt))}
+                max={toLocalDatetime(new Date())}
+                onChange={(value) =>
+                  update({ injectedAt: new Date(value).toISOString() })
+                }
+              />
+            </div>
+          )}
           <Button disabled={logging} onClick={() => logMeal(result)}>
             {units > 0
               ? t(lang, "logUnits").replace("{units}", decimal.format(units))

@@ -65,3 +65,9 @@
   color: var(--color-accent-text);
   text-decoration: none;
 }
+
+.calculator-late {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}

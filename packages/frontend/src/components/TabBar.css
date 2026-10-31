@@ -33,3 +33,18 @@
   color: var(--color-accent-text);
   font-weight: var(--font-weight-bold);
 }
+
+.tab-bar-icon {
+  position: relative;
+  display: inline-flex;
+}
+
+.tab-bar-dot {
+  position: absolute;
+  top: 0;
+  right: calc(-1 * var(--space-1));
+  width: var(--space-2);
+  height: var(--space-2);
+  border-radius: 50%;
+  background: var(--color-accent);
+}
