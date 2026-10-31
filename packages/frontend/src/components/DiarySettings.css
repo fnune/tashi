@@ -1,0 +1,19 @@
+.diary-settings {
+  scroll-margin-top: var(--space-4);
+}
+
+.diary-import {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.diary-import progress {
+  width: 100%;
+}
+
+.diary-import-buttons {
+  display: flex;
+  gap: var(--space-2);
+  justify-content: flex-end;
+}

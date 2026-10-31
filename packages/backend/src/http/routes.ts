@@ -1,6 +1,7 @@
 import type { TimelinePageResponse } from "@tashi/shared";
 import { Hono } from "hono";
 import type { ApiKeyStore } from "../domain/api-key-store.js";
+import type { DiaryImport } from "../domain/diary-import.js";
 import type { Doses } from "../domain/doses.js";
 import { DomainError } from "../domain/errors.js";
 import type { Repositories } from "../domain/repositories.js";
@@ -12,7 +13,9 @@ import {
   apiKeySchema,
   calculateSchema,
   createTimelineSchema,
+  importEntriesSchema,
   logMealSchema,
+  startImportSchema,
   updateTimelineSchema,
 } from "./request-schemas.js";
 
@@ -21,6 +24,7 @@ const TIME_ZONE_HEADER = "X-Timezone";
 export interface RouteDependencies {
   doses: Doses;
   timeline: TimelineService;
+  diaryImport: DiaryImport;
   repositories: Repositories;
   apiKeys: ApiKeyStore;
   defaultTimeZone: string;
@@ -29,6 +33,7 @@ export interface RouteDependencies {
 export function createRoutes({
   doses,
   timeline,
+  diaryImport,
   repositories,
   apiKeys,
   defaultTimeZone,
@@ -117,6 +122,28 @@ export function createRoutes({
       next_cursor: page.next ? encodeCursor(page.next) : null,
     };
     return c.json(response);
+  });
+
+  api.get("/api/vocabulary", async (c) =>
+    c.json(await repositories.vocabulary.list()),
+  );
+
+  api.post("/api/import", async (c) => {
+    const parsed = startImportSchema.safeParse(await c.req.json());
+    if (!parsed.success) {
+      return apiError(c, "validation_failed", 400, parsed.error.message);
+    }
+    await diaryImport.start(parsed.data.settings, parsed.data.vocabulary);
+    return c.json({ ok: true });
+  });
+
+  api.post("/api/import/entries", async (c) => {
+    const parsed = importEntriesSchema.safeParse(await c.req.json());
+    if (!parsed.success) {
+      return apiError(c, "validation_failed", 400, parsed.error.message);
+    }
+    await diaryImport.addEntries(parsed.data.entries);
+    return c.json({ ok: true });
   });
 
   api.get("/api/iob", async (c) => c.json(await doses.insulinOnBoard()));

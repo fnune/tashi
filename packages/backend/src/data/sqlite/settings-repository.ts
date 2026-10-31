@@ -13,6 +13,7 @@ import type { SettingsRepository } from "../../domain/repositories.js";
 import { settingsSchema } from "../../domain/schemas.js";
 import { StoredDataError } from "../stored-data-error.js";
 import type { WriteBatch, WriteQuery } from "../write-batch.js";
+import { flagOf } from "./columns.js";
 import type { Db, Executor } from "./connection.js";
 import { fromMgDl, toMgDl } from "./glucose-units.js";
 
@@ -78,7 +79,7 @@ export async function readSettings(db: Executor): Promise<Settings> {
     })),
     active_profile_id: profileIdOfUuid(row.active_profile_id),
     cycle: {
-      enabled: row.cycle_tracking_enabled,
+      enabled: row.cycle_tracking_enabled === 1,
       last_period_start: row.last_period_start,
       length_days: row.cycle_length_days,
     },
@@ -90,7 +91,7 @@ export async function readSettings(db: Executor): Promise<Settings> {
   }
 }
 
-export class PostgresSettingsRepository implements SettingsRepository {
+export class SqliteSettingsRepository implements SettingsRepository {
   constructor(
     private db: Db,
     private batch: WriteBatch,
@@ -166,12 +167,12 @@ export class PostgresSettingsRepository implements SettingsRepository {
       const columns = profileColumns(profile, position);
       writes.push(
         this.db
+          .deleteFrom("profile_window_ratios")
+          .where("profile_id", "=", id),
+        this.db
           .insertInto("profiles")
           .values({ id, ...columns })
           .onConflict((oc) => oc.column("id").doUpdateSet(columns)),
-        this.db
-          .deleteFrom("profile_window_ratios")
-          .where("profile_id", "=", id),
       );
       if (profile.adjustment.mode === "per_window") {
         for (const [windowName, ratio] of Object.entries(
@@ -209,7 +210,7 @@ export class PostgresSettingsRepository implements SettingsRepository {
       bolus_insulin: settings.bolus_insulin_id satisfies BolusInsulinId | null,
       basal_insulin: settings.basal_insulin_id satisfies BasalInsulinId | null,
       insulin_action_minutes: settings.insulin_action_minutes,
-      cycle_tracking_enabled: settings.cycle.enabled,
+      cycle_tracking_enabled: flagOf(settings.cycle.enabled),
       cycle_length_days: settings.cycle.length_days,
       last_period_start: settings.cycle.last_period_start,
       active_profile_id: profileUuid(settings.active_profile_id),
@@ -219,20 +220,20 @@ export class PostgresSettingsRepository implements SettingsRepository {
     writes.push(
       this.db
         .insertInto("settings")
-        .values({ singleton: true, ...columns })
+        .values({ singleton: 1, ...columns })
         .onConflict((oc) => oc.column("singleton").doUpdateSet(columns)),
       this.db
         .deleteFrom("profiles")
         .where((eb) =>
           keptProfiles.length === 0
-            ? eb.val(true)
+            ? eb.lit(true)
             : eb("id", "not in", keptProfiles),
         ),
       this.db
         .deleteFrom("meal_windows")
         .where((eb) =>
           keptWindows.length === 0
-            ? eb.val(true)
+            ? eb.lit(true)
             : eb("name", "not in", keptWindows),
         ),
     );

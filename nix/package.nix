@@ -49,7 +49,7 @@ stdenv.mkDerivation (finalAttrs: {
   pnpmDeps = fetchPnpmDeps {
     inherit (finalAttrs) pname version src;
     fetcherVersion = 2;
-    hash = "sha256-RpjJEsDPuY05VYaxh36Zih7CidsV1DWEEsmecSKhYsw=";
+    hash = "sha256-95YyXlsthoYhJ7vKxi+R5k6wY0UXDmd73PnDzAKxG8g=";
   };
 
   nativeBuildInputs = [
@@ -73,16 +73,14 @@ stdenv.mkDerivation (finalAttrs: {
     app=$out/lib/tashi
     pnpm --offline --config.inject-workspace-packages=true --filter @tashi/backend deploy --prod $app
     rm -r $app/src $app/scripts $app/dist/__tests__
-    mkdir $app/data
     cp -r packages/frontend/dist $app/public
-    cp data/foods.db $app/data/
     rm -rf $app/catalog
     cp -r packages/backend/catalog $app/catalog
 
     # The server finds its static files at ./public.
     makeWrapper ${lib.getExe nodejs_22} $out/bin/tashi \
       --chdir $app \
-      --set-default FOODS_DB $app/data/foods.db \
+      --add-flags --disable-warning=ExperimentalWarning \
       --add-flags $app/dist/server.js
 
     runHook postInstall

@@ -325,6 +325,15 @@ export function repositoryContract(
         expect(await repositories.vocabulary.list()).toHaveLength(2);
       });
 
+      it("clears every entry", async () => {
+        await repositories.vocabulary.upsert([
+          vocabEntry("Rice", 1),
+          vocabEntry("Bread", 2),
+        ]);
+        await repositories.vocabulary.clear();
+        expect(await repositories.vocabulary.list()).toEqual([]);
+      });
+
       it("keeps the same food from another source apart", async () => {
         await repositories.vocabulary.upsert([vocabEntry("Rice", 1)]);
         await repositories.vocabulary.upsert([

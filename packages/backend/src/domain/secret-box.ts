@@ -69,10 +69,10 @@ async function deriveKey(
   );
 }
 
-function toBase64(bytes: Uint8Array): string {
+export function toBase64(bytes: Uint8Array): string {
   return btoa(String.fromCharCode(...bytes));
 }
 
-function fromBase64(encoded: string): Uint8Array<ArrayBuffer> {
+export function fromBase64(encoded: string): Uint8Array<ArrayBuffer> {
   return Uint8Array.from(atob(encoded), (char) => char.charCodeAt(0));
 }

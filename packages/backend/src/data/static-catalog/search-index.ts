@@ -35,6 +35,10 @@ export class SearchIndex {
     return this.data.label;
   }
 
+  get size(): number {
+    return this.data.summaries.length;
+  }
+
   rankOf(fdcId: number): number | undefined {
     return this.ranksByFdcId.get(fdcId);
   }

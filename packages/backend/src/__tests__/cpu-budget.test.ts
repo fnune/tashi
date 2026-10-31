@@ -10,6 +10,7 @@ import { StaticFoodCatalog } from "../data/static-catalog/static-food-catalog.js
 import { ApiKeyStore } from "../domain/api-key-store.js";
 import { Calculator } from "../domain/calculator.js";
 import type { Clock } from "../domain/clock.js";
+import { DiaryImport } from "../domain/diary-import.js";
 import { Doses } from "../domain/doses.js";
 import { TimelineService } from "../domain/timeline-service.js";
 import { createRoutes } from "../http/routes.js";
@@ -136,6 +137,7 @@ async function coldApp() {
       clock,
     ),
     timeline: new TimelineService(repositories, clock, newId),
+    diaryImport: new DiaryImport(repositories),
     repositories,
     apiKeys: new ApiKeyStore(repositories.apiKey),
     defaultTimeZone: "Europe/Berlin",

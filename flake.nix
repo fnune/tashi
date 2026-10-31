@@ -20,7 +20,6 @@
           packages = with pkgs; [
             nodejs_22
             pnpm
-            postgresql_18
             prek
             # brand/generate.py
             python3

@@ -238,6 +238,28 @@ export interface TimelinePageResponse {
   next_cursor: string | null;
 }
 
+export const DIARY_FORMAT = "tashi-diary";
+export const DIARY_VERSION = 1;
+export const IMPORT_ENTRIES_PER_REQUEST = 25;
+
+export interface Diary {
+  format: typeof DIARY_FORMAT;
+  version: typeof DIARY_VERSION;
+  exported_at: string;
+  settings: Settings;
+  vocabulary: FoodVocabEntry[];
+  timeline: TimelineEntry[];
+}
+
+export interface StartImportRequest {
+  settings: Settings;
+  vocabulary: FoodVocabEntry[];
+}
+
+export interface ImportEntriesRequest {
+  entries: TimelineEntry[];
+}
+
 export interface LogMealResponse {
   meal_entry_id: string;
   insulin_entry_id: string | null;

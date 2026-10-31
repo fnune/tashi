@@ -5,8 +5,7 @@ import { serveStatic } from "@hono/node-server/serve-static";
 import { Hono } from "hono";
 import { ConfigError, loadConfig } from "./config.js";
 import { AnthropicFoodParser } from "./data/anthropic-food-parser.js";
-import { readCatalogFile } from "./data/catalog-file.js";
-import { openPostgresRepositories } from "./data/postgres/index.js";
+import { openSqliteRepositories } from "./data/sqlite/index.js";
 import {
   diskAssets,
   readSearchIndex,
@@ -15,6 +14,7 @@ import {
 import { ApiKeyStore } from "./domain/api-key-store.js";
 import { Calculator } from "./domain/calculator.js";
 import { systemClock } from "./domain/clock.js";
+import { DiaryImport } from "./domain/diary-import.js";
 import { Doses } from "./domain/doses.js";
 import { randomId } from "./domain/ids.js";
 import {
@@ -36,27 +36,21 @@ function configOrExit() {
 }
 
 const config = configOrExit();
-const foodsDbPath =
-  config.foodsDbPath ?? join(import.meta.dirname, "../../../data/foods.db");
 const { basePath } = config;
 
-const catalog = await readCatalogFile(foodsDbPath);
-const catalogAssets = diskAssets(
-  config.catalogDir ?? join(import.meta.dirname, "../catalog"),
-);
+const catalogDir = config.catalogDir ?? join(import.meta.dirname, "../catalog");
+const catalogAssets = diskAssets(catalogDir);
 const searchIndex = await readSearchIndex(catalogAssets);
-if (searchIndex?.label !== catalog.label) {
-  console.error(
-    `The built catalog (${searchIndex?.label ?? "missing"}) does not match ${foodsDbPath} (${catalog.label}). Run pnpm build:catalog.`,
-  );
+if (!searchIndex) {
+  console.error(`No food catalog in ${catalogDir}. Run pnpm build:catalog.`);
   process.exit(1);
 }
 const foodCatalog = new StaticFoodCatalog(searchIndex, catalogAssets);
-const { repositories } = await openPostgresRepositories(config.databaseUrl, {
+const { repositories } = await openSqliteRepositories(config.databasePath, {
   newId: randomId,
-  catalog,
+  catalogRelease: searchIndex.label,
 });
-console.log(`Food catalog ${catalog.label}: ${catalog.records.length} foods`);
+console.log(`Food catalog ${searchIndex.label}: ${searchIndex.size} foods`);
 
 const apiKeys = new ApiKeyStore(repositories.apiKey, {
   encryptionSecret: config.encryptionSecret,
@@ -84,6 +78,7 @@ if (config.password) {
 const routes = createRoutes({
   doses: new Doses(repositories, calculator, systemClock),
   timeline: new TimelineService(repositories, systemClock, randomId),
+  diaryImport: new DiaryImport(repositories),
   repositories,
   apiKeys,
   defaultTimeZone: config.defaultTimeZone,

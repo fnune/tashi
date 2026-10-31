@@ -99,6 +99,11 @@ function AppShell() {
     localStorage.setItem("tashi-lang", s.language);
   }
 
+  async function handleDiaryReplaced() {
+    handleDataChanged();
+    handleSaveSettings(await api.getSettings());
+  }
+
   function handleReuse(text: string) {
     setCalcForm({ ...INITIAL_FORM, foodText: text });
     navigate("/");
@@ -140,6 +145,7 @@ function AppShell() {
             <SettingsView
               settings={settings}
               onSave={handleSaveSettings}
+              onDiaryReplaced={handleDiaryReplaced}
               lang={lang}
             />
           }

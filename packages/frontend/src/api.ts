@@ -4,12 +4,16 @@ import type {
   CalculateRequest,
   CalculateResponse,
   CreateTimelineRequest,
+  DiaryApi,
   ErrorResponse,
+  FoodVocabEntry,
+  ImportEntriesRequest,
   InsulinOnBoard,
   LogMealRequest,
   LogMealResponse,
   SetApiKeyRequest,
   Settings,
+  StartImportRequest,
   TimelineEntry,
   TimelinePageResponse,
   UpdateTimelineRequest,
@@ -142,3 +146,29 @@ export function saveApiKey(apiKey: string): Promise<ApiKeyStatus> {
 export function deleteApiKey(): Promise<ApiKeyStatus> {
   return request<ApiKeyStatus>("/api/api-key", { method: "DELETE" });
 }
+
+export function getVocabulary(): Promise<FoodVocabEntry[]> {
+  return request<FoodVocabEntry[]>("/api/vocabulary");
+}
+
+async function startImport(req: StartImportRequest): Promise<void> {
+  await request("/api/import", { method: "POST", body: JSON.stringify(req) });
+}
+
+async function importEntries(req: ImportEntriesRequest): Promise<void> {
+  await request("/api/import/entries", {
+    method: "POST",
+    body: JSON.stringify(req),
+  });
+}
+
+export const diaryApi: DiaryApi = {
+  settings: getSettings,
+  vocabulary: getVocabulary,
+  timelinePage: async (cursor) => {
+    const page = await getTimelinePage(cursor);
+    return { entries: page.items, next: page.next };
+  },
+  startImport,
+  importEntries,
+};

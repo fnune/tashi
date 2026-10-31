@@ -1,17 +1,16 @@
 import { describe, expect, it } from "vitest";
 import { ConfigError, loadConfig } from "../config.js";
 
-const DATABASE_URL = "postgres://tashi@localhost/tashi";
-const minimal = { DATABASE_URL };
+const DATABASE_PATH = "/var/lib/tashi/tashi.sqlite";
+const minimal = { DATABASE_PATH };
 
 describe("loadConfig", () => {
   it("falls back to defaults when only the database is given", () => {
     expect(loadConfig(minimal)).toEqual({
       port: 3000,
-      databaseUrl: DATABASE_URL,
+      databasePath: DATABASE_PATH,
       defaultTimeZone: expect.any(String),
       basePath: "",
-      foodsDbPath: undefined,
       catalogDir: undefined,
       model: "claude-haiku-4-5-20251001",
       anthropicApiKey: undefined,
@@ -21,7 +20,7 @@ describe("loadConfig", () => {
   });
 
   it("will not start without a database", () => {
-    expect(() => loadConfig({})).toThrow(/DATABASE_URL/);
+    expect(() => loadConfig({})).toThrow(/DATABASE_PATH/);
   });
 
   it("treats blank variables as unset", () => {
@@ -59,17 +58,10 @@ describe("loadConfig", () => {
     ]) {
       expect(() => loadConfig({ ...minimal, ...env })).toThrow(ConfigError);
     }
-    for (const url of ["mysql://localhost/tashi", "postgres"]) {
-      expect(() => loadConfig({ DATABASE_URL: url })).toThrow(ConfigError);
-    }
+    expect(() => loadConfig({ DATABASE_PATH: "" })).toThrow(ConfigError);
     expect(() =>
       loadConfig({ ...minimal, PORT: "abc", BASE_PATH: "x" }),
     ).toThrow(/PORT.*BASE_PATH/);
-  });
-
-  it("accepts a Postgres connection string with options", () => {
-    const url = "postgresql://u:p@host:5432/db?sslmode=require";
-    expect(loadConfig({ DATABASE_URL: url }).databaseUrl).toBe(url);
   });
 
   it("accepts a base path under a prefix", () => {

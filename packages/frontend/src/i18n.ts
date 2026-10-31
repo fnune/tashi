@@ -68,6 +68,25 @@ const translations = {
     apiKeyPlaceholder: "sk-ant-...",
     apiKeyChecking: "Checking...",
     apiKeyRemove: "Remove saved key",
+    diaryTitle: "Your data",
+    diaryExport: "Download a copy",
+    diaryExportDetail: "Settings, history and remembered foods in one file",
+    diaryExporting: "Preparing the file…",
+    diaryImport: "Replace with a copy",
+    diaryImportDetail: "Load a file downloaded from Tashi",
+    diaryImportWarning:
+      "This replaces everything in Tashi now: settings, history and remembered foods. Your API key stays as it is.",
+    diaryFile: "File",
+    diaryEntries: "Entries",
+    diaryDates: "Dates",
+    diaryReplace: "Replace",
+    diaryImporting: "Importing",
+    diaryImported: "Your copy is loaded.",
+    diaryImportStopped:
+      "The import stopped before the end. Your file is unchanged: choose it again to start over.",
+    diaryNotADiary: "This file is not a copy downloaded from Tashi.",
+    diaryNewerVersion:
+      "This copy comes from a newer version of Tashi. Update this one first.",
     api_key_missing:
       "Add your Anthropic API key in settings to calculate doses.",
     api_key_invalid:
@@ -352,6 +371,26 @@ const translations = {
     apiKeyPlaceholder: "sk-ant-...",
     apiKeyChecking: "Comprobando...",
     apiKeyRemove: "Quitar la clave guardada",
+    diaryTitle: "Tus datos",
+    diaryExport: "Descargar una copia",
+    diaryExportDetail:
+      "Ajustes, historial y alimentos recordados en un archivo",
+    diaryExporting: "Preparando el archivo…",
+    diaryImport: "Sustituir por una copia",
+    diaryImportDetail: "Cargar un archivo descargado de Tashi",
+    diaryImportWarning:
+      "Esto sustituye todo lo que hay ahora en Tashi: ajustes, historial y alimentos recordados. Tu clave de API no cambia.",
+    diaryFile: "Archivo",
+    diaryEntries: "Entradas",
+    diaryDates: "Fechas",
+    diaryReplace: "Sustituir",
+    diaryImporting: "Importando",
+    diaryImported: "Tu copia está cargada.",
+    diaryImportStopped:
+      "La importación se detuvo antes del final. Tu archivo no ha cambiado: elígelo de nuevo para empezar otra vez.",
+    diaryNotADiary: "Este archivo no es una copia descargada de Tashi.",
+    diaryNewerVersion:
+      "Esta copia viene de una versión más reciente de Tashi. Actualiza esta primero.",
     api_key_missing:
       "Añade tu clave de API de Anthropic en ajustes para calcular dosis.",
     api_key_invalid:

@@ -18,13 +18,8 @@ const envSchema = z.object({
       })
       .optional(),
   ),
-  DATABASE_URL: z
-    .string({ required_error: "required" })
-    .refine((url) => /^postgres(ql)?:\/\//.test(url), {
-      message: "must be a postgres:// or postgresql:// URL",
-    }),
+  DATABASE_PATH: z.string({ required_error: "required" }).min(1, "required"),
   TIME_ZONE: optionalText,
-  FOODS_DB: optionalText,
   CATALOG_DIR: optionalText,
   LLM_MODEL: z.preprocess(
     blankIsUnset,
@@ -43,10 +38,9 @@ const envSchema = z.object({
 
 export interface Config {
   port: number;
-  databaseUrl: string;
+  databasePath: string;
   defaultTimeZone: string;
   basePath: string;
-  foodsDbPath: string | undefined;
   catalogDir: string | undefined;
   model: string;
   anthropicApiKey: string | undefined;
@@ -70,11 +64,10 @@ export function loadConfig(env: Record<string, string | undefined>): Config {
   const e = parsed.data;
   return {
     port: e.PORT,
-    databaseUrl: e.DATABASE_URL,
+    databasePath: e.DATABASE_PATH,
     defaultTimeZone:
       e.TIME_ZONE ?? Intl.DateTimeFormat().resolvedOptions().timeZone,
     basePath: e.BASE_PATH ?? "",
-    foodsDbPath: e.FOODS_DB,
     catalogDir: e.CATALOG_DIR,
     model: e.LLM_MODEL,
     anthropicApiKey: e.ANTHROPIC_API_KEY,

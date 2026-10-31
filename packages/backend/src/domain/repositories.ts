@@ -32,6 +32,7 @@ export interface TimelineRepository {
 export interface VocabularyRepository {
   list(): Promise<FoodVocabEntry[]>;
   upsert(entries: FoodVocabEntry[]): Promise<void>;
+  clear(): Promise<void>;
 }
 
 export interface ApiKeyRepository {

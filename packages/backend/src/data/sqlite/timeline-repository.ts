@@ -16,28 +16,29 @@ import {
   roundToIncrement,
 } from "@tashi/shared";
 import { sql } from "kysely";
-import { type CatalogRecord, foodItemOf } from "../../domain/food-catalog.js";
 import type { IdGenerator } from "../../domain/ids.js";
 import type {
   TimelineCursor,
   TimelinePage,
   TimelineRepository,
 } from "../../domain/repositories.js";
-import { storedTimelineSchema } from "../../domain/schemas.js";
+import {
+  foodItemSchema,
+  parseTraceSchema,
+  storedTimelineSchema,
+} from "../../domain/schemas.js";
 import { StoredDataError } from "../stored-data-error.js";
 import type { WriteBatch, WriteQuery } from "../write-batch.js";
+import { flagOf, instantOf } from "./columns.js";
 import type { Db, Executor } from "./connection.js";
-import { type EntryKey, entryKeyOf, recordsAt } from "./food-catalog.js";
 import { fromMgDl, toMgDl } from "./glucose-units.js";
-
-const SEPARATOR = "\u0000";
 
 const entrySchema = storedTimelineSchema.element;
 
 interface TimelineRow {
   id: string;
   kind: TimelineEntry["type"];
-  occurred_at: Date;
+  occurred_at: string;
   occurred_tz: string;
 }
 
@@ -46,12 +47,12 @@ interface Display {
   penIncrement: 0.5 | 1;
 }
 
-export class PostgresTimelineRepository implements TimelineRepository {
+export class SqliteTimelineRepository implements TimelineRepository {
   constructor(
     private db: Db,
     private batch: WriteBatch,
     private newId: IdGenerator,
-    private catalogRelease: number,
+    private catalogRelease: string,
   ) {}
 
   async page(options: {
@@ -63,8 +64,8 @@ export class PostgresTimelineRepository implements TimelineRepository {
       SELECT id, kind, occurred_at, occurred_tz FROM timeline
       WHERE ${
         before
-          ? sql`(occurred_at, id) < (${before.occurredAt}::timestamptz, ${before.id}::uuid)`
-          : sql`true`
+          ? sql`(occurred_at, id) < (${before.occurredAt}, ${before.id})`
+          : sql`TRUE`
       }
       ORDER BY occurred_at DESC, id DESC
       LIMIT ${limit + 1}`.execute(this.db);
@@ -75,7 +76,7 @@ export class PostgresTimelineRepository implements TimelineRepository {
       entries: await this.hydrate(this.db, pageRows),
       next:
         rows.length > limit && last
-          ? { occurredAt: last.occurred_at.toISOString(), id: last.id }
+          ? { occurredAt: last.occurred_at, id: last.id }
           : null,
     };
   }
@@ -83,7 +84,7 @@ export class PostgresTimelineRepository implements TimelineRepository {
   async since(instant: Date): Promise<TimelineEntry[]> {
     const result = await sql<TimelineRow>`
       SELECT id, kind, occurred_at, occurred_tz FROM timeline
-      WHERE occurred_at >= ${instant}
+      WHERE occurred_at >= ${instantOf(instant)}
       ORDER BY occurred_at DESC, id DESC`.execute(this.db);
     return this.hydrate(this.db, result.rows);
   }
@@ -91,7 +92,7 @@ export class PostgresTimelineRepository implements TimelineRepository {
   async get(id: string): Promise<TimelineEntry | null> {
     if (!isUuid(id)) return null;
     const result = await sql<TimelineRow>`
-      SELECT id, kind, occurred_at, occurred_tz FROM timeline WHERE id = ${id}::uuid`.execute(
+      SELECT id, kind, occurred_at, occurred_tz FROM timeline WHERE id = ${id}`.execute(
       this.db,
     );
     const [entry] = await this.hydrate(this.db, result.rows);
@@ -106,7 +107,14 @@ export class PostgresTimelineRepository implements TimelineRepository {
       ...entries.filter((entry) => entry.type === "meal"),
       ...entries.filter((entry) => entry.type !== "meal"),
     ];
-    const writes: WriteQuery[] = [];
+    const writes: WriteQuery[] = mealsFirst.some((e) => e.type === "meal")
+      ? [
+          this.db
+            .insertInto("catalog_releases")
+            .values({ label: this.catalogRelease })
+            .onConflict((oc) => oc.doNothing()),
+        ]
+      : [];
     for (const entry of mealsFirst) {
       writes.push(...(await this.insert(entry, display, ratioVersions)));
     }
@@ -116,7 +124,7 @@ export class PostgresTimelineRepository implements TimelineRepository {
   async replace(entry: TimelineEntry): Promise<boolean> {
     if (!isUuid(entry.id)) return false;
     const moment = {
-      occurred_at: entry.timestamp,
+      occurred_at: instantOf(entry.timestamp),
       occurred_tz: entry.time_zone,
     };
     switch (entry.type) {
@@ -203,7 +211,7 @@ export class PostgresTimelineRepository implements TimelineRepository {
   ): Promise<WriteQuery[]> {
     const moment = {
       id: entry.id,
-      occurred_at: entry.timestamp,
+      occurred_at: instantOf(entry.timestamp),
       occurred_tz: entry.time_zone,
     };
     switch (entry.type) {
@@ -248,7 +256,7 @@ export class PostgresTimelineRepository implements TimelineRepository {
     writes.push(
       this.db.insertInto("meal_entries").values({
         id: meal.id,
-        occurred_at: meal.timestamp,
+        occurred_at: instantOf(meal.timestamp),
         occurred_tz: meal.time_zone,
         input_text: meal.input_text,
         input_language: meal.language,
@@ -275,7 +283,7 @@ export class PostgresTimelineRepository implements TimelineRepository {
               position,
               description: item.description,
               weight_g: item.weight_g,
-              assumed_cooked: item.assumed_cooked,
+              assumed_cooked: flagOf(item.assumed_cooked),
               confidence: item.confidence,
               source,
               carbs_per_100g: item.net_carbs_per_100g,
@@ -285,11 +293,14 @@ export class PostgresTimelineRepository implements TimelineRepository {
               protein_per_100g: item.protein_per_100g,
               protein_g: item.protein_g,
               glycemic_index: item.glycemic_index,
-              gi_estimated: item.gi_estimated,
+              gi_estimated: flagOf(item.gi_estimated),
               notes: item.notes,
               warning: item.warning,
               external_id: item.food_item
                 ? String(item.food_item.fdc_id)
+                : null,
+              food_snapshot: item.food_item
+                ? JSON.stringify(item.food_item)
                 : null,
             };
           }),
@@ -382,7 +393,7 @@ export class PostgresTimelineRepository implements TimelineRepository {
         adjustment_mode: null,
         percent_adjustment: null,
         carbs_g_per_unit: window.ratio,
-        first_used_at: meal.timestamp,
+        first_used_at: instantOf(meal.timestamp),
       }),
     );
     return id;
@@ -408,7 +419,7 @@ export class PostgresTimelineRepository implements TimelineRepository {
       for (const row of found) {
         const entry: GlucoseEntry = {
           id: row.id,
-          timestamp: row.occurred_at.toISOString(),
+          timestamp: row.occurred_at,
           time_zone: row.occurred_tz,
           type: "glucose_reading",
           value: fromMgDl(row.glucose_mg_dl, display.unit),
@@ -427,7 +438,7 @@ export class PostgresTimelineRepository implements TimelineRepository {
       for (const row of found) {
         const entry: SlowInsulinEntry = {
           id: row.id,
-          timestamp: row.occurred_at.toISOString(),
+          timestamp: row.occurred_at,
           time_zone: row.occurred_tz,
           type: "slow_insulin",
           units: row.insulin_units,
@@ -446,7 +457,7 @@ export class PostgresTimelineRepository implements TimelineRepository {
       for (const row of found) {
         const entry: FastInsulinEntry = {
           id: row.id,
-          timestamp: row.occurred_at.toISOString(),
+          timestamp: row.occurred_at,
           time_zone: row.occurred_tz,
           type: "fast_insulin",
           units: row.insulin_units,
@@ -479,50 +490,6 @@ export class PostgresTimelineRepository implements TimelineRepository {
     });
   }
 
-  private async foodItems(
-    db: Executor,
-    meals: { id: string; catalog_release: number }[],
-    items: {
-      meal_entry_id: string;
-      position: number;
-      source: string;
-      external_id: string | null;
-    }[],
-  ): Promise<Map<string, FoodItem | null>> {
-    const releaseOf = new Map(meals.map((m) => [m.id, m.catalog_release]));
-    const keysByRelease = new Map<number, EntryKey[]>();
-    for (const item of items) {
-      const release = releaseOf.get(item.meal_entry_id);
-      if (item.external_id === null || release === undefined) continue;
-      const keys = keysByRelease.get(release) ?? [];
-      keys.push({
-        source: item.source as FoodSourceId,
-        externalId: item.external_id,
-      });
-      keysByRelease.set(release, keys);
-    }
-    const recordsByRelease = new Map<number, Map<string, CatalogRecord>>();
-    for (const [release, keys] of keysByRelease) {
-      recordsByRelease.set(release, await recordsAt(db, keys, release));
-    }
-    const foodItems = new Map<string, FoodItem | null>();
-    for (const item of items) {
-      const release = releaseOf.get(item.meal_entry_id);
-      if (item.external_id === null || release === undefined) continue;
-      const record = recordsByRelease.get(release)?.get(
-        entryKeyOf({
-          source: item.source as FoodSourceId,
-          externalId: item.external_id,
-        }),
-      );
-      foodItems.set(
-        `${item.meal_entry_id}${SEPARATOR}${item.position}`,
-        record ? foodItemOf(record) : null,
-      );
-    }
-    return foodItems;
-  }
-
   private async meals(
     db: Executor,
     ids: string[],
@@ -544,7 +511,6 @@ export class PostgresTimelineRepository implements TimelineRepository {
         "meal_entries.total_carbs_g",
         "meal_entries.carb_dose_units",
         "meal_entries.total_dose_units",
-        "meal_entries.catalog_release",
         "ratio_versions.window_name",
         "ratio_versions.window_start_hour",
         "ratio_versions.window_end_hour",
@@ -558,7 +524,6 @@ export class PostgresTimelineRepository implements TimelineRepository {
       .where("meal_entry_id", "in", ids)
       .orderBy("position")
       .execute();
-    const foodItems = await this.foodItems(db, meals, items);
     const corrections = await db
       .selectFrom("meal_corrections")
       .selectAll()
@@ -582,7 +547,7 @@ export class PostgresTimelineRepository implements TimelineRepository {
       const rawFoodDose = row.total_carbs_g / row.carbs_g_per_unit;
       const meal: MealEntry = {
         id: row.id,
-        timestamp: row.occurred_at.toISOString(),
+        timestamp: row.occurred_at,
         time_zone: row.occurred_tz,
         type: "meal",
         input_text: row.input_text,
@@ -606,18 +571,15 @@ export class PostgresTimelineRepository implements TimelineRepository {
               protein_per_100g: item.protein_per_100g,
               fat_g: item.fat_g,
               protein_g: item.protein_g,
-              assumed_cooked: item.assumed_cooked,
+              assumed_cooked: item.assumed_cooked === 1,
               confidence: item.confidence,
               notes: item.notes,
               warning: item.warning,
               data_source: dataSourceOfFoodSource(source),
               estimated: FOOD_SOURCES[source].estimate,
               glycemic_index: item.glycemic_index,
-              gi_estimated: item.gi_estimated,
-              food_item: item.external_id
-                ? (foodItems.get(`${row.id}${SEPARATOR}${item.position}`) ??
-                  null)
-                : null,
+              gi_estimated: item.gi_estimated === 1,
+              food_item: snapshotOf(row.id, item.food_snapshot),
             };
           }),
         total_net_carbs_g: row.total_carbs_g,
@@ -664,9 +626,7 @@ export class PostgresTimelineRepository implements TimelineRepository {
       }
       if (trace) {
         meal.trace = {
-          searches: trace.searches as NonNullable<
-            MealEntry["trace"]
-          >["searches"],
+          searches: searchesOf(row.id, trace.searches),
           raw_response: trace.raw_response,
           model: trace.model,
           duration_ms: trace.duration_ms,
@@ -693,3 +653,22 @@ function isUuid(text: string): boolean {
     text,
   );
 }
+
+function snapshotOf(mealId: string, snapshot: string | null): FoodItem | null {
+  if (snapshot === null) return null;
+  try {
+    return foodItemSchema.parse(JSON.parse(snapshot));
+  } catch (e) {
+    throw new StoredDataError(`meal ${mealId} food snapshot`, e);
+  }
+}
+
+function searchesOf(mealId: string, searches: string): MealTrace["searches"] {
+  try {
+    return parseTraceSchema.shape.searches.parse(JSON.parse(searches));
+  } catch (e) {
+    throw new StoredDataError(`meal ${mealId} trace`, e);
+  }
+}
+
+type MealTrace = NonNullable<MealEntry["trace"]>;

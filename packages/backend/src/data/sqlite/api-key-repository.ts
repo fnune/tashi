@@ -1,10 +1,14 @@
 import type { ApiKeyRepository } from "../../domain/repositories.js";
 import { sealedSecretSchema } from "../../domain/schemas.js";
-import type { SealedSecret } from "../../domain/secret-box.js";
+import {
+  fromBase64,
+  type SealedSecret,
+  toBase64,
+} from "../../domain/secret-box.js";
 import { StoredDataError } from "../stored-data-error.js";
 import type { Db } from "./connection.js";
 
-export class PostgresApiKeyRepository implements ApiKeyRepository {
+export class SqliteApiKeyRepository implements ApiKeyRepository {
   constructor(private db: Db) {}
 
   async get(): Promise<SealedSecret | null> {
@@ -15,10 +19,10 @@ export class PostgresApiKeyRepository implements ApiKeyRepository {
     if (!row) return null;
     try {
       return sealedSecretSchema.parse({
-        salt: row.salt.toString("base64"),
-        iv: row.iv.toString("base64"),
-        tag: row.auth_tag.toString("base64"),
-        data: row.ciphertext.toString("base64"),
+        salt: toBase64(row.salt),
+        iv: toBase64(row.iv),
+        tag: toBase64(row.auth_tag),
+        data: toBase64(row.ciphertext),
       });
     } catch (e) {
       throw new StoredDataError("anthropic_api_key", e);
@@ -27,14 +31,14 @@ export class PostgresApiKeyRepository implements ApiKeyRepository {
 
   async save(record: SealedSecret): Promise<void> {
     const columns = {
-      salt: Buffer.from(record.salt, "base64"),
-      iv: Buffer.from(record.iv, "base64"),
-      auth_tag: Buffer.from(record.tag, "base64"),
-      ciphertext: Buffer.from(record.data, "base64"),
+      salt: fromBase64(record.salt),
+      iv: fromBase64(record.iv),
+      auth_tag: fromBase64(record.tag),
+      ciphertext: fromBase64(record.data),
     };
     await this.db
       .insertInto("anthropic_api_key")
-      .values({ singleton: true, ...columns })
+      .values({ singleton: 1, ...columns })
       .onConflict((oc) => oc.column("singleton").doUpdateSet(columns))
       .execute();
   }

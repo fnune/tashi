@@ -9,15 +9,13 @@
   },
   "dependencies": {
     "@hono/node-server": "^1.14.0",
-    "hono": "^4.7.0",
-    "pg": "8.23.1"
+    "hono": "^4.7.0"
   },
   "devDependencies": {
     "@playwright/test": "^1.52.0",
     "@tashi/backend": "workspace:*",
     "@tashi/shared": "workspace:*",
     "@types/node": "^22.0.0",
-    "@types/pg": "8.23.1",
     "tsx": "^4.19.0",
     "typescript": "^5.8.0"
   }

@@ -22,6 +22,13 @@ export {
   toLocalDateString,
   typicalInsulinResistance,
 } from "./cycle.js";
+export {
+  type DiaryApi,
+  type DiaryReading,
+  exportDiary,
+  importDiary,
+  readDiary,
+} from "./diary.js";
 export type { FoodSourceId } from "./food-sources.js";
 export {
   DATA_SOURCE_LABELS,
@@ -104,12 +111,14 @@ export type {
   CalculationResult,
   CreateTimelineRequest,
   CycleTracking,
+  Diary,
   ErrorResponse,
   FastInsulinEntry,
   FoodItem,
   FoodVocabEntry,
   GlucoseEntry,
   GlucoseUnit,
+  ImportEntriesRequest,
   LogMealRequest,
   LogMealResponse,
   MealEntry,
@@ -123,9 +132,16 @@ export type {
   SetApiKeyRequest,
   Settings,
   SlowInsulinEntry,
+  StartImportRequest,
   TimelineEntry,
   TimelinePageResponse,
   UpdateTimelineRequest,
   UserCarbs,
 } from "./types.js";
-export { DEFAULT_SETTINGS, NORMAL_PROFILE_ID } from "./types.js";
+export {
+  DEFAULT_SETTINGS,
+  DIARY_FORMAT,
+  DIARY_VERSION,
+  IMPORT_ENTRIES_PER_REQUEST,
+  NORMAL_PROFILE_ID,
+} from "./types.js";

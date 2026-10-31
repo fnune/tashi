@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it } from "vitest";
 import { ApiKeyStore } from "../domain/api-key-store.js";
 import { Calculator } from "../domain/calculator.js";
 import { systemClock } from "../domain/clock.js";
+import { DiaryImport } from "../domain/diary-import.js";
 import { Doses } from "../domain/doses.js";
 import { InvalidApiKeyError } from "../domain/errors.js";
 import type { FoodParser } from "../domain/food-parser.js";
@@ -52,6 +53,7 @@ describe("api key routes", () => {
         systemClock,
       ),
       timeline: new TimelineService(repositories, systemClock, newId),
+      diaryImport: new DiaryImport(repositories),
       repositories,
       apiKeys,
       defaultTimeZone: "Europe/Berlin",

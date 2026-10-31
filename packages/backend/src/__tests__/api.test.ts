@@ -13,6 +13,7 @@ import { beforeEach, describe, expect, it } from "vitest";
 import { ApiKeyStore } from "../domain/api-key-store.js";
 import { Calculator } from "../domain/calculator.js";
 import type { Clock } from "../domain/clock.js";
+import { DiaryImport } from "../domain/diary-import.js";
 import { Doses } from "../domain/doses.js";
 import type { Repositories } from "../domain/repositories.js";
 import { TimelineService } from "../domain/timeline-service.js";
@@ -103,6 +104,7 @@ describe("API routes", () => {
     app = createRoutes({
       doses: new Doses(repositories, calculator, clock),
       timeline: new TimelineService(repositories, clock, newId),
+      diaryImport: new DiaryImport(repositories),
       repositories,
       apiKeys: new ApiKeyStore(repositories.apiKey),
       defaultTimeZone: "Europe/Berlin",

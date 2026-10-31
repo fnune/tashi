@@ -7,6 +7,7 @@
   "exports": {
     "./api-key-store": "./src/domain/api-key-store.ts",
     "./calculator": "./src/domain/calculator.ts",
+    "./diary-import": "./src/domain/diary-import.ts",
     "./doses": "./src/domain/doses.ts",
     "./catalog-file": "./src/data/catalog-file.ts",
     "./static-catalog": "./src/data/static-catalog/index.ts",
@@ -14,15 +15,15 @@
     "./ids": "./src/domain/ids.ts",
     "./keyed-food-parser": "./src/domain/keyed-food-parser.ts",
     "./password-gate": "./src/http/password-gate.ts",
-    "./postgres": "./src/data/postgres/index.ts",
+    "./sqlite": "./src/data/sqlite/index.ts",
     "./routes": "./src/http/routes.ts",
     "./timeline-service": "./src/domain/timeline-service.ts"
   },
   "scripts": {
-    "dev": "pnpm build:catalog && tsx watch --env-file-if-exists=../../.env src/server.ts",
+    "dev": "pnpm build:catalog && NODE_OPTIONS=--disable-warning=ExperimentalWarning tsx watch --env-file-if-exists=../../.env src/server.ts",
     "build": "tsc && pnpm build:catalog",
     "build:catalog": "tsx scripts/build-catalog.ts ../../data/foods.db catalog",
-    "start": "node dist/server.js",
+    "start": "node --disable-warning=ExperimentalWarning dist/server.js",
     "test": "vitest run",
     "import-usda": "tsx scripts/import-usda.ts ../../data/usda ../../data/foods.db"
   },
@@ -32,14 +33,12 @@
     "@tashi/shared": "workspace:*",
     "hono": "^4.7.0",
     "kysely": "0.29.7",
-    "pg": "8.23.1",
-    "sql.js": "^1.14.1",
     "stemmer": "2.0.1",
     "zod": "^3.24.0"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",
-    "@types/pg": "8.23.1",
+    "sql.js": "^1.14.1",
     "tsx": "^4.19.0",
     "typescript": "^5.8.0",
     "vitest": "^3.2.0"

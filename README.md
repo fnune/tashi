@@ -25,21 +25,19 @@ nix develop
 pnpm install
 ```
 
-Tashi stores its data in Postgres, so a running server needs `DATABASE_URL`. The shell has Postgres 18 for the tests:
+Tashi stores its data in SQLite through Node's built-in `node:sqlite`, so a running server needs `DATABASE_PATH`, the file to keep it in. `pnpm dev` and `pnpm build` also build the food catalog from `data/foods.db` into `packages/backend/catalog`.
 
 ```sh
 pnpm check && pnpm typecheck
-TASHI_TEST_DATABASE_URL=postgres://user@localhost/scratch pnpm test:unit   # truncates that database's tables
-pnpm test:e2e                                                              # starts its own temporary Postgres
+pnpm test:unit   # runs the storage tests against temporary SQLite files
+pnpm test:e2e    # starts the app on a temporary SQLite file
 ```
-
-Without `TASHI_TEST_DATABASE_URL` the Postgres tests are skipped. The end-to-end tests need `initdb` and `pg_ctl` on `PATH` (or `PG_BIN` pointing at their directory) unless `TASHI_TEST_DATABASE_URL` is set.
 
 ## Deployment
 
 Runs on bilbo as the `tashi` app (`nixos/tashi.nix` in fnune/bilbo), from this flake's default package. To ship, push to `main`, then in bilbo run `nix flake update tashi` and rebuild.
 
-`DATABASE_URL` (a `postgres://` URL) is required; the schema is created and updated at startup. Set `TASHI_PASSWORD` to require HTTP Basic auth (any username, that password) on everything except `GET /api/health`. Leave it unset for no gate. Set `TASHI_SECRET_KEY` to a random string of at least 32 characters (for example `openssl rand -base64 32`) to save the Anthropic API key from the settings; without it, only `ANTHROPIC_API_KEY` works.
+`DATABASE_PATH` (the SQLite file) is required; the schema is created and updated at startup. Set `TASHI_PASSWORD` to require HTTP Basic auth (any username, that password) on everything except `GET /api/health`. Leave it unset for no gate. Set `TASHI_SECRET_KEY` to a random string of at least 32 characters (for example `openssl rand -base64 32`) to save the Anthropic API key from the settings; without it, only `ANTHROPIC_API_KEY` works.
 
 ## License
 

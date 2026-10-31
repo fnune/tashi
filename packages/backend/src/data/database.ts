@@ -1,8 +1,8 @@
-import type { ColumnType, Generated, JSONColumnType } from "kysely";
+import type { Generated } from "kysely";
 
-type Timestamp = ColumnType<Date, Date | string, Date | string>;
-type DateOnly = ColumnType<string, string, string>;
-type Json<T extends object | null> = JSONColumnType<T>;
+export type Instant = string;
+export type Flag = 0 | 1;
+type JsonText = string;
 
 export interface InsulinProductsTable {
   id: string;
@@ -11,18 +11,16 @@ export interface InsulinProductsTable {
 
 export interface FoodSourcesTable {
   id: string;
-  catalog: boolean;
-  estimate: boolean;
+  catalog: Flag;
+  estimate: Flag;
 }
 
 export interface CatalogReleasesTable {
-  id: number;
   label: string;
-  imported_at: Timestamp;
 }
 
 export interface SettingsTable {
-  singleton: boolean;
+  singleton: 1;
   language: "en" | "es";
   glucose_unit: "mg/dL" | "mmol/L";
   ratio_format: "grams_per_unit" | "units_per_10g";
@@ -35,9 +33,9 @@ export interface SettingsTable {
   basal_insulin: string | null;
   basal_action: Generated<"basal">;
   insulin_action_minutes: number | null;
-  cycle_tracking_enabled: boolean;
+  cycle_tracking_enabled: Flag;
   cycle_length_days: number;
-  last_period_start: DateOnly | null;
+  last_period_start: string | null;
   active_profile_id: string;
 }
 
@@ -76,38 +74,38 @@ export interface RatioVersionsTable {
   adjustment_mode: "percent" | "per_window" | null;
   percent_adjustment: number | null;
   carbs_g_per_unit: number;
-  first_used_at: Timestamp;
+  first_used_at: Instant;
 }
 
 export interface GlucoseEntriesTable {
   id: string;
-  occurred_at: Timestamp;
+  occurred_at: Instant;
   occurred_tz: string;
   glucose_mg_dl: number;
 }
 
 export interface SlowInsulinEntriesTable {
   id: string;
-  occurred_at: Timestamp;
+  occurred_at: Instant;
   occurred_tz: string;
   insulin: string;
-  action: "basal";
+  action: Generated<"basal">;
   insulin_units: number;
 }
 
 export interface FastInsulinEntriesTable {
   id: string;
-  occurred_at: Timestamp;
+  occurred_at: Instant;
   occurred_tz: string;
   insulin: string;
-  action: "bolus";
+  action: Generated<"bolus">;
   insulin_units: number;
   meal_entry_id: string | null;
 }
 
 export interface MealEntriesTable {
   id: string;
-  occurred_at: Timestamp;
+  occurred_at: Instant;
   occurred_tz: string;
   input_text: string;
   input_language: "en" | "es";
@@ -115,7 +113,7 @@ export interface MealEntriesTable {
   total_carbs_g: number;
   carb_dose_units: number;
   total_dose_units: number;
-  catalog_release: number;
+  catalog_release: string;
 }
 
 export interface MealItemsTable {
@@ -123,7 +121,7 @@ export interface MealItemsTable {
   position: number;
   description: string;
   weight_g: number;
-  assumed_cooked: boolean;
+  assumed_cooked: Flag;
   confidence: "high" | "medium" | "low";
   source: string;
   carbs_per_100g: number;
@@ -133,10 +131,11 @@ export interface MealItemsTable {
   protein_per_100g: number;
   protein_g: number;
   glycemic_index: number | null;
-  gi_estimated: boolean;
+  gi_estimated: Flag;
   notes: string | null;
   warning: string | null;
   external_id: string | null;
+  food_snapshot: JsonText | null;
 }
 
 export interface MealCorrectionsTable {
@@ -163,15 +162,14 @@ export interface MealTracesTable {
   model: string;
   duration_ms: number;
   raw_response: string;
-  searches: Json<unknown[]>;
+  searches: JsonText;
 }
 
 export interface TimelineView {
   id: string;
   kind: "meal" | "fast_insulin" | "slow_insulin" | "glucose_reading";
-  occurred_at: Date;
+  occurred_at: Instant;
   occurred_tz: string;
-  occurred_local: Date;
 }
 
 export interface FoodVocabularyTable {
@@ -179,81 +177,18 @@ export interface FoodVocabularyTable {
   source: string;
   external_id: string;
   description: string;
+  catalog_name: string;
   last_weight_g: number;
   use_count: number;
-  last_used_at: Timestamp;
-}
-
-export interface NutrientsTable {
-  id: string;
-  name: string;
-  unit: "g" | "mg" | "ug" | "kcal";
-}
-
-export interface CatalogEntriesTable {
-  source: string;
-  source_is_catalog: Generated<true>;
-  external_id: string;
-  name: string;
-  category: string | null;
-}
-
-export interface EntryNutrientsTable {
-  source: string;
-  external_id: string;
-  nutrient_id: string;
-  amount_per_100g: number;
-  from_release: number;
-  to_release: number | null;
-}
-
-export interface EntryServingsTable {
-  source: string;
-  external_id: string;
-  position: number;
-  description: string;
-  grams: number;
-  from_release: number;
-  to_release: number | null;
-}
-
-export interface FoodsTable {
-  id: string;
-  slug: string;
-}
-
-export interface FoodEntriesTable {
-  food_id: string;
-  source: string;
-  external_id: string;
-}
-
-export interface FoodNamesTable {
-  food_id: string;
-  language: "en" | "es";
-  name: string;
-}
-
-export interface FoodGlycemicIndexesTable {
-  food_id: string;
-  fact_source: string;
-  glycemic_index: number;
-  from_release: number;
-  to_release: number | null;
-}
-
-export interface FoodCookingFactorsTable {
-  food_id: string;
-  multiplier: number;
-  fact_source: string;
+  last_used_at: Instant;
 }
 
 export interface AnthropicApiKeyTable {
-  singleton: boolean;
-  salt: Buffer;
-  iv: Buffer;
-  auth_tag: Buffer;
-  ciphertext: Buffer;
+  singleton: 1;
+  salt: Uint8Array;
+  iv: Uint8Array;
+  auth_tag: Uint8Array;
+  ciphertext: Uint8Array;
 }
 
 export interface Database {
@@ -275,14 +210,5 @@ export interface Database {
   meal_traces: MealTracesTable;
   timeline: TimelineView;
   food_vocabulary: FoodVocabularyTable;
-  nutrients: NutrientsTable;
-  catalog_entries: CatalogEntriesTable;
-  entry_nutrients: EntryNutrientsTable;
-  entry_servings: EntryServingsTable;
-  foods: FoodsTable;
-  food_entries: FoodEntriesTable;
-  food_names: FoodNamesTable;
-  food_glycemic_indexes: FoodGlycemicIndexesTable;
-  food_cooking_factors: FoodCookingFactorsTable;
   anthropic_api_key: AnthropicApiKeyTable;
 }

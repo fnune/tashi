@@ -87,6 +87,9 @@ export function createInMemoryRepositories(): Repositories {
           else vocabulary[at] = entry;
         }
       },
+      clear: async () => {
+        vocabulary.length = 0;
+      },
     },
     apiKey: {
       get: async () => (apiKey ? { ...apiKey } : null),

@@ -1,5 +1,9 @@
-import type { UpdateTimelineRequest } from "@tashi/shared";
-import { isPlausibleGlucose } from "@tashi/shared";
+import type {
+  ImportEntriesRequest,
+  StartImportRequest,
+  UpdateTimelineRequest,
+} from "@tashi/shared";
+import { IMPORT_ENTRIES_PER_REQUEST, isPlausibleGlucose } from "@tashi/shared";
 import { z } from "zod";
 import {
   calculatedItemSchema,
@@ -9,6 +13,9 @@ import {
   languageSchema,
   mealWindowSchema,
   parseTraceSchema,
+  settingsSchema,
+  storedTimelineSchema,
+  storedVocabularySchema,
 } from "../domain/schemas.js";
 
 export const calculateSchema = z.object({
@@ -85,3 +92,12 @@ export const updateTimelineSchema = z.discriminatedUnion("type", [
     value: z.number().positive().optional(),
   }),
 ]) satisfies z.ZodType<UpdateTimelineRequest>;
+
+export const startImportSchema = z.object({
+  settings: settingsSchema,
+  vocabulary: storedVocabularySchema,
+}) satisfies z.ZodType<StartImportRequest>;
+
+export const importEntriesSchema = z.object({
+  entries: storedTimelineSchema.max(IMPORT_ENTRIES_PER_REQUEST),
+}) satisfies z.ZodType<ImportEntriesRequest>;

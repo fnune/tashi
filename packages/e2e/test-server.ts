@@ -1,4 +1,7 @@
+import { mkdtempSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { DatabaseSync } from "node:sqlite";
 import { serve } from "@hono/node-server";
 import { serveStatic } from "@hono/node-server/serve-static";
 import {
@@ -7,13 +10,14 @@ import {
 } from "@tashi/backend/api-key-store";
 import { Calculator } from "@tashi/backend/calculator";
 import { readCatalogFile } from "@tashi/backend/catalog-file";
+import { DiaryImport } from "@tashi/backend/diary-import";
 import { Doses } from "@tashi/backend/doses";
 import type { FoodParser, ParseOutcome } from "@tashi/backend/food-parser";
 import { randomId } from "@tashi/backend/ids";
 import { KeyedFoodParser } from "@tashi/backend/keyed-food-parser";
 import { passwordGate } from "@tashi/backend/password-gate";
-import { openPostgresRepositories } from "@tashi/backend/postgres";
 import { createRoutes } from "@tashi/backend/routes";
+import { openSqliteRepositories } from "@tashi/backend/sqlite";
 import {
   catalogAssets,
   memoryAssets,
@@ -24,8 +28,6 @@ import { TimelineService } from "@tashi/backend/timeline-service";
 import type { FoodVocabEntry, ParsedFoodItem } from "@tashi/shared";
 import { DEFAULT_SETTINGS } from "@tashi/shared";
 import { Hono } from "hono";
-import pg from "pg";
-import { temporaryDatabase } from "./postgres.js";
 
 export const OPEN_PORT = 3100;
 export const GATED_PORT = 3101;
@@ -140,9 +142,9 @@ class FakeFoodParser implements FoodParser {
 }
 
 async function startServer(): Promise<void> {
-  const database = await temporaryDatabase();
-  const stopDatabase = () => database.stop();
-  process.on("exit", stopDatabase);
+  const databaseDir = mkdtempSync(join(tmpdir(), "tashi-e2e-"));
+  const databasePath = join(databaseDir, "tashi.sqlite");
+  process.on("exit", () => rmSync(databaseDir, { recursive: true }));
   for (const signal of ["SIGINT", "SIGTERM"] as const) {
     process.on(signal, () => process.exit(0));
   }
@@ -150,13 +152,13 @@ async function startServer(): Promise<void> {
   const catalog = await readCatalogFile(
     join(import.meta.dirname, "../../data/foods.db"),
   );
-  const { repositories } = await openPostgresRepositories(database.url, {
-    newId: randomId,
-    catalog,
-  });
   const catalogFiles = memoryAssets(catalogAssets(catalog));
   const searchIndex = await readSearchIndex(catalogFiles);
   if (!searchIndex) throw new Error("The catalog build has no search index");
+  const { repositories } = await openSqliteRepositories(databasePath, {
+    newId: randomId,
+    catalogRelease: searchIndex.label,
+  });
   const foodCatalog = new StaticFoodCatalog(searchIndex, catalogFiles);
 
   const lunchtimeClock = () => {
@@ -183,23 +185,25 @@ async function startServer(): Promise<void> {
   const routes = createRoutes({
     doses: new Doses(repositories, calculator, lunchtimeClock),
     timeline: new TimelineService(repositories, lunchtimeClock, randomId),
+    diaryImport: new DiaryImport(repositories),
     repositories,
     apiKeys,
     defaultTimeZone: "Europe/Berlin",
   });
 
-  const sql = new pg.Client({ connectionString: database.url });
-  await sql.connect();
+  const sql = new DatabaseSync(databasePath);
 
   function build(options: { password?: string }): Hono {
     const app = new Hono();
     if (options.password) app.use("*", passwordGate(options.password));
 
     app.post("/api/__reset", async (c) => {
-      await sql.query(`TRUNCATE settings, profile_window_ratios, profiles,
-        meal_windows, ratio_versions, glucose_entries, slow_insulin_entries,
-        fast_insulin_entries, meal_entries, food_vocabulary,
-        anthropic_api_key CASCADE`);
+      sql.exec(`DELETE FROM settings; DELETE FROM profile_window_ratios;
+        DELETE FROM profiles; DELETE FROM meal_windows;
+        DELETE FROM fast_insulin_entries; DELETE FROM meal_entries;
+        DELETE FROM glucose_entries; DELETE FROM slow_insulin_entries;
+        DELETE FROM ratio_versions; DELETE FROM food_vocabulary;
+        DELETE FROM anthropic_api_key;`);
       keyOptions.environmentKey =
         c.req.query("key") === "none" ? undefined : ENVIRONMENT_KEY;
       await apiKeys.clear();

@@ -47,6 +47,7 @@ import { RATIOS_ANCHOR } from "./AppHeader.js";
 import { CycleSettings } from "./CycleSettings.js";
 import { DataSources } from "./DataSources.js";
 import { DayBar } from "./DayBar.js";
+import { DiarySettings } from "./DiarySettings.js";
 import { IobCurve } from "./IobCurve.js";
 import { Logo } from "./Logo.js";
 import { ProfileChips } from "./ProfileChips.js";
@@ -71,6 +72,7 @@ import { numberFormat } from "../numberFormat.js";
 interface SettingsViewProps {
   settings: Settings;
   onSave: (s: Settings) => void;
+  onDiaryReplaced: () => Promise<void>;
   lang: Language;
 }
 
@@ -114,7 +116,12 @@ function dedupeSources(sources: SourceRef[]): SourceRef[] {
   });
 }
 
-export function SettingsView({ settings, onSave, lang }: SettingsViewProps) {
+export function SettingsView({
+  settings,
+  onSave,
+  onDiaryReplaced,
+  lang,
+}: SettingsViewProps) {
   const [editing, setEditing] = useState<Editing | null>(null);
   const [theme, setTheme] = useState(savedTheme);
   const [error, setError] = useState<string | null>(null);
@@ -447,6 +454,8 @@ export function SettingsView({ settings, onSave, lang }: SettingsViewProps) {
       />
 
       <ApiKeySettings id="api-key" lang={lang} />
+
+      <DiarySettings id="data" lang={lang} onReplaced={onDiaryReplaced} />
 
       <DataSources lang={lang} />
 
