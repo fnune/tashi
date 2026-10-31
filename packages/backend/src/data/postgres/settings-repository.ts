@@ -6,12 +6,13 @@ import type {
   Settings,
 } from "@tashi/shared";
 import { DEFAULT_SETTINGS } from "@tashi/shared";
-import { sql } from "kysely";
+
 import { profileIdOfUuid, profileUuid } from "../../domain/builtin-profiles.js";
 import type { IdGenerator } from "../../domain/ids.js";
 import type { SettingsRepository } from "../../domain/repositories.js";
 import { settingsSchema } from "../../domain/schemas.js";
 import { StoredDataError } from "../stored-data-error.js";
+import type { WriteBatch, WriteQuery } from "../write-batch.js";
 import type { Db, Executor } from "./connection.js";
 import { fromMgDl, toMgDl } from "./glucose-units.js";
 
@@ -29,7 +30,10 @@ export async function readSettings(db: Executor): Promise<Settings> {
     .selectAll()
     .orderBy("position")
     .execute();
-  const ratios = await db.selectFrom("profile_window_ratios").selectAll().execute();
+  const ratios = await db
+    .selectFrom("profile_window_ratios")
+    .selectAll()
+    .execute();
   const windowNames = new Map(windows.map((w) => [w.id, w.name]));
   const unit: GlucoseUnit = row.glucose_unit;
 
@@ -89,6 +93,7 @@ export async function readSettings(db: Executor): Promise<Settings> {
 export class PostgresSettingsRepository implements SettingsRepository {
   constructor(
     private db: Db,
+    private batch: WriteBatch,
     private newId: IdGenerator,
   ) {}
 
@@ -97,133 +102,141 @@ export class PostgresSettingsRepository implements SettingsRepository {
   }
 
   async save(settings: Settings): Promise<void> {
-    await this.db.transaction().execute(async (trx) => {
-      await sql`SET CONSTRAINTS ALL DEFERRED`.execute(trx);
-      const unit = settings.glucose_unit;
-      const stored = await trx
-        .selectFrom("settings")
-        .select([
-          "glucose_unit",
-          "target_glucose_mg_dl",
-          "glucose_drop_mg_dl_per_unit",
-        ])
-        .executeTakeFirst();
-      const onlyTheUnitChanged =
-        stored !== undefined &&
-        stored.glucose_unit !== unit &&
-        sameNumber(
-          settings.target_blood_sugar,
-          fromMgDl(stored.target_glucose_mg_dl, stored.glucose_unit),
-        ) &&
-        (settings.correction_factor === null
-          ? stored.glucose_drop_mg_dl_per_unit === null
-          : stored.glucose_drop_mg_dl_per_unit !== null &&
-            sameNumber(
-              settings.correction_factor,
-              fromMgDl(stored.glucose_drop_mg_dl_per_unit, stored.glucose_unit),
-            ));
+    const unit = settings.glucose_unit;
+    const stored = await this.db
+      .selectFrom("settings")
+      .select([
+        "glucose_unit",
+        "target_glucose_mg_dl",
+        "glucose_drop_mg_dl_per_unit",
+      ])
+      .executeTakeFirst();
+    const onlyTheUnitChanged =
+      stored !== undefined &&
+      stored.glucose_unit !== unit &&
+      sameNumber(
+        settings.target_blood_sugar,
+        fromMgDl(stored.target_glucose_mg_dl, stored.glucose_unit),
+      ) &&
+      (settings.correction_factor === null
+        ? stored.glucose_drop_mg_dl_per_unit === null
+        : stored.glucose_drop_mg_dl_per_unit !== null &&
+          sameNumber(
+            settings.correction_factor,
+            fromMgDl(stored.glucose_drop_mg_dl_per_unit, stored.glucose_unit),
+          ));
 
-      const existingWindows = await trx
-        .selectFrom("meal_windows")
-        .select(["id", "name"])
-        .execute();
-      const windowIds = new Map(existingWindows.map((w) => [w.name, w.id]));
-      for (const [position, window] of settings.meal_windows.entries()) {
-        const id = windowIds.get(window.name) ?? this.newId();
-        windowIds.set(window.name, id);
-        const columns = {
-          position,
-          name: window.name,
-          start_hour: window.start_hour,
-          end_hour: window.end_hour,
-          carbs_g_per_unit: window.ratio,
-        };
-        await trx
+    const existingWindows = await this.db
+      .selectFrom("meal_windows")
+      .select(["id", "name"])
+      .execute();
+    const existingProfiles = await this.db
+      .selectFrom("profiles")
+      .select("id")
+      .execute();
+    const windowIds = new Map(existingWindows.map((w) => [w.name, w.id]));
+    const writes: WriteQuery[] = [
+      this.db.updateTable("meal_windows").set((eb) => ({
+        position: eb("position", "+", existingWindows.length),
+      })),
+      this.db.updateTable("profiles").set((eb) => ({
+        position: eb("position", "+", existingProfiles.length),
+      })),
+    ];
+    for (const [position, window] of settings.meal_windows.entries()) {
+      const id = windowIds.get(window.name) ?? this.newId();
+      windowIds.set(window.name, id);
+      const columns = {
+        position,
+        name: window.name,
+        start_hour: window.start_hour,
+        end_hour: window.end_hour,
+        carbs_g_per_unit: window.ratio,
+      };
+      writes.push(
+        this.db
           .insertInto("meal_windows")
           .values({ id, ...columns })
-          .onConflict((oc) => oc.column("id").doUpdateSet(columns))
-          .execute();
-      }
+          .onConflict((oc) => oc.column("id").doUpdateSet(columns)),
+      );
+    }
 
-      for (const [position, profile] of settings.profiles.entries()) {
-        const id = profileUuid(profile.id);
-        const columns = profileColumns(profile, position);
-        await trx
+    for (const [position, profile] of settings.profiles.entries()) {
+      const id = profileUuid(profile.id);
+      const columns = profileColumns(profile, position);
+      writes.push(
+        this.db
           .insertInto("profiles")
           .values({ id, ...columns })
-          .onConflict((oc) => oc.column("id").doUpdateSet(columns))
-          .execute();
-        await trx
+          .onConflict((oc) => oc.column("id").doUpdateSet(columns)),
+        this.db
           .deleteFrom("profile_window_ratios")
-          .where("profile_id", "=", id)
-          .execute();
-        if (profile.adjustment.mode === "per_window") {
-          for (const [windowName, ratio] of Object.entries(
-            profile.adjustment.ratios,
-          )) {
-            const windowId = windowIds.get(windowName);
-            if (!windowId) continue;
-            await trx
-              .insertInto("profile_window_ratios")
-              .values({
-                profile_id: id,
-                window_id: windowId,
-                carbs_g_per_unit: ratio,
-              })
-              .execute();
-          }
+          .where("profile_id", "=", id),
+      );
+      if (profile.adjustment.mode === "per_window") {
+        for (const [windowName, ratio] of Object.entries(
+          profile.adjustment.ratios,
+        )) {
+          const windowId = windowIds.get(windowName);
+          if (!windowId) continue;
+          writes.push(
+            this.db.insertInto("profile_window_ratios").values({
+              profile_id: id,
+              window_id: windowId,
+              carbs_g_per_unit: ratio,
+            }),
+          );
         }
       }
+    }
 
-      const columns = {
-        language: settings.language,
-        glucose_unit: unit,
-        ratio_format: settings.ratio_format,
-        pen_increment_units: settings.pen_increment,
-        target_glucose_mg_dl:
-          onlyTheUnitChanged && stored
-            ? stored.target_glucose_mg_dl
-            : toMgDl(settings.target_blood_sugar, unit),
-        glucose_drop_mg_dl_per_unit:
-          onlyTheUnitChanged && stored
-            ? stored.glucose_drop_mg_dl_per_unit
-            : settings.correction_factor === null
-              ? null
-              : toMgDl(settings.correction_factor, unit),
-        fat_protein_multiplier: settings.fat_protein_multiplier,
-        bolus_insulin: settings.bolus_insulin_id satisfies BolusInsulinId | null,
-        basal_insulin: settings.basal_insulin_id satisfies BasalInsulinId | null,
-        insulin_action_minutes: settings.insulin_action_minutes,
-        cycle_tracking_enabled: settings.cycle.enabled,
-        cycle_length_days: settings.cycle.length_days,
-        last_period_start: settings.cycle.last_period_start,
-        active_profile_id: profileUuid(settings.active_profile_id),
-      };
-      await trx
+    const columns = {
+      language: settings.language,
+      glucose_unit: unit,
+      ratio_format: settings.ratio_format,
+      pen_increment_units: settings.pen_increment,
+      target_glucose_mg_dl:
+        onlyTheUnitChanged && stored
+          ? stored.target_glucose_mg_dl
+          : toMgDl(settings.target_blood_sugar, unit),
+      glucose_drop_mg_dl_per_unit:
+        onlyTheUnitChanged && stored
+          ? stored.glucose_drop_mg_dl_per_unit
+          : settings.correction_factor === null
+            ? null
+            : toMgDl(settings.correction_factor, unit),
+      fat_protein_multiplier: settings.fat_protein_multiplier,
+      bolus_insulin: settings.bolus_insulin_id satisfies BolusInsulinId | null,
+      basal_insulin: settings.basal_insulin_id satisfies BasalInsulinId | null,
+      insulin_action_minutes: settings.insulin_action_minutes,
+      cycle_tracking_enabled: settings.cycle.enabled,
+      cycle_length_days: settings.cycle.length_days,
+      last_period_start: settings.cycle.last_period_start,
+      active_profile_id: profileUuid(settings.active_profile_id),
+    };
+    const keptProfiles = settings.profiles.map((p) => profileUuid(p.id));
+    const keptWindows = settings.meal_windows.map((w) => w.name);
+    writes.push(
+      this.db
         .insertInto("settings")
         .values({ singleton: true, ...columns })
-        .onConflict((oc) => oc.column("singleton").doUpdateSet(columns))
-        .execute();
-
-      const keptProfiles = settings.profiles.map((p) => profileUuid(p.id));
-      await trx
+        .onConflict((oc) => oc.column("singleton").doUpdateSet(columns)),
+      this.db
         .deleteFrom("profiles")
         .where((eb) =>
           keptProfiles.length === 0
             ? eb.val(true)
             : eb("id", "not in", keptProfiles),
-        )
-        .execute();
-      const keptWindows = settings.meal_windows.map((w) => w.name);
-      await trx
+        ),
+      this.db
         .deleteFrom("meal_windows")
         .where((eb) =>
           keptWindows.length === 0
             ? eb.val(true)
             : eb("name", "not in", keptWindows),
-        )
-        .execute();
-    });
+        ),
+    );
+    await this.batch.write(writes);
   }
 }
 

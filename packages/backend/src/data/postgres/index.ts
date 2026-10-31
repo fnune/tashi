@@ -3,7 +3,7 @@ import type { IdGenerator } from "../../domain/ids.js";
 import type { Repositories } from "../../domain/repositories.js";
 import { PostgresApiKeyRepository } from "./api-key-repository.js";
 import { importCatalog } from "./catalog-import.js";
-import { connect, migrate } from "./connection.js";
+import { connect, migrate, postgresWriteBatch } from "./connection.js";
 import { PostgresFoodCatalog } from "./food-catalog.js";
 import { PostgresSettingsRepository } from "./settings-repository.js";
 import { PostgresTimelineRepository } from "./timeline-repository.js";
@@ -23,10 +23,16 @@ export async function openPostgresRepositories(
   try {
     await migrate(db);
     const release = await importCatalog(db, options.catalog);
+    const batch = postgresWriteBatch(db);
     return {
       repositories: {
-        settings: new PostgresSettingsRepository(db, options.newId),
-        timeline: new PostgresTimelineRepository(db, options.newId, release),
+        settings: new PostgresSettingsRepository(db, batch, options.newId),
+        timeline: new PostgresTimelineRepository(
+          db,
+          batch,
+          options.newId,
+          release,
+        ),
         vocabulary: new PostgresVocabularyRepository(db),
         apiKey: new PostgresApiKeyRepository(db),
       },

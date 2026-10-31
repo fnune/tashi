@@ -16,18 +16,16 @@ import {
   roundToIncrement,
 } from "@tashi/shared";
 import { sql } from "kysely";
+import { type CatalogRecord, foodItemOf } from "../../domain/food-catalog.js";
 import type { IdGenerator } from "../../domain/ids.js";
 import type {
   TimelineCursor,
   TimelinePage,
   TimelineRepository,
 } from "../../domain/repositories.js";
-import {
-  type CatalogRecord,
-  foodItemOf,
-} from "../../domain/food-catalog.js";
 import { storedTimelineSchema } from "../../domain/schemas.js";
 import { StoredDataError } from "../stored-data-error.js";
+import type { WriteBatch, WriteQuery } from "../write-batch.js";
 import type { Db, Executor } from "./connection.js";
 import { type EntryKey, entryKeyOf, recordsAt } from "./food-catalog.js";
 import { fromMgDl, toMgDl } from "./glucose-units.js";
@@ -51,6 +49,7 @@ interface Display {
 export class PostgresTimelineRepository implements TimelineRepository {
   constructor(
     private db: Db,
+    private batch: WriteBatch,
     private newId: IdGenerator,
     private catalogRelease: number,
   ) {}
@@ -101,51 +100,52 @@ export class PostgresTimelineRepository implements TimelineRepository {
 
   async add(entries: TimelineEntry[]): Promise<void> {
     if (entries.length === 0) return;
-    await this.db.transaction().execute(async (trx) => {
-      const display = await displayOf(trx);
-      const mealsFirst = [
-        ...entries.filter((entry) => entry.type === "meal"),
-        ...entries.filter((entry) => entry.type !== "meal"),
-      ];
-      for (const entry of mealsFirst) {
-        await this.insert(trx, entry, display);
-      }
-    });
+    const display = await displayOf(this.db);
+    const ratioVersions = new Map<string, string>();
+    const mealsFirst = [
+      ...entries.filter((entry) => entry.type === "meal"),
+      ...entries.filter((entry) => entry.type !== "meal"),
+    ];
+    const writes: WriteQuery[] = [];
+    for (const entry of mealsFirst) {
+      writes.push(...(await this.insert(entry, display, ratioVersions)));
+    }
+    await this.batch.write(writes);
   }
 
   async replace(entry: TimelineEntry): Promise<boolean> {
     if (!isUuid(entry.id)) return false;
-    return this.db.transaction().execute(async (trx) => {
-      const moment = {
-        occurred_at: entry.timestamp,
-        occurred_tz: entry.time_zone,
-      };
-      switch (entry.type) {
-        case "glucose_reading": {
-          const result = await trx
+    const moment = {
+      occurred_at: entry.timestamp,
+      occurred_tz: entry.time_zone,
+    };
+    switch (entry.type) {
+      case "glucose_reading": {
+        return this.updated(
+          this.db
             .updateTable("glucose_entries")
             .set({
               ...moment,
               glucose_mg_dl: toMgDl(entry.value, entry.unit),
             })
-            .where("id", "=", entry.id)
-            .executeTakeFirst();
-          return result.numUpdatedRows > 0n;
-        }
-        case "slow_insulin": {
-          const result = await trx
+            .where("id", "=", entry.id),
+        );
+      }
+      case "slow_insulin": {
+        return this.updated(
+          this.db
             .updateTable("slow_insulin_entries")
             .set({
               ...moment,
               insulin: entry.insulin_id,
               insulin_units: entry.units,
             })
-            .where("id", "=", entry.id)
-            .executeTakeFirst();
-          return result.numUpdatedRows > 0n;
-        }
-        case "fast_insulin": {
-          const result = await trx
+            .where("id", "=", entry.id),
+        );
+      }
+      case "fast_insulin": {
+        return this.updated(
+          this.db
             .updateTable("fast_insulin_entries")
             .set({
               ...moment,
@@ -153,55 +153,54 @@ export class PostgresTimelineRepository implements TimelineRepository {
               insulin_units: entry.units,
               meal_entry_id: entry.related_meal_id,
             })
-            .where("id", "=", entry.id)
-            .executeTakeFirst();
-          return result.numUpdatedRows > 0n;
-        }
-        case "meal": {
-          const result = await trx
+            .where("id", "=", entry.id),
+        );
+      }
+      case "meal": {
+        return this.updated(
+          this.db
             .updateTable("meal_entries")
             .set(moment)
-            .where("id", "=", entry.id)
-            .executeTakeFirst();
-          return result.numUpdatedRows > 0n;
-        }
+            .where("id", "=", entry.id),
+        );
       }
-    });
+    }
   }
 
   async delete(id: string): Promise<boolean> {
     if (!isUuid(id)) return false;
-    return this.db.transaction().execute(async (trx) => {
-      for (const table of [
-        "glucose_entries",
-        "slow_insulin_entries",
-        "fast_insulin_entries",
-        "meal_entries",
-      ] as const) {
-        const result = await trx
-          .deleteFrom(table)
-          .where("id", "=", id)
-          .executeTakeFirst();
-        if (result.numDeletedRows > 0n) return true;
-      }
-      return false;
-    });
+    const results = await this.batch.write(
+      (
+        [
+          "glucose_entries",
+          "slow_insulin_entries",
+          "fast_insulin_entries",
+          "meal_entries",
+        ] as const
+      ).map((table) => this.db.deleteFrom(table).where("id", "=", id)),
+    );
+    return results.some((result) => result.affectedRows > 0);
   }
 
   async clear(): Promise<void> {
-    await this.db.transaction().execute(async (trx) => {
-      await trx.deleteFrom("glucose_entries").execute();
-      await trx.deleteFrom("slow_insulin_entries").execute();
-      await trx.deleteFrom("fast_insulin_entries").execute();
-      await trx.deleteFrom("meal_entries").execute();
-    });
+    await this.batch.write([
+      this.db.deleteFrom("glucose_entries"),
+      this.db.deleteFrom("slow_insulin_entries"),
+      this.db.deleteFrom("fast_insulin_entries"),
+      this.db.deleteFrom("meal_entries"),
+    ]);
+  }
+
+  private async updated(query: WriteQuery): Promise<boolean> {
+    const [result] = await this.batch.write([query]);
+    return (result?.affectedRows ?? 0) > 0;
   }
 
   private async insert(
-    trx: Executor,
     entry: TimelineEntry,
     display: Display,
-  ): Promise<void> {
+    ratioVersions: Map<string, string>,
+  ): Promise<WriteQuery[]> {
     const moment = {
       id: entry.id,
       occurred_at: entry.timestamp,
@@ -209,51 +208,45 @@ export class PostgresTimelineRepository implements TimelineRepository {
     };
     switch (entry.type) {
       case "glucose_reading":
-        await trx
-          .insertInto("glucose_entries")
-          .values({
+        return [
+          this.db.insertInto("glucose_entries").values({
             ...moment,
             glucose_mg_dl: toMgDl(entry.value, entry.unit),
-          })
-          .execute();
-        return;
+          }),
+        ];
       case "slow_insulin":
-        await trx
-          .insertInto("slow_insulin_entries")
-          .values({
+        return [
+          this.db.insertInto("slow_insulin_entries").values({
             ...moment,
             insulin: entry.insulin_id,
             action: "basal",
             insulin_units: entry.units,
-          })
-          .execute();
-        return;
+          }),
+        ];
       case "fast_insulin":
-        await trx
-          .insertInto("fast_insulin_entries")
-          .values({
+        return [
+          this.db.insertInto("fast_insulin_entries").values({
             ...moment,
             insulin: entry.insulin_id,
             action: "bolus",
             insulin_units: entry.units,
             meal_entry_id: entry.related_meal_id,
-          })
-          .execute();
-        return;
+          }),
+        ];
       case "meal":
-        await this.insertMeal(trx, entry, display);
+        return this.insertMeal(entry, display, ratioVersions);
     }
   }
 
   private async insertMeal(
-    trx: Executor,
     meal: MealEntry,
     display: Display,
-  ): Promise<void> {
-    const ratioVersionId = await this.ratioVersion(trx, meal);
-    await trx
-      .insertInto("meal_entries")
-      .values({
+    ratioVersions: Map<string, string>,
+  ): Promise<WriteQuery[]> {
+    const writes: WriteQuery[] = [];
+    const ratioVersionId = await this.ratioVersion(meal, ratioVersions, writes);
+    writes.push(
+      this.db.insertInto("meal_entries").values({
         id: meal.id,
         occurred_at: meal.timestamp,
         occurred_tz: meal.time_zone,
@@ -264,13 +257,12 @@ export class PostgresTimelineRepository implements TimelineRepository {
         carb_dose_units: meal.recommended_dose,
         total_dose_units: meal.total_dose,
         catalog_release: this.catalogRelease,
-      })
-      .execute();
+      }),
+    );
 
     if (meal.items.length > 0) {
-      await trx
-        .insertInto("meal_items")
-        .values(
+      writes.push(
+        this.db.insertInto("meal_items").values(
           meal.items.map((item, position) => {
             const source = foodSourceOfDataSource(item.data_source);
             if (item.estimated !== FOOD_SOURCES[source].estimate) {
@@ -296,19 +288,20 @@ export class PostgresTimelineRepository implements TimelineRepository {
               gi_estimated: item.gi_estimated,
               notes: item.notes,
               warning: item.warning,
-              external_id: item.food_item ? String(item.food_item.fdc_id) : null,
+              external_id: item.food_item
+                ? String(item.food_item.fdc_id)
+                : null,
             };
           }),
-        )
-        .execute();
+        ),
+      );
     }
 
     const unit = display.unit;
     if (meal.correction) {
       const c = meal.correction;
-      await trx
-        .insertInto("meal_corrections")
-        .values({
+      writes.push(
+        this.db.insertInto("meal_corrections").values({
           meal_entry_id: meal.id,
           current_glucose_mg_dl: toMgDl(c.current_blood_sugar, unit),
           target_glucose_mg_dl: toMgDl(c.target_blood_sugar, unit),
@@ -316,40 +309,54 @@ export class PostgresTimelineRepository implements TimelineRepository {
           correction_dose_units: c.correction_dose,
           iob_units: c.iob,
           iob_reduction_units: c.iob_reduction,
-        })
-        .execute();
+        }),
+      );
     }
     if (meal.fat_protein_adjustment) {
       const a = meal.fat_protein_adjustment;
-      await trx
-        .insertInto("meal_fat_protein_adjustments")
-        .values({
+      writes.push(
+        this.db.insertInto("meal_fat_protein_adjustments").values({
           meal_entry_id: meal.id,
           total_fat_g: a.total_fat_g,
           total_protein_g: a.total_protein_g,
-          trigger: a.threshold_met as "high_fat" | "fat_and_protein" | "energy_ratio",
+          trigger: a.threshold_met as
+            | "high_fat"
+            | "fat_and_protein"
+            | "energy_ratio",
           multiplier: a.multiplier,
           adjustment_dose_units: a.adjustment_dose,
-        })
-        .execute();
+        }),
+      );
     }
     if (meal.trace) {
-      await trx
-        .insertInto("meal_traces")
-        .values({
+      writes.push(
+        this.db.insertInto("meal_traces").values({
           meal_entry_id: meal.id,
           model: meal.trace.model,
           duration_ms: Math.round(meal.trace.duration_ms),
           raw_response: meal.trace.raw_response,
           searches: JSON.stringify(meal.trace.searches),
-        })
-        .execute();
+        }),
+      );
     }
+    return writes;
   }
 
-  private async ratioVersion(trx: Executor, meal: MealEntry): Promise<string> {
+  private async ratioVersion(
+    meal: MealEntry,
+    known: Map<string, string>,
+    writes: WriteQuery[],
+  ): Promise<string> {
     const window = meal.meal_window;
-    const existing = await trx
+    const key = JSON.stringify([
+      window.name,
+      window.start_hour,
+      window.end_hour,
+      window.ratio,
+    ]);
+    const knownId = known.get(key);
+    if (knownId) return knownId;
+    const existing = await this.db
       .selectFrom("ratio_versions")
       .select("id")
       .where("window_name", "=", window.name)
@@ -358,11 +365,14 @@ export class PostgresTimelineRepository implements TimelineRepository {
       .where("carbs_g_per_unit", "=", window.ratio)
       .where("profile_id", "is", null)
       .executeTakeFirst();
-    if (existing) return existing.id;
+    if (existing) {
+      known.set(key, existing.id);
+      return existing.id;
+    }
     const id = this.newId();
-    await trx
-      .insertInto("ratio_versions")
-      .values({
+    known.set(key, id);
+    writes.push(
+      this.db.insertInto("ratio_versions").values({
         id,
         window_name: window.name,
         window_start_hour: window.start_hour,
@@ -373,8 +383,8 @@ export class PostgresTimelineRepository implements TimelineRepository {
         percent_adjustment: null,
         carbs_g_per_unit: window.ratio,
         first_used_at: meal.timestamp,
-      })
-      .execute();
+      }),
+    );
     return id;
   }
 
@@ -472,7 +482,12 @@ export class PostgresTimelineRepository implements TimelineRepository {
   private async foodItems(
     db: Executor,
     meals: { id: string; catalog_release: number }[],
-    items: { meal_entry_id: string; position: number; source: string; external_id: string | null }[],
+    items: {
+      meal_entry_id: string;
+      position: number;
+      source: string;
+      external_id: string | null;
+    }[],
   ): Promise<Map<string, FoodItem | null>> {
     const releaseOf = new Map(meals.map((m) => [m.id, m.catalog_release]));
     const keysByRelease = new Map<number, EntryKey[]>();
@@ -494,9 +509,12 @@ export class PostgresTimelineRepository implements TimelineRepository {
     for (const item of items) {
       const release = releaseOf.get(item.meal_entry_id);
       if (item.external_id === null || release === undefined) continue;
-      const record = recordsByRelease
-        .get(release)
-        ?.get(entryKeyOf({ source: item.source as FoodSourceId, externalId: item.external_id }));
+      const record = recordsByRelease.get(release)?.get(
+        entryKeyOf({
+          source: item.source as FoodSourceId,
+          externalId: item.external_id,
+        }),
+      );
       foodItems.set(
         `${item.meal_entry_id}${SEPARATOR}${item.position}`,
         record ? foodItemOf(record) : null,
@@ -512,7 +530,11 @@ export class PostgresTimelineRepository implements TimelineRepository {
   ): Promise<MealEntry[]> {
     const meals = await db
       .selectFrom("meal_entries")
-      .innerJoin("ratio_versions", "ratio_versions.id", "meal_entries.ratio_version_id")
+      .innerJoin(
+        "ratio_versions",
+        "ratio_versions.id",
+        "meal_entries.ratio_version_id",
+      )
       .select([
         "meal_entries.id",
         "meal_entries.occurred_at",
@@ -593,9 +615,8 @@ export class PostgresTimelineRepository implements TimelineRepository {
               glycemic_index: item.glycemic_index,
               gi_estimated: item.gi_estimated,
               food_item: item.external_id
-                ? (foodItems.get(
-                    `${row.id}${SEPARATOR}${item.position}`,
-                  ) ?? null)
+                ? (foodItems.get(`${row.id}${SEPARATOR}${item.position}`) ??
+                  null)
                 : null,
             };
           }),
@@ -643,7 +664,9 @@ export class PostgresTimelineRepository implements TimelineRepository {
       }
       if (trace) {
         meal.trace = {
-          searches: trace.searches as NonNullable<MealEntry["trace"]>["searches"],
+          searches: trace.searches as NonNullable<
+            MealEntry["trace"]
+          >["searches"],
           raw_response: trace.raw_response,
           model: trace.model,
           duration_ms: trace.duration_ms,
@@ -666,5 +689,7 @@ async function displayOf(db: Executor): Promise<Display> {
 }
 
 function isUuid(text: string): boolean {
-  return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(text);
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+    text,
+  );
 }

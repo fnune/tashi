@@ -79,7 +79,7 @@ Testing:
 Progress:
 
 - [x] 1. HKDF over `TASHI_SECRET_KEY` instead of scrypt, while bilbo has no stored key. The password no longer doubles as the secret.
-- [ ] 2. Write batches behind the repositories, checked by the contract suite on Postgres.
+- [x] 2. Write batches behind the repositories, checked by the contract suite on Postgres. `WriteBatch.write` takes only insert, update and delete queries, so a read inside a batch does not compile, and its own contract suite checks order, all-or-nothing and row counts. Settings no longer rely on deferred constraints: positions are shifted out of the way first.
 - [ ] 3. Catalog as static assets with a term-split search index, behind `FoodCatalog` and its contract suite.
 - [ ] 4. SQLite schema with snapshots on meal items, `better-sqlite3` repositories, unit tests on in-memory SQLite, e2e on SQLite. Remove `pg`, sql.js at runtime and the Postgres code. Update [database-schema.md](database-schema.md).
 - [ ] 5. Move bilbo from Postgres to a SQLite file as a one-off on bilbo, rehearsed on a backup: the script writes the snapshots from the release ranges and lives in the project context directory, not in the repo. bilbo stays on Node until the Workers deploy is tested end to end.

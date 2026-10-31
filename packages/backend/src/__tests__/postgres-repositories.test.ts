@@ -5,7 +5,7 @@ import { Migrator } from "kysely/migration";
 import pg from "pg";
 import { describe, expect, it } from "vitest";
 import { migrations } from "../data/migrations/index.js";
-import { connect } from "../data/postgres/connection.js";
+import { connect, postgresWriteBatch } from "../data/postgres/connection.js";
 import { openPostgresRepositories } from "../data/postgres/index.js";
 import { StoredDataError } from "../data/stored-data-error.js";
 import type { CatalogBuild, CatalogRecord } from "../domain/food-catalog.js";
@@ -27,6 +27,7 @@ import {
   SUGAR,
   testFoodItem,
 } from "./test-catalog.js";
+import { writeBatchContract } from "./write-batch-contract.js";
 
 const databaseUrl = process.env.TASHI_TEST_DATABASE_URL;
 
@@ -66,6 +67,17 @@ describe.skipIf(!databaseUrl)("postgres", () => {
   repositoryContract("postgres", async () => {
     const { repositories, close } = await emptyDatabase();
     return { repositories, dispose: close };
+  });
+
+  writeBatchContract("postgres", async () => {
+    const { close } = await emptyDatabase();
+    await close();
+    const db = connect(databaseUrl ?? "");
+    return {
+      db,
+      batch: postgresWriteBatch(db),
+      dispose: () => db.destroy(),
+    };
   });
 
   foodCatalogContract("postgres", async (records) => {

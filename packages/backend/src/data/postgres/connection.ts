@@ -3,6 +3,7 @@ import { Migrator } from "kysely/migration";
 import pg from "pg";
 import type { Database } from "../database.js";
 import { migrations } from "../migrations/index.js";
+import type { WriteBatch, WriteResult } from "../write-batch.js";
 
 export type Db = Kysely<Database>;
 export type Executor = Db | Transaction<Database>;
@@ -36,4 +37,18 @@ export async function migrate(db: Db): Promise<void> {
   });
   const { error } = await migrator.migrateToLatest();
   if (error) throw error;
+}
+
+export function postgresWriteBatch(db: Db): WriteBatch {
+  return {
+    write: (queries) =>
+      db.transaction().execute(async (trx) => {
+        const results: WriteResult[] = [];
+        for (const query of queries) {
+          const result = await trx.executeQuery(query.compile());
+          results.push({ affectedRows: Number(result.numAffectedRows ?? 0n) });
+        }
+        return results;
+      }),
+  };
 }
