@@ -9,7 +9,7 @@ This tracks what stands between the repo and that setup.
 ## Done
 
 - Server needs no `ANTHROPIC_API_KEY` at startup. The key is entered in settings, verified against Anthropic, encrypted at rest in `api-key.json` and never returned by any endpoint. The env var still works as a fallback.
-- Saving a key in the UI requires `TASHI_PASSWORD` (or `TASHI_SECRET_KEY`) to be set, because the password is also the encryption passphrase. Changing it makes the saved key unreadable, so the user enters it again.
+- Saving a key in the UI requires `TASHI_SECRET_KEY`, a random string of at least 32 characters. The key is encrypted with AES-256-GCM under a key derived from it by HKDF, which costs microseconds where scrypt over the password cost tens of milliseconds. Changing the secret makes the saved key unreadable, so the user enters it again.
 - Optional single-password gate (`TASHI_PASSWORD`, HTTP Basic auth, any username). Off when unset.
 - Unrestricted CORS removed.
 - `GET /api/health`, unauthenticated.
@@ -78,7 +78,7 @@ Testing:
 
 Progress:
 
-- [ ] 1. HKDF over `TASHI_SECRET_KEY` instead of scrypt, while bilbo has no stored key.
+- [x] 1. HKDF over `TASHI_SECRET_KEY` instead of scrypt, while bilbo has no stored key. The password no longer doubles as the secret.
 - [ ] 2. Write batches behind the repositories, checked by the contract suite on Postgres.
 - [ ] 3. Catalog as static assets with a term-split search index, behind `FoodCatalog` and its contract suite.
 - [ ] 4. SQLite schema with snapshots on meal items, `better-sqlite3` repositories, unit tests on in-memory SQLite, e2e on SQLite. Remove `pg`, sql.js at runtime and the Postgres code. Update [database-schema.md](database-schema.md).

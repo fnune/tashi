@@ -4,7 +4,7 @@ import type { ApiKeyRepository } from "./repositories.js";
 import { seal, unseal } from "./secret-box.js";
 
 export interface ApiKeyStoreOptions {
-  encryptionPassphrase?: string;
+  encryptionSecret?: string;
   environmentKey?: string;
   verify?: (apiKey: string) => Promise<boolean>;
 }
@@ -22,7 +22,7 @@ export class ApiKeyStore {
   }
 
   async status(): Promise<ApiKeyStatus> {
-    const can_save = this.options.encryptionPassphrase !== undefined;
+    const can_save = this.options.encryptionSecret !== undefined;
     if ((await this.stored()) !== null) {
       return { configured: true, source: "settings", can_save };
     }
@@ -33,10 +33,10 @@ export class ApiKeyStore {
   }
 
   async save(apiKey: string): Promise<void> {
-    const { encryptionPassphrase, verify } = this.options;
-    if (encryptionPassphrase === undefined) throw new SecretUnavailableError();
+    const { encryptionSecret, verify } = this.options;
+    if (encryptionSecret === undefined) throw new SecretUnavailableError();
     if (verify && !(await verify(apiKey))) throw new InvalidApiKeyError();
-    await this.records.save(seal(apiKey, encryptionPassphrase));
+    await this.records.save(await seal(apiKey, encryptionSecret));
     this.decryptedKey = apiKey;
   }
 
@@ -48,10 +48,10 @@ export class ApiKeyStore {
   private async stored(): Promise<string | null> {
     if (this.decryptedKey !== undefined) return this.decryptedKey;
     const record = await this.records.get();
-    const { encryptionPassphrase } = this.options;
+    const { encryptionSecret } = this.options;
     this.decryptedKey =
-      record && encryptionPassphrase !== undefined
-        ? unseal(record, encryptionPassphrase)
+      record && encryptionSecret !== undefined
+        ? await unseal(record, encryptionSecret)
         : null;
     return this.decryptedKey;
   }

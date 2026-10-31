@@ -31,7 +31,13 @@ const envSchema = z.object({
   ),
   ANTHROPIC_API_KEY: optionalText,
   TASHI_PASSWORD: optionalText,
-  TASHI_SECRET_KEY: optionalText,
+  TASHI_SECRET_KEY: z.preprocess(
+    blankIsUnset,
+    z
+      .string()
+      .min(32, "must be a random string of at least 32 characters")
+      .optional(),
+  ),
 });
 
 export interface Config {
@@ -43,7 +49,7 @@ export interface Config {
   model: string;
   anthropicApiKey: string | undefined;
   password: string | undefined;
-  encryptionPassphrase: string | undefined;
+  encryptionSecret: string | undefined;
 }
 
 export class ConfigError extends Error {
@@ -70,6 +76,6 @@ export function loadConfig(env: Record<string, string | undefined>): Config {
     model: e.LLM_MODEL,
     anthropicApiKey: e.ANTHROPIC_API_KEY,
     password: e.TASHI_PASSWORD,
-    encryptionPassphrase: e.TASHI_SECRET_KEY ?? e.TASHI_PASSWORD,
+    encryptionSecret: e.TASHI_SECRET_KEY,
   };
 }

@@ -43,7 +43,7 @@ const { repositories, foodCatalog } = await openPostgresRepositories(
 console.log(`Food catalog ${catalog.label}: ${catalog.records.length} foods`);
 
 const apiKeys = new ApiKeyStore(repositories.apiKey, {
-  encryptionPassphrase: config.encryptionPassphrase,
+  encryptionSecret: config.encryptionSecret,
   environmentKey: config.anthropicApiKey,
   verify: anthropicAcceptsKey,
 });

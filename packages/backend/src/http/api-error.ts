@@ -13,7 +13,7 @@ const FALLBACK_MESSAGES: Record<ApiErrorCode, string> = {
   api_key_invalid:
     "Anthropic rejected the API key. Check it in settings and try again.",
   api_key_storage_unavailable:
-    "Saving a key needs a password set on the server (TASHI_PASSWORD).",
+    "Saving a key needs a secret key set on the server (TASHI_SECRET_KEY).",
   validation_failed: "Invalid request.",
   not_found: "Not found.",
   internal_error: "Something went wrong.",

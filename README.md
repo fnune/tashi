@@ -39,7 +39,7 @@ Without `TASHI_TEST_DATABASE_URL` the Postgres tests are skipped. The end-to-end
 
 Runs on bilbo as the `tashi` app (`nixos/tashi.nix` in fnune/bilbo), from this flake's default package. To ship, push to `main`, then in bilbo run `nix flake update tashi` and rebuild.
 
-`DATABASE_URL` (a `postgres://` URL) is required; the schema is created and updated at startup. Set `TASHI_PASSWORD` to require HTTP Basic auth (any username, that password) on everything except `GET /api/health`. Leave it unset for no gate.
+`DATABASE_URL` (a `postgres://` URL) is required; the schema is created and updated at startup. Set `TASHI_PASSWORD` to require HTTP Basic auth (any username, that password) on everything except `GET /api/health`. Leave it unset for no gate. Set `TASHI_SECRET_KEY` to a random string of at least 32 characters (for example `openssl rand -base64 32`) to save the Anthropic API key from the settings; without it, only `ANTHROPIC_API_KEY` works.
 
 ## License
 

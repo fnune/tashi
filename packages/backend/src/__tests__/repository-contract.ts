@@ -340,8 +340,8 @@ export function repositoryContract(
       });
 
       it("keeps the latest record until it is deleted", async () => {
-        const first = seal("one", "pw");
-        const second = seal("two", "pw");
+        const first = await seal("one", "pw");
+        const second = await seal("two", "pw");
         await repositories.apiKey.save(first);
         await repositories.apiKey.save(second);
         expect(await repositories.apiKey.get()).toEqual(second);

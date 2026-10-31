@@ -15,7 +15,7 @@ describe("loadConfig", () => {
       model: "claude-haiku-4-5-20251001",
       anthropicApiKey: undefined,
       password: undefined,
-      encryptionPassphrase: undefined,
+      encryptionSecret: undefined,
     });
   });
 
@@ -36,17 +36,15 @@ describe("loadConfig", () => {
     expect(config.anthropicApiKey).toBeUndefined();
   });
 
-  it("encrypts with TASHI_SECRET_KEY, else with the password", () => {
+  it("encrypts with TASHI_SECRET_KEY only, never with the password", () => {
+    const secret = "a".repeat(32);
     expect(
-      loadConfig({ ...minimal, TASHI_PASSWORD: "pw" }).encryptionPassphrase,
-    ).toBe("pw");
+      loadConfig({ ...minimal, TASHI_PASSWORD: "pw" }).encryptionSecret,
+    ).toBeUndefined();
     expect(
-      loadConfig({
-        ...minimal,
-        TASHI_PASSWORD: "pw",
-        TASHI_SECRET_KEY: "secret",
-      }).encryptionPassphrase,
-    ).toBe("secret");
+      loadConfig({ ...minimal, TASHI_PASSWORD: "pw", TASHI_SECRET_KEY: secret })
+        .encryptionSecret,
+    ).toBe(secret);
   });
 
   it("names every variable that is wrong instead of starting on a bad value", () => {
@@ -56,6 +54,7 @@ describe("loadConfig", () => {
       { PORT: "70000" },
       { BASE_PATH: "tashi" },
       { BASE_PATH: "/tashi/" },
+      { TASHI_SECRET_KEY: "too short" },
     ]) {
       expect(() => loadConfig({ ...minimal, ...env })).toThrow(ConfigError);
     }

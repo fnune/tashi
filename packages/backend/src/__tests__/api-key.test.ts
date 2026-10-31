@@ -20,20 +20,19 @@ import { testBuild } from "./test-catalog.js";
 const KEY = "sk-ant-test-key";
 
 describe("secret box", () => {
-  it("round-trips with the same passphrase", () => {
-    expect(unseal(seal(KEY, "hunter2"), "hunter2")).toBe(KEY);
+  it("round-trips with the same secret key", async () => {
+    expect(await unseal(await seal(KEY, "hunter2"), "hunter2")).toBe(KEY);
   });
 
-  it("gives nothing back for another passphrase or a tampered record", () => {
-    const sealed = seal(KEY, "hunter2");
-    expect(unseal(sealed, "other")).toBeNull();
-    expect(
-      unseal({ ...sealed, data: seal("x", "hunter2").data }, "hunter2"),
-    ).toBeNull();
+  it("gives nothing back for another secret key or a tampered record", async () => {
+    const sealed = await seal(KEY, "hunter2");
+    expect(await unseal(sealed, "other")).toBeNull();
+    const other = await seal("x", "hunter2");
+    expect(await unseal({ ...sealed, data: other.data }, "hunter2")).toBeNull();
   });
 
-  it("does not contain the key in the sealed record", () => {
-    expect(JSON.stringify(seal(KEY, "hunter2"))).not.toContain(KEY);
+  it("does not contain the key in the sealed record", async () => {
+    expect(JSON.stringify(await seal(KEY, "hunter2"))).not.toContain(KEY);
   });
 });
 
@@ -60,7 +59,7 @@ describe("api key routes", () => {
   }
 
   function appWith(options: {
-    encryptionPassphrase?: string;
+    encryptionSecret?: string;
     environmentKey?: string;
   }) {
     const keys = new ApiKeyStore(repositories.apiKey, {
@@ -118,7 +117,7 @@ describe("api key routes", () => {
   });
 
   it("starts without a key and says so when calculating", async () => {
-    const app = appWith({ encryptionPassphrase: "pw" });
+    const app = appWith({ encryptionSecret: "pw" });
     expect(await status(app)).toEqual({
       configured: false,
       source: null,
@@ -132,7 +131,7 @@ describe("api key routes", () => {
   });
 
   it("saves a verified key encrypted and uses it for calculations", async () => {
-    const app = appWith({ encryptionPassphrase: "pw" });
+    const app = appWith({ encryptionSecret: "pw" });
     const res = await putKey(app, `  ${KEY}  `);
     expect(res.status).toBe(200);
     expect(await res.json()).toEqual({
@@ -148,17 +147,17 @@ describe("api key routes", () => {
   });
 
   it("keeps the saved key across restarts with the same passphrase only", async () => {
-    await putKey(appWith({ encryptionPassphrase: "pw" }), KEY);
+    await putKey(appWith({ encryptionSecret: "pw" }), KEY);
+    expect((await status(appWith({ encryptionSecret: "pw" }))).configured).toBe(
+      true,
+    );
     expect(
-      (await status(appWith({ encryptionPassphrase: "pw" }))).configured,
-    ).toBe(true);
-    expect(
-      (await status(appWith({ encryptionPassphrase: "changed" }))).configured,
+      (await status(appWith({ encryptionSecret: "changed" }))).configured,
     ).toBe(false);
   });
 
   it("decrypts the saved key once, not on every request", async () => {
-    await putKey(appWith({ encryptionPassphrase: "pw" }), KEY);
+    await putKey(appWith({ encryptionSecret: "pw" }), KEY);
     let reads = 0;
     const counting = {
       get: () => {
@@ -168,7 +167,7 @@ describe("api key routes", () => {
       save: repositories.apiKey.save.bind(repositories.apiKey),
       delete: repositories.apiKey.delete.bind(repositories.apiKey),
     };
-    const keys = new ApiKeyStore(counting, { encryptionPassphrase: "pw" });
+    const keys = new ApiKeyStore(counting, { encryptionSecret: "pw" });
     await keys.get();
     await keys.get();
     await keys.status();
@@ -177,7 +176,7 @@ describe("api key routes", () => {
 
   it("never returns the key", async () => {
     const app = appWith({
-      encryptionPassphrase: "pw",
+      encryptionSecret: "pw",
       environmentKey: "sk-ant-env",
     });
     await putKey(app, KEY);
@@ -193,7 +192,7 @@ describe("api key routes", () => {
 
   it("rejects a key Anthropic does not accept without saving it", async () => {
     accepted = false;
-    const app = appWith({ encryptionPassphrase: "pw" });
+    const app = appWith({ encryptionSecret: "pw" });
     const res = await putKey(app, KEY);
     expect(res.status).toBe(400);
     expect(((await res.json()) as { code: string }).code).toBe(
@@ -203,7 +202,7 @@ describe("api key routes", () => {
   });
 
   it("rejects blank keys and keys with whitespace inside", async () => {
-    const app = appWith({ encryptionPassphrase: "pw" });
+    const app = appWith({ encryptionSecret: "pw" });
     expect((await putKey(app, "   ")).status).toBe(400);
     expect((await putKey(app, "sk-ant a b")).status).toBe(400);
     expect(verified).toEqual([]);
@@ -226,7 +225,7 @@ describe("api key routes", () => {
 
   it("prefers the saved key over the environment key and falls back after removal", async () => {
     const app = appWith({
-      encryptionPassphrase: "pw",
+      encryptionSecret: "pw",
       environmentKey: "sk-ant-env",
     });
     await putKey(app, KEY);

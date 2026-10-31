@@ -1,10 +1,3 @@
-import {
-  createCipheriv,
-  createDecipheriv,
-  randomBytes,
-  scryptSync,
-} from "node:crypto";
-
 export interface SealedSecret {
   salt: string;
   iv: string;
@@ -12,39 +5,74 @@ export interface SealedSecret {
   data: string;
 }
 
-export function seal(secret: string, passphrase: string): SealedSecret {
-  const salt = randomBytes(16);
-  const iv = randomBytes(12);
-  const cipher = createCipheriv("aes-256-gcm", deriveKey(passphrase, salt), iv);
-  const data = Buffer.concat([cipher.update(secret, "utf8"), cipher.final()]);
+const TAG_BYTES = 16;
+const text = new TextEncoder();
+
+export async function seal(
+  secret: string,
+  secretKey: string,
+): Promise<SealedSecret> {
+  const salt = crypto.getRandomValues(new Uint8Array(16));
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const encrypted = new Uint8Array(
+    await crypto.subtle.encrypt(
+      { name: "AES-GCM", iv },
+      await deriveKey(secretKey, salt),
+      text.encode(secret),
+    ),
+  );
   return {
-    salt: salt.toString("base64"),
-    iv: iv.toString("base64"),
-    tag: cipher.getAuthTag().toString("base64"),
-    data: data.toString("base64"),
+    salt: toBase64(salt),
+    iv: toBase64(iv),
+    tag: toBase64(encrypted.subarray(-TAG_BYTES)),
+    data: toBase64(encrypted.subarray(0, -TAG_BYTES)),
   };
 }
 
-export function unseal(
+export async function unseal(
   sealed: SealedSecret,
-  passphrase: string,
-): string | null {
+  secretKey: string,
+): Promise<string | null> {
   try {
-    const decipher = createDecipheriv(
-      "aes-256-gcm",
-      deriveKey(passphrase, Buffer.from(sealed.salt, "base64")),
-      Buffer.from(sealed.iv, "base64"),
+    const ciphertext = new Uint8Array([
+      ...fromBase64(sealed.data),
+      ...fromBase64(sealed.tag),
+    ]);
+    const plain = await crypto.subtle.decrypt(
+      { name: "AES-GCM", iv: fromBase64(sealed.iv) },
+      await deriveKey(secretKey, fromBase64(sealed.salt)),
+      ciphertext,
     );
-    decipher.setAuthTag(Buffer.from(sealed.tag, "base64"));
-    return Buffer.concat([
-      decipher.update(Buffer.from(sealed.data, "base64")),
-      decipher.final(),
-    ]).toString("utf8");
+    return new TextDecoder().decode(plain);
   } catch {
     return null;
   }
 }
 
-function deriveKey(passphrase: string, salt: Buffer): Buffer {
-  return scryptSync(passphrase, salt, 32);
+async function deriveKey(
+  secretKey: string,
+  salt: Uint8Array<ArrayBuffer>,
+): Promise<CryptoKey> {
+  const material = await crypto.subtle.importKey(
+    "raw",
+    text.encode(secretKey),
+    "HKDF",
+    false,
+    ["deriveKey"],
+  );
+  return crypto.subtle.deriveKey(
+    { name: "HKDF", hash: "SHA-256", salt, info: text.encode("tashi api key") },
+    material,
+    { name: "AES-GCM", length: 256 },
+    false,
+    ["encrypt", "decrypt"],
+  );
+}
+
+function toBase64(bytes: Uint8Array): string {
+  return btoa(String.fromCharCode(...bytes));
+}
+
+function fromBase64(encoded: string): Uint8Array<ArrayBuffer> {
+  return Uint8Array.from(atob(encoded), (char) => char.charCodeAt(0));
 }

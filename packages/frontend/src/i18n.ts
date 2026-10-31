@@ -73,7 +73,7 @@ const translations = {
     api_key_invalid:
       "Anthropic rejected the API key. Check it in settings and try again.",
     api_key_storage_unavailable:
-      "To save a key here, set a password on the server first (TASHI_PASSWORD).",
+      "To save a key here, set a secret key on the server first (TASHI_SECRET_KEY).",
     today: "Today",
     yesterday: "Yesterday",
     addTitle: "Add",
@@ -357,7 +357,7 @@ const translations = {
     api_key_invalid:
       "Anthropic ha rechazado la clave de API. Revísala en ajustes e inténtalo de nuevo.",
     api_key_storage_unavailable:
-      "Para guardar una clave aquí, primero define una contraseña en el servidor (TASHI_PASSWORD).",
+      "Para guardar una clave aquí, primero define una clave secreta en el servidor (TASHI_SECRET_KEY).",
     today: "Hoy",
     yesterday: "Ayer",
     addTitle: "Añadir",

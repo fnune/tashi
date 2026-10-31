@@ -156,7 +156,7 @@ async function startServer(): Promise<void> {
   };
 
   const keyOptions: ApiKeyStoreOptions = {
-    encryptionPassphrase: "e2e-secret",
+    encryptionSecret: "e2e-secret",
     environmentKey: ENVIRONMENT_KEY,
     verify: async (key) =>
       key.startsWith("sk-ant-") && key !== "sk-ant-rejected",
