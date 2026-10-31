@@ -73,7 +73,7 @@ Testing:
 - Unit tests use the in-memory fakes, as now.
 - The repository contract suite runs against `better-sqlite3` in memory and against D1 through Wrangler's local runtime (`getPlatformProxy` or `@cloudflare/vitest-pool-workers`), which is the real D1 code backed by a local SQLite file. Neither needs a server or credentials.
 - The Playwright suite runs against `wrangler dev` with local D1 and the stand-in `FoodParser`, wired by a test entry point as `packages/e2e/test-server.ts` does today.
-- A CPU budget test drives the heaviest routes in process with cold caches and fails when the median goes over 5 ms, half the Workers limit, so a regression shows up before a deploy.
+- A CPU budget test (`cpu-budget.test.ts`) drives the heaviest routes in process with cold caches and fails when the median goes over 5 ms, half the Workers limit. A meal of four foods runs the real parser, SDK and catalog against a scripted model through an injected `fetch`. Medians on a laptop: meal 4.0 ms, timeline page 1.6 ms, settings 0.4 ms.
 - Local runs do not enforce the CPU limit or the daily row quota. Check those on a preview deployment with the Workers metrics.
 
 Progress:
