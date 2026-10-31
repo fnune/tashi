@@ -274,7 +274,6 @@ export type ApiErrorCode =
   | "injection_in_future"
   | "api_key_missing"
   | "api_key_invalid"
-  | "api_key_storage_unavailable"
   | "signed_out"
   | "credit_exhausted"
   | "sign_in_failed"
@@ -290,14 +289,24 @@ export interface UsageSummary {
   prices_checked_on: string;
 }
 
-export interface ApiKeyStatus {
-  configured: boolean;
-  source: "settings" | "environment" | null;
-  can_save: boolean;
+export interface AiModelOption {
+  id: string;
+  label: string;
 }
 
-export interface SetApiKeyRequest {
+export interface AiConnectionStatus {
+  connected: boolean;
+  model: string;
+  models: AiModelOption[];
+}
+
+export interface ConnectAiRequest {
   api_key: string;
+  model?: string;
+}
+
+export interface ChooseAiModelRequest {
+  model: string;
 }
 
 export interface ErrorResponse {

@@ -25,7 +25,7 @@ nix develop
 pnpm install
 ```
 
-Tashi stores its data in SQLite through Node's built-in `node:sqlite`, so a running server needs `DATABASE_PATH`, the file to keep it in. `pnpm dev` and `pnpm build` also build the food catalog from `data/foods.db` into `packages/backend/catalog`.
+Tashi stores its data in SQLite through Node's built-in `node:sqlite`. `pnpm dev` keeps it in `dev.sqlite` at the root of the repository, and `pnpm dev` and `pnpm build` also build the food catalog from `data/foods.db` into `packages/backend/catalog`.
 
 ```sh
 pnpm check && pnpm typecheck
@@ -38,7 +38,7 @@ E2E_RUNTIME=node pnpm --filter @tashi/e2e test   # the same browser tests on the
 
 Runs on bilbo as the `tashi` app (`nixos/tashi.nix` in fnune/bilbo), from this flake's default package. To ship, push to `main`, then in bilbo run `nix flake update tashi` and rebuild.
 
-`DATABASE_PATH` (the SQLite file) is required; the schema is created and updated at startup. On its first start without an account, the server prints a setup link to its log; open it to choose a name and password. Until then every address answers "not found". Set `TASHI_SECRET_KEY` to a random string of at least 32 characters (for example `openssl rand -base64 32`) to save the Anthropic API key from the settings; without it, only `ANTHROPIC_API_KEY` works.
+The server takes its settings as command-line options, listed by `tashi --help`: `--database` (the SQLite file, required; the schema is created and updated at startup), `--port` and `--base-path`. Everything else, the AI provider's key and model included, is set in Tashi's settings. On its first start without an account, the server prints a setup link to its log; open it to choose a name and password. Until then every address answers "not found".
 
 ## License
 

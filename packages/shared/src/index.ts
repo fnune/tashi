@@ -102,13 +102,16 @@ export {
 } from "./profiles.js";
 export { fromDisplayRatio, toDisplayRatio } from "./ratio-format.js";
 export type {
+  AiConnectionStatus,
+  AiModelOption,
   ApiErrorCode,
-  ApiKeyStatus,
   AppliedProfile,
   CalculatedItem,
   CalculateRequest,
   CalculateResponse,
   CalculationResult,
+  ChooseAiModelRequest,
+  ConnectAiRequest,
   CreateTimelineRequest,
   CycleTracking,
   Diary,
@@ -129,7 +132,6 @@ export type {
   ProfileAdjustment,
   RatioFormat,
   SearchTraceEntry,
-  SetApiKeyRequest,
   Settings,
   SlowInsulinEntry,
   StartImportRequest,

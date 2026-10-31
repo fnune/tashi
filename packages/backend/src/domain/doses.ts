@@ -1,5 +1,6 @@
 import type { InsulinOnBoard } from "@tashi/shared";
 import { findMealWindow, insulinOnBoard } from "@tashi/shared";
+import type { AiConnection } from "./ai-connections.js";
 import type { CalculateOutcome, Calculator } from "./calculator.js";
 import type { Clock } from "./clock.js";
 import { DomainError } from "./errors.js";
@@ -20,6 +21,7 @@ export class Doses {
   ) {}
 
   async calculate(
+    connection: AiConnection | null,
     query: DoseQuery,
     timeZone?: string,
   ): Promise<CalculateOutcome> {
@@ -40,6 +42,7 @@ export class Doses {
         : (await this.insulinOnBoard()).total_units;
 
     return this.calculator.calculate(
+      connection,
       query.food_description,
       settings,
       query.current_blood_sugar,

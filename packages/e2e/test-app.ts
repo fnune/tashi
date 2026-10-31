@@ -1,7 +1,5 @@
-import {
-  ApiKeyStore,
-  type ApiKeyStoreOptions,
-} from "@tashi/backend/api-key-store";
+import type { AiConnection } from "@tashi/backend/ai-connections";
+import { AiConnections } from "@tashi/backend/ai-connections";
 import { authenticate, type SignedIn } from "@tashi/backend/authenticate";
 import {
   Authentication,
@@ -24,7 +22,7 @@ import { Hono } from "hono";
 export const OPEN_PORT = 3100;
 export const GATED_PORT = 3101;
 export const SETUP_TOKEN = "e2e-setup-token";
-export const ENVIRONMENT_KEY = "sk-ant-from-the-server";
+const OPEN_DATA_KEY = new Uint8Array(32).fill(5);
 
 export const USER_TABLES = [
   "sessions",
@@ -42,7 +40,8 @@ export const USER_TABLES = [
   "slow_insulin_entries",
   "ratio_versions",
   "food_vocabulary",
-  "anthropic_api_key",
+  "anthropic_connections",
+  "ai_connections",
   "model_usage",
 ];
 
@@ -85,14 +84,14 @@ export function lunchtimeIn(timeZone: string, now: Date): Date {
 export function buildTestApp(options: TestAppOptions): Hono<SignedIn> {
   const { repositories, foodCatalog } = options;
   const lunchtimeClock = () => lunchtimeIn(options.timeZone, new Date());
-  const keyOptions: ApiKeyStoreOptions = {
-    encryptionSecret: "e2e-secret",
-    environmentKey: ENVIRONMENT_KEY,
+  const aiConnections = new AiConnections(repositories.aiConnections, {
+    kind: "anthropic",
+    clock: () => new Date(),
+    newId: randomId,
     verify: async (key) =>
       key.startsWith("sk-ant-") && key !== "sk-ant-rejected",
-  };
-  const apiKeys = new ApiKeyStore(repositories.apiKey, keyOptions);
-  const parser = new KeyedFoodParser(apiKeys, () => new FakeFoodParser());
+  });
+  const parser = new KeyedFoodParser(new FakeFoodParser());
   const calculator = new Calculator(
     parser,
     foodCatalog,
@@ -104,7 +103,7 @@ export function buildTestApp(options: TestAppOptions): Hono<SignedIn> {
     timeline: new TimelineService(repositories, lunchtimeClock, randomId),
     diaryImport: new DiaryImport(repositories),
     repositories,
-    apiKeys,
+    aiConnections,
     defaultTimeZone: options.timeZone,
   });
 
@@ -124,9 +123,9 @@ export function buildTestApp(options: TestAppOptions): Hono<SignedIn> {
   app.post("/api/__reset", async (c) => {
     await options.clearTables();
     authentication = newAuthentication();
-    keyOptions.environmentKey =
-      c.req.query("key") === "none" ? undefined : ENVIRONMENT_KEY;
-    await apiKeys.clear();
+    if (!options.withAccounts && c.req.query("key") !== "none") {
+      await aiConnections.connect(OPEN_DATA_KEY, "sk-ant-e2e");
+    }
     await repositories.settings.save({
       ...DEFAULT_SETTINGS,
       correction_factor: null,
@@ -158,6 +157,14 @@ export function buildTestApp(options: TestAppOptions): Hono<SignedIn> {
     };
     authenticate(app, current, "");
   } else {
+    app.use("/api/*", async (c, next) => {
+      c.set("session", {
+        account: { id: "e2e", name: "E2E", role: "admin" },
+        dataKey: OPEN_DATA_KEY,
+        renewedUntil: null,
+      });
+      await next();
+    });
     app.get("/api/auth/me", (c) => c.json({ name: "E2E", role: "admin" }));
   }
 
@@ -170,6 +177,7 @@ class FakeFoodParser implements FoodParser {
     foodDescription: string,
     _vocabulary: FoodVocabEntry[] = [],
     _language: "en" | "es" = "en",
+    _connection: AiConnection | null = null,
   ): Promise<ParseOutcome> {
     const lower = foodDescription.toLowerCase();
 

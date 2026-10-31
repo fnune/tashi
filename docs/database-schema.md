@@ -283,9 +283,9 @@ CREATE VIEW timeline AS
 
 - `fast_insulin_entries.meal_entry_id` is null for a dose not tied to a meal (a correction or a manual entry). Deleting a meal leaves its insulin entry, because the injection happened.
 
-## Vocabulary and API key
+## Vocabulary
 
-The vocabulary is what the user has logged before, offered back to the parser. The API key is sealed with AES-256-GCM, under a key derived by HKDF from `TASHI_SECRET_KEY`, before it reaches the database; bytes are stored as bytes.
+The vocabulary is what the user has logged before, offered back to the parser.
 
 ```sql
 CREATE TABLE food_vocabulary (
@@ -298,14 +298,6 @@ CREATE TABLE food_vocabulary (
   use_count INTEGER NOT NULL CHECK (use_count >= 1),
   last_used_at TEXT NOT NULL CHECK (last_used_at IS strftime('%Y-%m-%dT%H:%M:%fZ', last_used_at)),
   PRIMARY KEY (description_key, source, external_id)
-) STRICT;
-
-CREATE TABLE anthropic_api_key (
-  singleton INTEGER PRIMARY KEY CHECK (singleton = 1),
-  salt BLOB NOT NULL CHECK (length(salt) = 16),
-  iv BLOB NOT NULL CHECK (length(iv) = 12),
-  auth_tag BLOB NOT NULL CHECK (length(auth_tag) = 16),
-  ciphertext BLOB NOT NULL CHECK (length(ciphertext) > 0)
 ) STRICT;
 ```
 
@@ -417,6 +409,33 @@ CREATE INDEX model_usage_by_time ON model_usage (used_at);
 - One row per calculation, logged or not, with the tokens of all its rounds added up. A calculation that fails halfway records nothing.
 - Rows hold tokens, not money: the price per model lives in code (`model-usage.ts`) with the date it was last checked, so a price change needs no migration and the cost of past months follows the current prices.
 
+## AI connections
+
+How Tashi reaches the model that reads meal descriptions: which provider, which model, and the provider's key. Migration `0004-ai-connections` creates it.
+
+```sql
+CREATE TABLE ai_connections (
+  id TEXT PRIMARY KEY,
+  kind TEXT NOT NULL CHECK (kind IN ('anthropic')),
+  model TEXT NOT NULL CHECK (model <> ''),
+  created_at TEXT NOT NULL CHECK (created_at IS strftime('%Y-%m-%dT%H:%M:%fZ', created_at)),
+  UNIQUE (id, kind)
+) STRICT;
+CREATE UNIQUE INDEX ai_connections_one_per_kind ON ai_connections (kind);
+
+CREATE TABLE anthropic_connections (
+  connection_id TEXT PRIMARY KEY,
+  kind TEXT NOT NULL DEFAULT 'anthropic' CHECK (kind = 'anthropic'),
+  sealed_api_key BLOB NOT NULL CHECK (length(sealed_api_key) > 28),
+  FOREIGN KEY (connection_id, kind) REFERENCES ai_connections (id, kind) ON DELETE CASCADE
+) STRICT;
+```
+
+- What every connection has lives in `ai_connections`; what one kind needs lives in a table of its own, tied to it like `password_methods` to `sign_in_methods`. A kind without a key, such as a model on the local network, gets a table with its address instead, and no column is ever empty.
+- The model is one of those Tashi knows the price of (`models.ts`), so the monthly cost can always be estimated.
+- The key is sealed with the instance's data key (AES-256-GCM, a fresh 12-byte nonce in front of the ciphertext and its tag), so only a signed-in session can open it.
+- One connection per kind for now; choosing between several comes with a second kind.
+
 ## Accounts and people (later)
 
 No table has an owner today. When sign-in arrives, the model separates who signs in from whose data it is, because they are not always the same human: a parent keeps a diary for a child, a partner looks after another's.
@@ -455,7 +474,7 @@ Deliberate denormalisation, kept because a meal is a record of what was shown, n
 | ------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Two copies of a limit drift (code constant and check constraint)    | Range checks that mirror code are left out of the DDL; the zod schemas own them                                                                                |
 | Checks mirror code unions                                           | Adding a unit or a language is a migration and a code change that ship together, and SQLite changes a check only by rebuilding the table. Insulin products and food sources avoid this: they are rows |
-| Singleton tables (`settings`, `anthropic_api_key`)                  | Adding people changes their primary key: a rebuild of two tiny tables                                                                                          |
+| Singleton table (`settings`)                                        | Adding people changes its primary key: a rebuild of one tiny table                                                                                             |
 | The whole timeline is read on every call                            | Pages are cursor-based from the start; insulin on board reads only the last hours                                                                              |
 | `meal_traces.raw_response` grows without bound and is personal data | Keep it for a limited time (say 90 days) and delete older rows, or do not store it                                                                             |
 | Deleting is not erasing                                             | A deleted entry stays in every backup and, on D1, in 7 days of point-in-time recovery; an erasure promise has to say so                                        |

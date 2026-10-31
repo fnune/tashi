@@ -1,4 +1,4 @@
-import type { ApiKeyStatus, UsageSummary } from "@tashi/shared";
+import type { AiConnectionStatus, UsageSummary } from "@tashi/shared";
 import { useEffect, useState } from "react";
 import * as api from "../api.js";
 import { apiErrorText, type Language, t } from "../i18n.js";
@@ -6,20 +6,22 @@ import { Button } from "./ui/Button.js";
 import { TextField } from "./ui/Field.js";
 import { ListButton, ListGroup, ListRow } from "./ui/List.js";
 import { Notice } from "./ui/Notice.js";
+import { OptionList } from "./ui/OptionList.js";
 import { Sheet } from "./ui/Sheet.js";
 import "./ApiKeySettings.css";
 
 const CONSOLE_URL = "https://console.anthropic.com/settings/keys";
 
 export function ApiKeySettings({ id, lang }: { id: string; lang: Language }) {
-  const [status, setStatus] = useState<ApiKeyStatus | null>(null);
-  const [editing, setEditing] = useState(false);
+  const [status, setStatus] = useState<AiConnectionStatus | null>(null);
+  const [editing, setEditing] = useState<"key" | "model" | null>(null);
+  const [modelError, setModelError] = useState<string | null>(null);
   const [usage, setUsage] = useState<UsageSummary | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
 
   useEffect(() => {
     api
-      .getApiKeyStatus()
+      .getAiConnection()
       .then(setStatus)
       .catch((err) => setLoadError(apiErrorText(lang, err)));
     api
@@ -28,40 +30,72 @@ export function ApiKeySettings({ id, lang }: { id: string; lang: Language }) {
       .catch(() => setUsage(null));
   }, [lang]);
 
-  function valueText(): string {
-    if (!status?.configured) return t(lang, "notSet");
-    return status.source === "environment"
-      ? t(lang, "apiKeyFromServer")
-      : t(lang, "apiKeySaved");
-  }
-
   return (
     <div id={id} className="api-key-settings">
       <ListGroup title={t(lang, "apiKeyTitle")}>
         <ListButton
           label={t(lang, "apiKeyLabel")}
           detail={t(lang, "apiKeyDetail")}
-          value={status ? valueText() : ""}
-          onClick={() => setEditing(true)}
+          value={
+            status ? t(lang, status.connected ? "apiKeySaved" : "notSet") : ""
+          }
+          onClick={() => setEditing("key")}
         />
+        {status?.connected && (
+          <ListButton
+            label={t(lang, "aiModelLabel")}
+            value={
+              status.models.find((m) => m.id === status.model)?.label ??
+              status.model
+            }
+            onClick={() => setEditing("model")}
+          />
+        )}
         {usage && <UsageRow lang={lang} usage={usage} />}
       </ListGroup>
       {loadError && <Notice tone="danger">{loadError}</Notice>}
 
       <Sheet
-        open={editing}
+        open={editing === "key"}
         title={t(lang, "apiKeyLabel")}
         closeLabel={t(lang, "close")}
-        onClose={() => setEditing(false)}
+        onClose={() => setEditing(null)}
       >
         <KeyEditor
           lang={lang}
           status={status}
           onChange={(next) => {
             setStatus(next);
-            setEditing(false);
+            setEditing(null);
           }}
         />
+      </Sheet>
+
+      <Sheet
+        open={editing === "model"}
+        title={t(lang, "aiModelLabel")}
+        closeLabel={t(lang, "close")}
+        onClose={() => setEditing(null)}
+      >
+        <p className="api-key-explainer">{t(lang, "aiModelExplainer")}</p>
+        {status && (
+          <OptionList
+            label={t(lang, "aiModelLabel")}
+            value={status.model}
+            options={status.models.map((m) => ({
+              value: m.id,
+              title: m.label,
+            }))}
+            onChange={(model) => {
+              setModelError(null);
+              api
+                .chooseAiModel(model)
+                .then(setStatus)
+                .catch((err) => setModelError(apiErrorText(lang, err)));
+            }}
+          />
+        )}
+        {modelError && <Notice tone="danger">{modelError}</Notice>}
       </Sheet>
     </div>
   );
@@ -106,14 +140,14 @@ function KeyEditor({
   onChange,
 }: {
   lang: Language;
-  status: ApiKeyStatus | null;
-  onChange: (status: ApiKeyStatus) => void;
+  status: AiConnectionStatus | null;
+  onChange: (status: AiConnectionStatus) => void;
 }) {
   const [apiKey, setApiKey] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  async function run(action: () => Promise<ApiKeyStatus>) {
+  async function run(action: () => Promise<AiConnectionStatus>) {
     setBusy(true);
     setError(null);
     try {
@@ -131,9 +165,6 @@ function KeyEditor({
       <a href={CONSOLE_URL} target="_blank" rel="noreferrer">
         {t(lang, "apiKeyGet")}
       </a>
-      {status && !status.can_save && (
-        <Notice tone="info">{t(lang, "api_key_storage_unavailable")}</Notice>
-      )}
       <TextField
         label={t(lang, "apiKeyLabel")}
         secret
@@ -143,16 +174,16 @@ function KeyEditor({
       />
       {error && <Notice tone="danger">{error}</Notice>}
       <Button
-        disabled={busy || !apiKey.trim() || status?.can_save === false}
-        onClick={() => run(() => api.saveApiKey(apiKey.trim()))}
+        disabled={busy || !apiKey.trim()}
+        onClick={() => run(() => api.connectAi(apiKey.trim()))}
       >
         {busy ? t(lang, "apiKeyChecking") : t(lang, "save")}
       </Button>
-      {status?.source === "settings" && (
+      {status?.connected && (
         <Button
           variant="destructive"
           disabled={busy}
-          onClick={() => run(() => api.deleteApiKey())}
+          onClick={() => run(() => api.disconnectAi())}
         >
           {t(lang, "apiKeyRemove")}
         </Button>

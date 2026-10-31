@@ -13,13 +13,7 @@ const ORIGIN = "https://tashi.example.workers.dev";
 async function freshApp() {
   const hash = toHex(await sha256(new TextEncoder().encode(SETUP_TOKEN)));
   const { app } = createApp({
-    config: {
-      defaultTimeZone: "Europe/Berlin",
-      basePath: "",
-      model: "test",
-      anthropicApiKey: undefined,
-      encryptionSecret: undefined,
-    },
+    config: { basePath: "" },
     setupToken: setupTokenWithHash(hash),
     repositories: createInMemoryRepositories(),
     foodCatalog: new InMemoryFoodCatalog(testBuild.records),

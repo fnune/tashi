@@ -29,7 +29,9 @@ const USER_TABLES = [
   "ratio_versions",
   "catalog_releases",
   "food_vocabulary",
-  "anthropic_api_key",
+  "anthropic_connections",
+  "ai_connections",
+  "model_usage",
 ];
 
 let database: D1Database;
@@ -83,6 +85,7 @@ describe("d1", () => {
       { name: "0001-initial" },
       { name: "0002-accounts" },
       { name: "0003-model-usage" },
+      { name: "0004-ai-connections" },
     ]);
   });
 

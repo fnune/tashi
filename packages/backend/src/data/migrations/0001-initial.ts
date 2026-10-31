@@ -209,14 +209,6 @@ CREATE TABLE food_vocabulary (
   last_used_at TEXT NOT NULL CHECK (last_used_at IS strftime('%Y-%m-%dT%H:%M:%fZ', last_used_at)),
   PRIMARY KEY (description_key, source, external_id)
 ) STRICT;
-
-CREATE TABLE anthropic_api_key (
-  singleton INTEGER PRIMARY KEY CHECK (singleton = 1),
-  salt BLOB NOT NULL CHECK (length(salt) = 16),
-  iv BLOB NOT NULL CHECK (length(iv) = 12),
-  auth_tag BLOB NOT NULL CHECK (length(auth_tag) = 16),
-  ciphertext BLOB NOT NULL CHECK (length(ciphertext) > 0)
-) STRICT;
 `;
 
 export const statementsOf = (script: string) =>

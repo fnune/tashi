@@ -13,8 +13,6 @@ const FALLBACK_MESSAGES: Record<ApiErrorCode, string> = {
   api_key_missing: "Add your Anthropic API key in settings to calculate doses.",
   api_key_invalid:
     "Anthropic rejected the API key. Check it in settings and try again.",
-  api_key_storage_unavailable:
-    "Saving a key needs a secret key set on the server (TASHI_SECRET_KEY).",
   signed_out: "Sign in to continue.",
   credit_exhausted:
     "The Anthropic credit has run out. Add credit at console.anthropic.com, under Billing, then calculate again.",

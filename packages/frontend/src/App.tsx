@@ -266,11 +266,9 @@ function TimelineRoute({
   );
 }
 
-declare const __BASE_PATH__: string;
-
 export function App() {
   return (
-    <BrowserRouter basename={__BASE_PATH__ || "/"}>
+    <BrowserRouter basename={api.BASE_PATH || "/"}>
       <AuthGate>
         <AppShell />
       </AuthGate>

@@ -185,12 +185,17 @@ export interface FoodVocabularyTable {
   last_used_at: Instant;
 }
 
-export interface AnthropicApiKeyTable {
-  singleton: 1;
-  salt: Uint8Array;
-  iv: Uint8Array;
-  auth_tag: Uint8Array;
-  ciphertext: Uint8Array;
+export interface AiConnectionsTable {
+  id: string;
+  kind: "anthropic";
+  model: string;
+  created_at: Instant;
+}
+
+export interface AnthropicConnectionsTable {
+  connection_id: string;
+  kind: Generated<"anthropic">;
+  sealed_api_key: Uint8Array;
 }
 
 export interface AccountsTable {
@@ -261,13 +266,14 @@ export interface Database {
   meal_traces: MealTracesTable;
   timeline: TimelineView;
   food_vocabulary: FoodVocabularyTable;
-  anthropic_api_key: AnthropicApiKeyTable;
   accounts: AccountsTable;
   sign_in_methods: SignInMethodsTable;
   password_methods: PasswordMethodsTable;
   sessions: SessionsTable;
   sign_in_failures: SignInFailuresTable;
   model_usage: ModelUsageTable;
+  ai_connections: AiConnectionsTable;
+  anthropic_connections: AnthropicConnectionsTable;
 }
 
 export type Db = Kysely<Database>;

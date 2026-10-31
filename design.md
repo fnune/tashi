@@ -268,11 +268,10 @@ Since the task is pure parsing (not creative or reasoning-heavy), most capable m
 
 ### Deployment
 
-The app deploys as a NixOS service on Bilbo (https://github.com/fnune/bilbo). Bilbo builds the flake's `packages.default`, with `basePath` overridden to the subpath it serves the app under, since the frontend bakes that prefix in at build time. Each deployment is pre-configured with LLM credentials -- there is no user-facing API key management.
+The app deploys as a NixOS service on Bilbo (https://github.com/fnune/bilbo), from the flake's `packages.default`, started with `--base-path` set to the subpath Bilbo serves it under. The same build serves any path: the server writes the path into the page's `<base href>`.
 
-- The LLM API key is a Bilbo secret, handed to the service as `ANTHROPIC_API_KEY`
-- The model is set with `LLM_MODEL` in the NixOS service definition
-- The app reads credentials at startup, never exposes them to the frontend
+- The AI provider's key and model are set in Tashi's settings and stored encrypted with the instance's data key
+- The backend never exposes the key to the frontend
 - The frontend is a static SPA; all LLM calls go through the app's backend
 
 This means the app is a single service with a small HTTP API: the frontend serves static files, and one endpoint handles the LLM-proxied food parsing.

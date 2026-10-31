@@ -4,7 +4,7 @@ import type { IdGenerator } from "../../domain/ids.js";
 import type { Repositories } from "../../domain/repositories.js";
 import type { Database } from "../database.js";
 import { SqliteAccountRepository } from "../sqlite/account-repository.js";
-import { SqliteApiKeyRepository } from "../sqlite/api-key-repository.js";
+import { SqliteAiConnectionRepository } from "../sqlite/ai-connection-repository.js";
 import { SqliteModelUsageRepository } from "../sqlite/model-usage-repository.js";
 import { SqliteSessionRepository } from "../sqlite/session-repository.js";
 import { SqliteSettingsRepository } from "../sqlite/settings-repository.js";
@@ -29,7 +29,7 @@ export function d1Repositories(
       options.catalogRelease,
     ),
     vocabulary: new SqliteVocabularyRepository(db, batch),
-    apiKey: new SqliteApiKeyRepository(db),
+    aiConnections: new SqliteAiConnectionRepository(db, batch),
     accounts: new SqliteAccountRepository(db, batch),
     sessions: new SqliteSessionRepository(db),
     signInFailures: new SqliteSignInFailureRepository(db),

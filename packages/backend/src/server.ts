@@ -1,9 +1,16 @@
 import { existsSync } from "node:fs";
+import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { serve } from "@hono/node-server";
 import { serveStatic } from "@hono/node-server/serve-static";
+import type { Context } from "hono";
 import { createApp } from "./app.js";
-import { ConfigError, loadConfig } from "./config.js";
+import {
+  SERVER_USAGE,
+  ServerOptionsError,
+  serverOptions,
+  withBaseHref,
+} from "./config.js";
 import { openSqliteRepositories } from "./data/sqlite/index.js";
 import {
   diskAssets,
@@ -18,20 +25,23 @@ import { systemClock } from "./domain/clock.js";
 import { randomId } from "./domain/ids.js";
 import { setupLinkLines, setupLinkMessage } from "./setup-link.js";
 
-function configOrExit() {
+function optionsOrExit() {
   try {
-    return loadConfig(process.env);
+    const options = serverOptions(process.argv.slice(2));
+    if (options !== "help") return options;
+    console.log(SERVER_USAGE);
+    process.exit(0);
   } catch (error) {
-    if (!(error instanceof ConfigError)) throw error;
+    if (!(error instanceof ServerOptionsError)) throw error;
     console.error(error.message);
     process.exit(1);
   }
 }
 
-const config = configOrExit();
+const config = optionsOrExit();
 const { basePath } = config;
 
-const catalogDir = config.catalogDir ?? join(import.meta.dirname, "../catalog");
+const catalogDir = join(import.meta.dirname, "../catalog");
 const catalogAssets = diskAssets(catalogDir);
 const searchIndex = await readSearchIndex(catalogAssets);
 if (!searchIndex) {
@@ -46,7 +56,7 @@ const { repositories } = await openSqliteRepositories(config.databasePath, {
 console.log(`Food catalog ${searchIndex.label}: ${searchIndex.size} foods`);
 
 const setup = await newSetupToken();
-const { app, apiKeys, authentication } = createApp({
+const { app, authentication } = createApp({
   config,
   setupToken: setupTokenWithHash(setup.sha256Hex),
   repositories,
@@ -66,11 +76,15 @@ if (!(await authentication.isClaimed())) {
     ]),
   );
 }
-if (!(await apiKeys.status()).configured) {
-  console.warn("No Anthropic API key yet: add one in the settings");
-}
 
 if (existsSync("./public")) {
+  const page = withBaseHref(
+    await readFile("./public/index.html", "utf-8"),
+    basePath,
+  );
+  const servePage = (c: Context) => c.html(page);
+  app.get(`${basePath}/`, servePage);
+  app.get(`${basePath}/index.html`, servePage);
   app.use(
     `${basePath}/*`,
     serveStatic({
@@ -79,12 +93,7 @@ if (existsSync("./public")) {
         basePath ? path.replace(basePath, "") : path,
     }),
   );
-
-  app.get(`${basePath}/*`, async (c) => {
-    const { readFile } = await import("node:fs/promises");
-    const html = await readFile("./public/index.html", "utf-8");
-    return c.html(html);
-  });
+  app.get(`${basePath}/*`, servePage);
 }
 
 console.log(`Listening on http://localhost:${config.port}`);

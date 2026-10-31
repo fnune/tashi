@@ -8,10 +8,10 @@ import {
   type PasswordMethod,
   type Repositories,
   type SignInFailures,
+  type StoredAiConnection,
   type StoredSession,
   type TimelineCursor,
 } from "../domain/repositories.js";
-import type { SealedSecret } from "../domain/secret-box.js";
 import { sameVocabularyEntry } from "../domain/vocabulary.js";
 
 function newestFirst(a: TimelineEntry, b: TimelineEntry): number {
@@ -29,7 +29,7 @@ export function createInMemoryRepositories(): Repositories {
   let settings: Settings = structuredClone(DEFAULT_SETTINGS);
   let timeline: TimelineEntry[] = [];
   const vocabulary: FoodVocabEntry[] = [];
-  let apiKey: SealedSecret | null = null;
+  const aiConnections = new Map<string, StoredAiConnection>();
   const accounts = new Map<
     string,
     { account: Account; password: PasswordMethod }
@@ -105,13 +105,18 @@ export function createInMemoryRepositories(): Repositories {
         vocabulary.length = 0;
       },
     },
-    apiKey: {
-      get: async () => (apiKey ? { ...apiKey } : null),
-      save: async (record) => {
-        apiKey = { ...record };
+    aiConnections: {
+      get: async (kind) => structuredClone(aiConnections.get(kind) ?? null),
+      replace: async (connection) => {
+        aiConnections.set(connection.kind, structuredClone(connection));
       },
-      delete: async () => {
-        apiKey = null;
+      setModel: async (kind, model) => {
+        const connection = aiConnections.get(kind);
+        if (connection) connection.model = model;
+        return connection !== undefined;
+      },
+      delete: async (kind) => {
+        aiConnections.delete(kind);
       },
     },
     accounts: {

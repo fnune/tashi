@@ -24,13 +24,16 @@ export const calculateSchema = z.object({
   meal_window_override: z.string().optional(),
 });
 
-export const apiKeySchema = z.object({
+export const connectAiSchema = z.object({
   api_key: z
     .string()
     .trim()
     .min(1)
     .refine((key) => !/\s/.test(key)),
+  model: z.string().optional(),
 });
+
+export const chooseAiModelSchema = z.object({ model: z.string() });
 
 export const createTimelineSchema = z
   .discriminatedUnion("type", [

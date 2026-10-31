@@ -5,9 +5,9 @@ export const GATED_SERVER = "http://localhost:3101";
 
 export async function resetServer(
   request: APIRequestContext,
-  options: { keyOnServer?: boolean } = {},
+  options: { withKey?: boolean } = {},
 ) {
-  const withoutKey = options.keyOnServer === false ? "?key=none" : "";
+  const withoutKey = options.withKey === false ? "?key=none" : "";
   await request.post(`${SERVER}/api/__reset${withoutKey}`);
 }
 

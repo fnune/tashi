@@ -9,9 +9,14 @@ import { testBuild } from "./test-catalog.js";
 
 async function calculateOk(
   calculator: Calculator,
-  ...args: Parameters<Calculator["calculate"]>
+  ...args: Parameters<Calculator["calculate"]> extends [unknown, ...infer Rest]
+    ? Rest
+    : never
 ): Promise<CalculationResult> {
-  const outcome = await calculator.calculate(...args);
+  const outcome = await calculator.calculate(
+    { kind: "anthropic", model: "claude-haiku-5-5", apiKey: "test-key" },
+    ...args,
+  );
   if (outcome.status !== "ok") {
     throw new Error(
       `expected ok outcome, got ${outcome.status}: ${outcome.message}`,

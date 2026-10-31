@@ -61,7 +61,9 @@ const translations = {
     apiKeyLabel: "Anthropic API key",
     apiKeyDetail: "Reads the foods and weights in your meal descriptions",
     apiKeySaved: "Saved",
-    apiKeyFromServer: "Set on the server",
+    aiModelLabel: "Model",
+    aiModelExplainer:
+      "Larger models read meals more carefully and cost more per calculation. Haiku is enough for most meals.",
     usageThisMonth: "This month",
     usageCalculation: "calculation",
     usageCalculations: "calculations",
@@ -96,8 +98,6 @@ const translations = {
       "Add your Anthropic API key in settings to calculate doses.",
     api_key_invalid:
       "Anthropic rejected the API key. Check it in settings and try again.",
-    api_key_storage_unavailable:
-      "To save a key here, set a secret key on the server first (TASHI_SECRET_KEY).",
     today: "Today",
     yesterday: "Yesterday",
     addTitle: "Add",
@@ -387,7 +387,9 @@ const translations = {
     apiKeyLabel: "Clave de API de Anthropic",
     apiKeyDetail: "Lee los alimentos y pesos de tus descripciones de comidas",
     apiKeySaved: "Guardada",
-    apiKeyFromServer: "Definida en el servidor",
+    aiModelLabel: "Modelo",
+    aiModelExplainer:
+      "Los modelos más grandes leen las comidas con más cuidado y cuestan más por cálculo. Haiku basta para la mayoría de las comidas.",
     usageThisMonth: "Este mes",
     usageCalculation: "cálculo",
     usageCalculations: "cálculos",
@@ -423,8 +425,6 @@ const translations = {
       "Añade tu clave de API de Anthropic en ajustes para calcular dosis.",
     api_key_invalid:
       "Anthropic ha rechazado la clave de API. Revísala en ajustes e inténtalo de nuevo.",
-    api_key_storage_unavailable:
-      "Para guardar una clave aquí, primero define una clave secreta en el servidor (TASHI_SECRET_KEY).",
     today: "Hoy",
     yesterday: "Ayer",
     addTitle: "Añadir",

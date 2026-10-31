@@ -17,7 +17,7 @@ test.describe("AI food reading", () => {
     await atLunchtime(page);
   });
 
-  test("a key set on the server is shown as such and calculating works", async ({
+  test("a saved key is shown as saved and calculating works", async ({
     request,
     page,
   }) => {
@@ -25,7 +25,7 @@ test.describe("AI food reading", () => {
     await page.goto("/settings");
     await expect(
       page.getByRole("button", { name: /Anthropic API key/ }),
-    ).toContainText("Set on the server");
+    ).toContainText("Saved");
 
     await goTo(page, "Calculate");
     await page.locator("textarea").fill("150g rice");
@@ -37,7 +37,7 @@ test.describe("AI food reading", () => {
     request,
     page,
   }) => {
-    await resetServer(request, { keyOnServer: false });
+    await resetServer(request, { withKey: false });
     await page.goto("/");
     await page.locator("textarea").fill("150g rice");
     await page.getByRole("button", { name: "Calculate dose" }).click();
@@ -54,7 +54,7 @@ test.describe("AI food reading", () => {
     request,
     page,
   }) => {
-    await resetServer(request, { keyOnServer: false });
+    await resetServer(request, { withKey: false });
     await page.goto("/settings");
     await saveKey(page, "sk-ant-mine");
     await expect(
@@ -78,7 +78,7 @@ test.describe("AI food reading", () => {
     request,
     page,
   }) => {
-    await resetServer(request, { keyOnServer: false });
+    await resetServer(request, { withKey: false });
     await page.goto("/settings");
     await saveKey(page, "sk-ant-rejected");
     await expect(page.getByRole("dialog")).toContainText(REJECTED);
@@ -90,7 +90,7 @@ test.describe("AI food reading", () => {
   });
 
   test("the saved key is never shown again", async ({ request, page }) => {
-    await resetServer(request, { keyOnServer: false });
+    await resetServer(request, { withKey: false });
     await page.goto("/settings");
     await saveKey(page, "sk-ant-secret-value");
     await page.getByRole("button", { name: /Anthropic API key/ }).click();

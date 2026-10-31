@@ -21,12 +21,3 @@ export class InvalidApiKeyError extends DomainError {
     super("api_key_invalid", "The API key was rejected");
   }
 }
-
-export class SecretUnavailableError extends DomainError {
-  constructor() {
-    super(
-      "api_key_storage_unavailable",
-      "No passphrase to encrypt the API key with",
-    );
-  }
-}

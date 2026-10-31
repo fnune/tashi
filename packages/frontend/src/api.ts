@@ -1,8 +1,10 @@
 import type {
+  AiConnectionStatus,
   ApiErrorCode,
-  ApiKeyStatus,
   CalculateRequest,
   CalculateResponse,
+  ChooseAiModelRequest,
+  ConnectAiRequest,
   CreateTimelineRequest,
   DiaryApi,
   ErrorResponse,
@@ -11,7 +13,6 @@ import type {
   InsulinOnBoard,
   LogMealRequest,
   LogMealResponse,
-  SetApiKeyRequest,
   Settings,
   StartImportRequest,
   TimelineEntry,
@@ -21,8 +22,8 @@ import type {
 } from "@tashi/shared";
 import type { Page } from "./paging/paged-list.js";
 
-declare const __BASE_PATH__: string;
-const BASE = __BASE_PATH__;
+export const BASE_PATH = new URL(document.baseURI).pathname.replace(/\/$/, "");
+const BASE = BASE_PATH;
 
 export const SIGNED_OUT_EVENT = "tashi:signed-out";
 
@@ -142,20 +143,30 @@ export function clearTimeline(): Promise<void> {
   return request("/api/timeline", { method: "DELETE" });
 }
 
-export function getApiKeyStatus(): Promise<ApiKeyStatus> {
-  return request<ApiKeyStatus>("/api/api-key");
+export function getAiConnection(): Promise<AiConnectionStatus> {
+  return request<AiConnectionStatus>("/api/ai-connection");
 }
 
-export function saveApiKey(apiKey: string): Promise<ApiKeyStatus> {
-  const body: SetApiKeyRequest = { api_key: apiKey };
-  return request<ApiKeyStatus>("/api/api-key", {
+export function connectAi(apiKey: string): Promise<AiConnectionStatus> {
+  const body: ConnectAiRequest = { api_key: apiKey };
+  return request<AiConnectionStatus>("/api/ai-connection", {
     method: "PUT",
     body: JSON.stringify(body),
   });
 }
 
-export function deleteApiKey(): Promise<ApiKeyStatus> {
-  return request<ApiKeyStatus>("/api/api-key", { method: "DELETE" });
+export function chooseAiModel(model: string): Promise<AiConnectionStatus> {
+  const body: ChooseAiModelRequest = { model };
+  return request<AiConnectionStatus>("/api/ai-connection/model", {
+    method: "PUT",
+    body: JSON.stringify(body),
+  });
+}
+
+export function disconnectAi(): Promise<AiConnectionStatus> {
+  return request<AiConnectionStatus>("/api/ai-connection", {
+    method: "DELETE",
+  });
 }
 
 export function getUsageSince(since: Date): Promise<UsageSummary> {

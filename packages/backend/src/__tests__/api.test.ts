@@ -10,7 +10,6 @@ import {
   type TimelinePageResponse,
 } from "@tashi/shared";
 import { beforeEach, describe, expect, it } from "vitest";
-import { ApiKeyStore } from "../domain/api-key-store.js";
 import { Calculator } from "../domain/calculator.js";
 import type { Clock } from "../domain/clock.js";
 import { DiaryImport } from "../domain/diary-import.js";
@@ -22,6 +21,7 @@ import { FakeFoodParser } from "./fake-food-parser.js";
 import { InMemoryFoodCatalog } from "./in-memory-food-catalog.js";
 import { createInMemoryRepositories } from "./in-memory-repositories.js";
 import { sequentialIds } from "./sequential-ids.js";
+import { signedIn, testAiConnections } from "./signed-in.js";
 import { testBuild } from "./test-catalog.js";
 
 const ENTRY_ID = "00000000-0000-4000-8000-0000000000e1";
@@ -58,7 +58,7 @@ function carbItem(netCarbsPer100g: number, weightG = 100): ParsedFoodItem {
 type CalculateOk = Extract<CalculateResponse, { status: "ok" }>;
 
 async function postJson(
-  app: ReturnType<typeof createRoutes>,
+  app: ReturnType<typeof signedIn>,
   path: string,
   body: unknown,
 ): Promise<Response> {
@@ -70,7 +70,7 @@ async function postJson(
 }
 
 async function readTimeline(
-  app: ReturnType<typeof createRoutes>,
+  app: ReturnType<typeof signedIn>,
 ): Promise<TimelineEntry[]> {
   return (
     (await (await app.request("/api/timeline")).json()) as TimelinePageResponse
@@ -87,7 +87,7 @@ function expectOkResponse(body: CalculateResponse): CalculateOk {
 }
 
 describe("API routes", () => {
-  let app: ReturnType<typeof createRoutes>;
+  let app: ReturnType<typeof signedIn>;
   let repositories: Repositories;
   let parser: FakeFoodParser;
   let foodCatalog: InMemoryFoodCatalog;
@@ -101,14 +101,16 @@ describe("API routes", () => {
     const clock: Clock = () => now;
     const newId = sequentialIds();
     const calculator = new Calculator(parser, foodCatalog, clock, newId);
-    app = createRoutes({
-      doses: new Doses(repositories, calculator, clock),
-      timeline: new TimelineService(repositories, clock, newId),
-      diaryImport: new DiaryImport(repositories),
-      repositories,
-      apiKeys: new ApiKeyStore(repositories.apiKey),
-      defaultTimeZone: "Europe/Berlin",
-    });
+    app = signedIn(
+      createRoutes({
+        doses: new Doses(repositories, calculator, clock),
+        timeline: new TimelineService(repositories, clock, newId),
+        diaryImport: new DiaryImport(repositories),
+        repositories,
+        aiConnections: testAiConnections(repositories),
+        defaultTimeZone: "Europe/Berlin",
+      }),
+    );
   });
 
   it("POST /api/calculate previews a dose without touching the timeline", async () => {

@@ -11,7 +11,6 @@ import {
 } from "@tashi/shared";
 import { afterEach, describe, expect, it } from "vitest";
 import { openSqliteRepositories } from "../data/sqlite/index.js";
-import { ApiKeyStore } from "../domain/api-key-store.js";
 import { Calculator } from "../domain/calculator.js";
 import { DiaryImport } from "../domain/diary-import.js";
 import { Doses } from "../domain/doses.js";
@@ -27,6 +26,7 @@ import {
 import { FakeFoodParser } from "./fake-food-parser.js";
 import { InMemoryFoodCatalog } from "./in-memory-food-catalog.js";
 import { sequentialIds } from "./sequential-ids.js";
+import { signedIn, testAiConnections } from "./signed-in.js";
 import { testBuild } from "./test-catalog.js";
 
 const EXPORTED_AT = new Date("2026-06-14T00:00:00.000Z");
@@ -48,27 +48,29 @@ async function sqliteApp() {
   });
   const clock = () => EXPORTED_AT;
   const newId = sequentialIds(9000);
-  const app = createRoutes({
-    doses: new Doses(
-      repositories,
-      new Calculator(
-        new FakeFoodParser(),
-        new InMemoryFoodCatalog(testBuild.records),
+  const app = signedIn(
+    createRoutes({
+      doses: new Doses(
+        repositories,
+        new Calculator(
+          new FakeFoodParser(),
+          new InMemoryFoodCatalog(testBuild.records),
+          clock,
+          newId,
+        ),
         clock,
-        newId,
       ),
-      clock,
-    ),
-    timeline: new TimelineService(repositories, clock, newId),
-    diaryImport: new DiaryImport(repositories),
-    repositories,
-    apiKeys: new ApiKeyStore(repositories.apiKey),
-    defaultTimeZone: "Europe/Berlin",
-  });
+      timeline: new TimelineService(repositories, clock, newId),
+      diaryImport: new DiaryImport(repositories),
+      repositories,
+      aiConnections: testAiConnections(repositories),
+      defaultTimeZone: "Europe/Berlin",
+    }),
+  );
   return { app, repositories };
 }
 
-function diaryApiOf(app: ReturnType<typeof createRoutes>): DiaryApi {
+function diaryApiOf(app: ReturnType<typeof signedIn>): DiaryApi {
   const json = async <T>(path: string, init?: RequestInit): Promise<T> => {
     const response = await app.request(path, init);
     if (!response.ok) throw new Error(await response.text());

@@ -4,9 +4,11 @@ import type {
   ParsedFoodItem,
   SearchTraceEntry,
 } from "@tashi/shared";
+import type { AiConnection } from "../domain/ai-connections.js";
 import type { FoodCatalog } from "../domain/food-catalog.js";
 import type { FoodParser, ParseOutcome } from "../domain/food-parser.js";
 import type { ModelUsage } from "../domain/model-usage.js";
+import { DEFAULT_MODEL } from "../domain/models.js";
 
 const SYSTEM_PROMPT = `You are a food parsing assistant for a diabetes insulin calculator.
 
@@ -152,26 +154,22 @@ function coerceEnvelope(value: unknown): ParsedEnvelope | null {
 }
 
 export class AnthropicFoodParser implements FoodParser {
-  private client: Anthropic;
-  private model: string;
-  private foodCatalog: FoodCatalog;
-
   constructor(
-    apiKey: string,
-    foodCatalog: FoodCatalog,
-    fetch: typeof globalThis.fetch,
-    model = "claude-haiku-4-5-20251001",
-  ) {
-    this.client = new Anthropic({ apiKey, fetch });
-    this.model = model;
-    this.foodCatalog = foodCatalog;
-  }
+    private foodCatalog: FoodCatalog,
+    private fetch: typeof globalThis.fetch,
+  ) {}
 
   async parse(
     foodDescription: string,
     vocabulary: FoodVocabEntry[] = [],
-    language: "en" | "es" = "en",
+    language: "en" | "es",
+    connection: AiConnection | null,
   ): Promise<ParseOutcome> {
+    const client = new Anthropic({
+      apiKey: connection?.apiKey,
+      fetch: this.fetch,
+    });
+    const model = connection?.model ?? DEFAULT_MODEL;
     const messages: Anthropic.Messages.MessageParam[] = [
       { role: "user", content: foodDescription },
     ];
@@ -188,7 +186,7 @@ export class AnthropicFoodParser implements FoodParser {
     const searches: SearchTraceEntry[] = [];
     const startMs = Date.now();
     const usage: ModelUsage = {
-      model: this.model,
+      model,
       inputTokens: 0,
       outputTokens: 0,
       cacheWriteTokens: 0,
@@ -196,8 +194,8 @@ export class AnthropicFoodParser implements FoodParser {
     };
 
     for (let round = 0; round < MAX_TOOL_ROUNDS; round++) {
-      const response = await this.client.messages.create({
-        model: this.model,
+      const response = await client.messages.create({
+        model,
         max_tokens: 2048,
         system,
         tools: [SEARCH_TOOL],
@@ -214,7 +212,7 @@ export class AnthropicFoodParser implements FoodParser {
         const trace = {
           searches,
           raw_response: rawResponse,
-          model: this.model,
+          model,
           duration_ms: Date.now() - startMs,
         };
 

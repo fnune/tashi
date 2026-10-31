@@ -1,6 +1,6 @@
 import type { TimelinePageResponse } from "@tashi/shared";
-import { Hono } from "hono";
-import type { ApiKeyStore } from "../domain/api-key-store.js";
+import { type Context, Hono } from "hono";
+import type { AiConnections } from "../domain/ai-connections.js";
 import type { DiaryImport } from "../domain/diary-import.js";
 import type { Doses } from "../domain/doses.js";
 import { DomainError } from "../domain/errors.js";
@@ -13,10 +13,12 @@ import {
 } from "../domain/schemas.js";
 import type { TimelineService } from "../domain/timeline-service.js";
 import { apiError } from "./api-error.js";
+import type { SignedIn } from "./authentication.js";
 import { decodeCursor, encodeCursor } from "./cursor.js";
 import {
-  apiKeySchema,
   calculateSchema,
+  chooseAiModelSchema,
+  connectAiSchema,
   createTimelineSchema,
   importEntriesSchema,
   logMealSchema,
@@ -31,7 +33,7 @@ export interface RouteDependencies {
   timeline: TimelineService;
   diaryImport: DiaryImport;
   repositories: Repositories;
-  apiKeys: ApiKeyStore;
+  aiConnections: AiConnections;
   defaultTimeZone: string;
 }
 
@@ -40,10 +42,11 @@ export function createRoutes({
   timeline,
   diaryImport,
   repositories,
-  apiKeys,
+  aiConnections,
   defaultTimeZone,
-}: RouteDependencies): Hono {
-  const api = new Hono();
+}: RouteDependencies): Hono<SignedIn> {
+  const api = new Hono<SignedIn>();
+  const dataKeyOf = (c: Context<SignedIn>) => c.get("session").dataKey;
 
   function timeZoneOf(header: string | undefined): string {
     const parsed = timeZoneSchema.safeParse(header);
@@ -65,19 +68,38 @@ export function createRoutes({
       return apiError(c, "validation_failed", 400, parsed.error.message);
     }
     return c.json(
-      await doses.calculate(parsed.data, c.req.header(TIME_ZONE_HEADER)),
+      await doses.calculate(
+        await aiConnections.get(dataKeyOf(c)),
+        parsed.data,
+        c.req.header(TIME_ZONE_HEADER),
+      ),
     );
   });
 
-  api.get("/api/api-key", async (c) => c.json(await apiKeys.status()));
+  api.get("/api/ai-connection", async (c) =>
+    c.json(await aiConnections.status(dataKeyOf(c))),
+  );
 
-  api.put("/api/api-key", async (c) => {
-    const parsed = apiKeySchema.safeParse(await c.req.json());
+  api.put("/api/ai-connection", async (c) => {
+    const parsed = connectAiSchema.safeParse(await c.req.json());
     if (!parsed.success) {
       return apiError(c, "validation_failed", 400, parsed.error.message);
     }
-    await apiKeys.save(parsed.data.api_key);
-    return c.json(await apiKeys.status());
+    await aiConnections.connect(
+      dataKeyOf(c),
+      parsed.data.api_key,
+      parsed.data.model,
+    );
+    return c.json(await aiConnections.status(dataKeyOf(c)));
+  });
+
+  api.put("/api/ai-connection/model", async (c) => {
+    const parsed = chooseAiModelSchema.safeParse(await c.req.json());
+    if (!parsed.success) {
+      return apiError(c, "validation_failed", 400, parsed.error.message);
+    }
+    await aiConnections.chooseModel(parsed.data.model);
+    return c.json(await aiConnections.status(dataKeyOf(c)));
   });
 
   api.get("/api/usage", async (c) => {
@@ -90,9 +112,9 @@ export function createRoutes({
     );
   });
 
-  api.delete("/api/api-key", async (c) => {
-    await apiKeys.clear();
-    return c.json(await apiKeys.status());
+  api.delete("/api/ai-connection", async (c) => {
+    await aiConnections.disconnect();
+    return c.json(await aiConnections.status(dataKeyOf(c)));
   });
 
   api.post("/api/meals", async (c) => {

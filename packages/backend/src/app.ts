@@ -1,7 +1,7 @@
 import { Hono } from "hono";
 import type { AppConfig } from "./config.js";
 import { AnthropicFoodParser } from "./data/anthropic-food-parser.js";
-import { ApiKeyStore } from "./domain/api-key-store.js";
+import { AiConnections } from "./domain/ai-connections.js";
 import {
   Authentication,
   type SetupToken,
@@ -44,18 +44,16 @@ export function createApp({
   newId,
 }: AppDependencies): {
   app: Hono<SignedIn>;
-  apiKeys: ApiKeyStore;
   authentication: Authentication;
 } {
-  const apiKeys = new ApiKeyStore(repositories.apiKey, {
-    encryptionSecret: config.encryptionSecret,
-    environmentKey: config.anthropicApiKey,
+  const aiConnections = new AiConnections(repositories.aiConnections, {
+    kind: "anthropic",
+    clock,
+    newId,
     verify: anthropicAcceptsKey,
   });
   const parser = new KeyedFoodParser(
-    apiKeys,
-    (apiKey) =>
-      new AnthropicFoodParser(apiKey, foodCatalog, fetch, config.model),
+    new AnthropicFoodParser(foodCatalog, fetch),
   );
   const calculator = new Calculator(
     new MeteredFoodParser(parser, repositories.modelUsage, clock),
@@ -84,9 +82,9 @@ export function createApp({
       timeline: new TimelineService(repositories, clock, newId),
       diaryImport: new DiaryImport(repositories),
       repositories,
-      apiKeys,
-      defaultTimeZone: config.defaultTimeZone,
+      aiConnections,
+      defaultTimeZone: "UTC",
     }),
   );
-  return { app, apiKeys, authentication };
+  return { app, authentication };
 }

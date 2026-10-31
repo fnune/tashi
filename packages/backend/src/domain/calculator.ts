@@ -10,6 +10,7 @@ import {
   findMealWindow,
   type Settings,
 } from "@tashi/shared";
+import type { AiConnection } from "./ai-connections.js";
 import type { Clock } from "./clock.js";
 import type { FoodCatalog } from "./food-catalog.js";
 import type { FoodParser } from "./food-parser.js";
@@ -39,6 +40,7 @@ export class Calculator {
   }
 
   async calculate(
+    connection: AiConnection | null,
     foodDescription: string,
     settings: Settings,
     currentBloodSugar?: number,
@@ -51,6 +53,7 @@ export class Calculator {
       foodDescription,
       vocabulary,
       settings.language,
+      connection,
     );
     if (outcome.status !== "ok") {
       return { status: outcome.status, message: outcome.message };

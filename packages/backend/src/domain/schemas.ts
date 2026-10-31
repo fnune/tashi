@@ -22,7 +22,6 @@ import {
   NORMAL_PROFILE_ID,
 } from "@tashi/shared";
 import { z } from "zod";
-import type { SealedSecret } from "./secret-box.js";
 
 export const bolusInsulinIdSchema = z.enum(
   bolusInsulinProfiles().map((p) => p.id) as [
@@ -266,10 +265,3 @@ export const storedVocabularySchema = z.array(
     last_used: z.string(),
   }),
 ) satisfies z.ZodType<FoodVocabEntry[]>;
-
-export const sealedSecretSchema = z.object({
-  salt: z.string(),
-  iv: z.string(),
-  tag: z.string(),
-  data: z.string(),
-}) satisfies z.ZodType<SealedSecret>;

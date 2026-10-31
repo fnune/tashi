@@ -4,7 +4,6 @@ import searchIndexJson from "tashi-search-index";
 import setupTokenJson from "tashi-setup-token";
 import { z } from "zod";
 import { createApp } from "./app.js";
-import { loadAppConfig } from "./config.js";
 import { d1Repositories } from "./data/d1/index.js";
 import { migrateD1 } from "./data/d1/migrate.js";
 import {
@@ -19,7 +18,7 @@ import { systemClock } from "./domain/clock.js";
 import { randomId } from "./domain/ids.js";
 import type { SignedIn } from "./http/authentication.js";
 
-interface Env extends Record<string, unknown> {
+interface Env {
   DB: D1Database;
   ASSETS: AssetFetcher;
 }
@@ -33,10 +32,9 @@ const setupTokenHash = z
 let ready: Promise<Hono<SignedIn>> | undefined;
 
 async function start(env: Env): Promise<Hono<SignedIn>> {
-  const config = loadAppConfig(env);
   await migrateD1(env.DB, systemClock());
   const { app } = createApp({
-    config,
+    config: { basePath: "" },
     setupToken: setupTokenWithHash(setupTokenHash),
     repositories: d1Repositories(env.DB, {
       newId: randomId,

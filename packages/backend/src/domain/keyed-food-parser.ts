@@ -1,6 +1,6 @@
 import Anthropic from "@anthropic-ai/sdk";
 import type { FoodVocabEntry } from "@tashi/shared";
-import type { ApiKeyStore } from "./api-key-store.js";
+import type { AiConnection } from "./ai-connections.js";
 import {
   DomainError,
   InvalidApiKeyError,
@@ -9,28 +9,21 @@ import {
 import type { FoodParser, ParseOutcome } from "./food-parser.js";
 
 export class KeyedFoodParser implements FoodParser {
-  private inner: { apiKey: string; parser: FoodParser } | null = null;
-
-  constructor(
-    private keys: ApiKeyStore,
-    private create: (apiKey: string) => FoodParser,
-  ) {}
+  constructor(private inner: FoodParser) {}
 
   async parse(
     foodDescription: string,
     vocabulary: FoodVocabEntry[],
     language: "en" | "es",
+    connection: AiConnection | null,
   ): Promise<ParseOutcome> {
-    const apiKey = await this.keys.get();
-    if (!apiKey) throw new MissingApiKeyError();
-    if (this.inner?.apiKey !== apiKey) {
-      this.inner = { apiKey, parser: this.create(apiKey) };
-    }
+    if (!connection) throw new MissingApiKeyError();
     try {
-      return await this.inner.parser.parse(
+      return await this.inner.parse(
         foodDescription,
         vocabulary,
         language,
+        connection,
       );
     } catch (e) {
       if (e instanceof Anthropic.AuthenticationError) {

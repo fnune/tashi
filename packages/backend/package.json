@@ -5,7 +5,7 @@
   "license": "AGPL-3.0-only",
   "type": "module",
   "exports": {
-    "./api-key-store": "./src/domain/api-key-store.ts",
+    "./ai-connections": "./src/domain/ai-connections.ts",
     "./authenticate": "./src/http/authentication.ts",
     "./authentication": "./src/domain/auth/authentication.ts",
     "./calculator": "./src/domain/calculator.ts",
@@ -30,7 +30,7 @@
     "./timeline-service": "./src/domain/timeline-service.ts"
   },
   "scripts": {
-    "dev": "pnpm build:catalog && NODE_OPTIONS=--disable-warning=ExperimentalWarning tsx watch --env-file-if-exists=../../.env src/server.ts",
+    "dev": "pnpm build:catalog && NODE_OPTIONS=--disable-warning=ExperimentalWarning tsx watch src/server.ts --database ../../dev.sqlite",
     "build": "tsc && pnpm build:catalog",
     "build:catalog": "tsx scripts/build-catalog.ts ../../data/foods.db catalog",
     "build:worker": "pnpm build:catalog && tsx scripts/build-worker-assets.ts ../frontend/dist catalog worker-assets && tsx scripts/build-setup-link.ts ../../wrangler.jsonc generated/setup-token.json",

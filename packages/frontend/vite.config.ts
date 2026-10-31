@@ -1,19 +1,13 @@
 import react from "@vitejs/plugin-react";
 import { defineConfig } from "vite";
 
-const basePath = process.env.BASE_PATH ?? "";
-
+// Relative URLs let one build serve under any path: the server sets <base href>.
 export default defineConfig({
-  base: basePath ? `${basePath}/` : "/",
-  define: {
-    __BASE_PATH__: JSON.stringify(basePath),
-  },
+  base: "./",
   plugins: [react()],
   server: {
     proxy: {
-      [`${basePath}/api`]: {
-        target: "http://localhost:3000",
-      },
+      "/api": { target: "http://localhost:3000" },
     },
   },
 });

@@ -6,8 +6,6 @@
   fetchPnpmDeps,
   pnpmConfigHook,
   makeWrapper,
-  # The frontend bakes basePath in at build time.
-  basePath ? "",
 }:
 
 stdenv.mkDerivation (finalAttrs: {
@@ -58,8 +56,6 @@ stdenv.mkDerivation (finalAttrs: {
     pnpmConfigHook
     makeWrapper
   ];
-
-  env.BASE_PATH = basePath;
 
   buildPhase = ''
     runHook preBuild

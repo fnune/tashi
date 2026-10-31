@@ -6,7 +6,6 @@ import {
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { nameKeyOf } from "../domain/auth/authentication.js";
 import type { Repositories, TimelineCursor } from "../domain/repositories.js";
-import { seal } from "../domain/secret-box.js";
 import {
   at,
   fastInsulin,
@@ -509,23 +508,54 @@ export function repositoryContract(
       });
     });
 
-    describe("api key", () => {
-      it("starts without a record", async () => {
-        expect(await repositories.apiKey.get()).toBeNull();
+    describe("ai connections", () => {
+      const at = new Date("2026-06-13T12:00:00.000Z");
+      const connection = (id: string, fill: number) => ({
+        id,
+        kind: "anthropic" as const,
+        model: "claude-haiku-5-5",
+        sealedApiKey: new Uint8Array(40).fill(fill),
       });
 
-      it("keeps the latest record until it is deleted", async () => {
-        const first = await seal("one", "pw");
-        const second = await seal("two", "pw");
-        await repositories.apiKey.save(first);
-        await repositories.apiKey.save(second);
-        expect(await repositories.apiKey.get()).toEqual(second);
-        await repositories.apiKey.delete();
-        expect(await repositories.apiKey.get()).toBeNull();
+      it("starts without a connection", async () => {
+        expect(await repositories.aiConnections.get("anthropic")).toBeNull();
       });
 
-      it("deleting nothing is not an error", async () => {
-        await expect(repositories.apiKey.delete()).resolves.toBeUndefined();
+      it("keeps one connection per kind, the latest", async () => {
+        const first = connection("00000000-0000-4000-8000-0000000000a1", 1);
+        const second = connection("00000000-0000-4000-8000-0000000000a2", 2);
+        await repositories.aiConnections.replace(first, at);
+        await repositories.aiConnections.replace(second, at);
+        expect(await repositories.aiConnections.get("anthropic")).toEqual(
+          second,
+        );
+      });
+
+      it("changes the model of a connection that exists", async () => {
+        expect(
+          await repositories.aiConnections.setModel("anthropic", "other"),
+        ).toBe(false);
+        const stored = connection("00000000-0000-4000-8000-0000000000a1", 1);
+        await repositories.aiConnections.replace(stored, at);
+        expect(
+          await repositories.aiConnections.setModel("anthropic", "other"),
+        ).toBe(true);
+        expect(await repositories.aiConnections.get("anthropic")).toEqual({
+          ...stored,
+          model: "other",
+        });
+      });
+
+      it("deletes the connection with its key", async () => {
+        await repositories.aiConnections.replace(
+          connection("00000000-0000-4000-8000-0000000000a1", 1),
+          at,
+        );
+        await repositories.aiConnections.delete("anthropic");
+        expect(await repositories.aiConnections.get("anthropic")).toBeNull();
+        await expect(
+          repositories.aiConnections.delete("anthropic"),
+        ).resolves.toBeUndefined();
       });
     });
   });

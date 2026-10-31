@@ -1,4 +1,5 @@
 import type { FoodVocabEntry, ParsedFoodItem } from "@tashi/shared";
+import type { AiConnection } from "../domain/ai-connections.js";
 import type { FoodParser, ParseOutcome } from "../domain/food-parser.js";
 
 type FakeOutcome =
@@ -30,6 +31,7 @@ export class FakeFoodParser implements FoodParser {
     foodDescription: string,
     _vocabulary: FoodVocabEntry[] = [],
     _language: "en" | "es" = "en",
+    _connection: AiConnection | null = null,
   ): Promise<ParseOutcome> {
     const response = this.responses.get(foodDescription);
     if (!response) {

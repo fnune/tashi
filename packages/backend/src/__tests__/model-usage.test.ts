@@ -4,7 +4,6 @@ import {
   type UsageSummary,
 } from "@tashi/shared";
 import { describe, expect, it } from "vitest";
-import { ApiKeyStore } from "../domain/api-key-store.js";
 import { Calculator } from "../domain/calculator.js";
 import { DiaryImport } from "../domain/diary-import.js";
 import { Doses } from "../domain/doses.js";
@@ -12,14 +11,15 @@ import {
   estimatedCostUsd,
   MeteredFoodParser,
   type ModelUsage,
-  PRICES_CHECKED_ON,
 } from "../domain/model-usage.js";
+import { PRICES_CHECKED_ON } from "../domain/models.js";
 import { TimelineService } from "../domain/timeline-service.js";
 import { createRoutes } from "../http/routes.js";
 import { FakeFoodParser } from "./fake-food-parser.js";
 import { InMemoryFoodCatalog } from "./in-memory-food-catalog.js";
 import { createInMemoryRepositories } from "./in-memory-repositories.js";
 import { sequentialIds } from "./sequential-ids.js";
+import { signedIn, testAiConnections } from "./signed-in.js";
 import { testBuild } from "./test-catalog.js";
 
 function usage(model: string, overrides: Partial<ModelUsage> = {}) {
@@ -101,14 +101,16 @@ describe("GET /api/usage", () => {
       clock,
       newId,
     );
-    const routes = createRoutes({
-      doses: new Doses(repositories, calculator, clock),
-      timeline: new TimelineService(repositories, clock, newId),
-      diaryImport: new DiaryImport(repositories),
-      repositories,
-      apiKeys: new ApiKeyStore(repositories.apiKey),
-      defaultTimeZone: "Europe/Berlin",
-    });
+    const routes = signedIn(
+      createRoutes({
+        doses: new Doses(repositories, calculator, clock),
+        timeline: new TimelineService(repositories, clock, newId),
+        diaryImport: new DiaryImport(repositories),
+        repositories,
+        aiConnections: testAiConnections(repositories),
+        defaultTimeZone: "Europe/Berlin",
+      }),
+    );
     return {
       repositories,
       calculate: (food_description: string) =>

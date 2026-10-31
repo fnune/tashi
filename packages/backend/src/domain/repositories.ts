@@ -1,6 +1,5 @@
 import type { FoodVocabEntry, Settings, TimelineEntry } from "@tashi/shared";
 import type { ModelUsage, ModelUsageTotal } from "./model-usage.js";
-import type { SealedSecret } from "./secret-box.js";
 
 export interface SettingsRepository {
   get(): Promise<Settings>;
@@ -36,10 +35,20 @@ export interface VocabularyRepository {
   clear(): Promise<void>;
 }
 
-export interface ApiKeyRepository {
-  get(): Promise<SealedSecret | null>;
-  save(record: SealedSecret): Promise<void>;
-  delete(): Promise<void>;
+export type AiConnectionKind = "anthropic";
+
+export interface StoredAiConnection {
+  id: string;
+  kind: AiConnectionKind;
+  model: string;
+  sealedApiKey: Uint8Array;
+}
+
+export interface AiConnectionRepository {
+  get(kind: AiConnectionKind): Promise<StoredAiConnection | null>;
+  replace(connection: StoredAiConnection, createdAt: Date): Promise<void>;
+  setModel(kind: AiConnectionKind, model: string): Promise<boolean>;
+  delete(kind: AiConnectionKind): Promise<void>;
 }
 
 export type AccountRole = "admin" | "member";
@@ -112,7 +121,7 @@ export interface Repositories {
   settings: SettingsRepository;
   timeline: TimelineRepository;
   vocabulary: VocabularyRepository;
-  apiKey: ApiKeyRepository;
+  aiConnections: AiConnectionRepository;
   accounts: AccountRepository;
   sessions: SessionRepository;
   signInFailures: SignInFailureRepository;

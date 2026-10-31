@@ -1,13 +1,13 @@
 # Authentication
 
-How people get into a Tashi instance: setting it up, signing in, keeping the Anthropic key safe, and, later, more accounts and a second factor.
+How people get into a Tashi instance: setting it up, signing in, keeping the AI provider's key safe, and, later, more accounts and a second factor.
 
 ## Goals
 
 - Nothing to configure in a hosting dashboard. Someone who deploys Tashi to Cloudflare from a fork, leaving every setting as it is, sets it up in Tashi itself.
 - An instance nobody has set up yet shows nothing: every address answers "not found", so a stranger cannot tell Tashi is there, let alone claim it.
 - Accounts, so that two parents can share a child's diary.
-- A leaked database reveals neither a usable session nor the Anthropic key.
+- A leaked database reveals neither a usable session nor the AI provider's key.
 - No email, SMS or any other message sent by Tashi.
 - Established designs and the platform's own cryptography (WebCrypto), small enough to read in full and tested like the rest of the code.
 
@@ -55,14 +55,14 @@ The design described by the Lucia guide (lucia-auth.com) and the Copenhagen Book
 - Requests that change anything must come from Tashi's own pages: Hono's `csrf` middleware checks the `Origin` header.
 - Every API route needs a signed-in session except the sign-in, setup and health routes.
 
-## The Anthropic key
+## The AI provider's key
 
-The key is stored encrypted, and only a signed-in session can use it.
+The Anthropic API key, which pays for reading meal descriptions, is entered in Settings, stored encrypted, and only a signed-in session can use it. Nothing about it is configured on the server.
 
-- The instance has one random **data key** (256 bits). The Anthropic key is encrypted with it (AES-256-GCM, `secret-box.ts`).
+- The instance has one random **data key** (256 bits). The provider's key is encrypted with it (AES-256-GCM with a fresh nonce, `data-key.ts`) in `api_keys`, one row per provider.
 - Each sign-in method that can unlock the data key keeps its own copy, encrypted with that method's key-encryption key: envelope encryption, as password managers use to share a vault. A password method derives its key-encryption key from the password at sign-in.
 - At sign-in, the data key is unlocked and encrypted again with a key derived from the session token (HKDF). The session row keeps that copy. A request carrying the cookie can unlock the data key; the database alone cannot, since it never holds the token.
-- `ANTHROPIC_API_KEY` in the environment works as well and needs none of this.
+- A calculation opens the key from the session's copy of the data key and hands it to the parser for that one call. The key is verified with the provider before it is saved and never returned by any endpoint.
 - The data key is created at setup, so every password method and every session has its copy from the start.
 
 ## More accounts, later
@@ -75,7 +75,7 @@ The key is stored encrypted, and only a signed-in session can use it.
 
 - **Authenticator codes** (TOTP, RFC 6238): a per-account secret shown once as a QR code, stored encrypted with the data key, checked with HMAC-SHA1 over the time step (WebCrypto, or `@oslojs/otp`). A session waits in `second_factor` until the code is right. A code cannot unlock the data key: six digits are too few to protect it.
 - **Recovery codes**: ten single-use codes shown once when a second factor is added, stored hashed.
-- **Passkeys** (WebAuthn, `@simplewebauthn/server`): as a second factor, or as a sign-in method on their own, since a passkey is already two factors. Checking a signature costs little CPU. Where the browser supports the WebAuthn PRF extension, a passkey can keep its own copy of the data key, so signing in with only a passkey still unlocks the Anthropic key.
+- **Passkeys** (WebAuthn, `@simplewebauthn/server`): as a second factor, or as a sign-in method on their own, since a passkey is already two factors. Checking a signature costs little CPU. Where the browser supports the WebAuthn PRF extension, a passkey can keep its own copy of the data key, so signing in with only a passkey still unlocks the provider's key.
 
 ## Iterations
 
@@ -90,14 +90,14 @@ New tables, in a migration of their own; the SQL goes into `database-schema.md` 
 - One table per kind, every column required. `password_methods`: method_id, salt, iteration count, verifier and the method's copy of the data key. A composite foreign key `(method_id, kind)` to `sign_in_methods (id, kind)`, with the kind fixed by a check, keeps a password row on a password method. Authenticator codes and passkeys get tables of their own the same way.
 - `sessions`: token hash, account_id, stage, created_at, expires_at, and the copy of the data key for the session.
 - `sign_in_failures`: the name tried, the number of failures and when the last one was.
-- `anthropic_api_key`: the Anthropic key, encrypted with the data key.
+- `api_keys`: each provider's key, encrypted with the data key.
 
 ## Order of work
 
 - [x] 1. An unclaimed instance answers 404 everywhere; the setup token from the build (Cloudflare) or the server's start (Node), and the framed link at the end of the build output.
 - [x] 2. Accounts, password sign-in methods and the setup page.
 - [x] 3. Sessions, the sign-in page, signing out, slowing repeated failures, the `csrf` check.
-- [ ] 4. The data key and the Anthropic key saved in Settings.
+- [x] 4. The data key and the Anthropic key saved in Settings.
 - [ ] 5. The Cloudflare guide in `self-hosting.md` without any dashboard secrets.
 
 Later: invitations, people and access, a second factor.

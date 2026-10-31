@@ -1,4 +1,5 @@
 import type { FoodVocabEntry, ParsedFoodItem, ParseTrace } from "@tashi/shared";
+import type { AiConnection } from "./ai-connections.js";
 import type { ModelUsage } from "./model-usage.js";
 
 export type ParseOutcome = (
@@ -16,5 +17,6 @@ export interface FoodParser {
     foodDescription: string,
     vocabulary: FoodVocabEntry[],
     language: "en" | "es",
+    connection: AiConnection | null,
   ): Promise<ParseOutcome>;
 }

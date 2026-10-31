@@ -7,7 +7,6 @@ import { catalogAssets } from "../data/static-catalog/build.js";
 import { searchIndexPath } from "../data/static-catalog/layout.js";
 import { SearchIndex } from "../data/static-catalog/search-index.js";
 import { StaticFoodCatalog } from "../data/static-catalog/static-food-catalog.js";
-import { ApiKeyStore } from "../domain/api-key-store.js";
 import { Calculator } from "../domain/calculator.js";
 import type { Clock } from "../domain/clock.js";
 import { DiaryImport } from "../domain/diary-import.js";
@@ -17,6 +16,7 @@ import { createRoutes } from "../http/routes.js";
 import { fullMeal, glucose, simpleMeal } from "./entries.js";
 import { createInMemoryRepositories } from "./in-memory-repositories.js";
 import { sequentialIds } from "./sequential-ids.js";
+import { signedIn, TEST_DATA_KEY, testAiConnections } from "./signed-in.js";
 
 const WORKERS_FREE_CPU_MS = 10;
 const BUDGET_MS = WORKERS_FREE_CPU_MS / 2;
@@ -125,23 +125,23 @@ async function coldApp() {
   const clock: Clock = () => now;
   const newId = sequentialIds();
   const catalog = coldCatalog();
-  const parser = new AnthropicFoodParser(
-    "sk-ant-budget",
-    catalog,
-    scriptedModel(),
-  );
-  const app = createRoutes({
-    doses: new Doses(
+  const parser = new AnthropicFoodParser(catalog, scriptedModel());
+  const aiConnections = testAiConnections(repositories);
+  await aiConnections.connect(TEST_DATA_KEY, "sk-ant-budget");
+  const app = signedIn(
+    createRoutes({
+      doses: new Doses(
+        repositories,
+        new Calculator(parser, catalog, clock, newId),
+        clock,
+      ),
+      timeline: new TimelineService(repositories, clock, newId),
+      diaryImport: new DiaryImport(repositories),
       repositories,
-      new Calculator(parser, catalog, clock, newId),
-      clock,
-    ),
-    timeline: new TimelineService(repositories, clock, newId),
-    diaryImport: new DiaryImport(repositories),
-    repositories,
-    apiKeys: new ApiKeyStore(repositories.apiKey),
-    defaultTimeZone: "Europe/Berlin",
-  });
+      aiConnections,
+      defaultTimeZone: "Europe/Berlin",
+    }),
+  );
   return { app, repositories };
 }
 

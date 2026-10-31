@@ -7,12 +7,7 @@ import type {
   SessionRepository,
   SignInFailureRepository,
 } from "../repositories.js";
-import {
-  newDataKey,
-  sessionWrappingKey,
-  unwrapDataKey,
-  wrapDataKey,
-} from "./data-key.js";
+import { newDataKey, seal, sessionWrappingKey, unseal } from "./data-key.js";
 import {
   PASSWORD_MAX_LENGTH,
   PASSWORD_MIN_LENGTH,
@@ -105,7 +100,7 @@ export class Authentication implements Authenticator {
         salt,
         iterations,
         verifier,
-        wrappedDataKey: await wrapDataKey(dataKey, keyEncryptionKey),
+        wrappedDataKey: await seal(dataKey, keyEncryptionKey),
       },
       clock(),
     );
@@ -128,7 +123,7 @@ export class Authentication implements Authenticator {
     );
     const dataKey =
       found && equalInConstantTime(verifier, found.password.verifier)
-        ? await unwrapDataKey(found.password.wrappedDataKey, keyEncryptionKey)
+        ? await unseal(found.password.wrappedDataKey, keyEncryptionKey)
         : null;
     if (!found || !dataKey) {
       await this.options.signInFailures.record(nameKey, this.options.clock());
@@ -157,7 +152,7 @@ export class Authentication implements Authenticator {
       await this.options.sessions.extend(tokenHash, renewedUntil);
     }
     const account = await this.options.accounts.get(stored.accountId);
-    const dataKey = await unwrapDataKey(
+    const dataKey = await unseal(
       stored.wrappedDataKey,
       await sessionWrappingKey(tokenBytes),
     );
@@ -183,10 +178,7 @@ export class Authentication implements Authenticator {
         accountId,
         stage: "signed_in",
         expiresAt: new Date(now.getTime() + SESSION_LIFETIME_MS),
-        wrappedDataKey: await wrapDataKey(
-          dataKey,
-          await sessionWrappingKey(token),
-        ),
+        wrappedDataKey: await seal(dataKey, await sessionWrappingKey(token)),
       },
       now,
     );

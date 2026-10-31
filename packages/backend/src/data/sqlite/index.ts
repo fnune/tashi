@@ -2,7 +2,7 @@ import type { IdGenerator } from "../../domain/ids.js";
 import type { Repositories } from "../../domain/repositories.js";
 import { transactionWriteBatch } from "../write-batch.js";
 import { SqliteAccountRepository } from "./account-repository.js";
-import { SqliteApiKeyRepository } from "./api-key-repository.js";
+import { SqliteAiConnectionRepository } from "./ai-connection-repository.js";
 import { migrate, openSqlite } from "./connection.js";
 import { SqliteModelUsageRepository } from "./model-usage-repository.js";
 import { SqliteSessionRepository } from "./session-repository.js";
@@ -34,7 +34,7 @@ export async function openSqliteRepositories(
           options.catalogRelease,
         ),
         vocabulary: new SqliteVocabularyRepository(db, batch),
-        apiKey: new SqliteApiKeyRepository(db),
+        aiConnections: new SqliteAiConnectionRepository(db, batch),
         accounts: new SqliteAccountRepository(db, batch),
         sessions: new SqliteSessionRepository(db),
         signInFailures: new SqliteSignInFailureRepository(db),
