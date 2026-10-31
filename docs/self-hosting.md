@@ -45,8 +45,54 @@ Progress:
   - [x] Entries, nutrients as rows, servings, release ranges and the curated foods layer; search by Postgres full text; `foods.db` imported at start by comparing it with the database.
   - [x] Missing nutrients are unknown, not 0: no carbohydrate means no offer, no fibre means net carbohydrate equals carbohydrate, and net carbohydrate is never below 0.
   - [x] Rehearsed against bilbo's backup: 528 meal items kept their entries, the timeline reads back identical, the import takes 1.8 s and 0.2 s when nothing changed.
-  - [ ] Deploy to bilbo: bump the `tashi` input, switch. The service dumps the database before starting, then the migration and the import run on that start.
-- [ ] 6. Find providers.
+  - [x] Deployed to bilbo on 2026-10-27: both migrations applied, the catalog imported on start, and the daily dumps run.
+- [x] 6. Find providers: Cloudflare Workers and D1, which replaces Postgres. See below.
+
+### Cloudflare Workers and D1
+
+Decision: host on Cloudflare Workers with D1, and make SQLite the only database dialect. Plain Node installs (VPS, NAS, bilbo) use a SQLite file. Postgres goes away.
+
+Why: one provider and one signup without a card; a free database that does not pause or expire after inactivity (no such rule found) and has 7 days of point-in-time recovery; no cold start; a D1 database created with jurisdiction `eu` stores its data in the EU; Cloudflare commits to a free D1 plan. Render needs a card and deletes its free database after 30 days, Supabase pauses after 7 days, Neon keeps 6 h of history and is a second provider.
+
+Limits that shape the design (Free plan):
+
+- D1 accepts 100,000 written rows a day, counting index writes and Wrangler imports. Past the limit the database rejects every query until 00:00 UTC, including the user's own logging. The catalog (13,670 foods, about 6 nutrient rows each, plus servings, names and indexes) does not fit, so it leaves the database.
+- A Worker gets 10 ms of CPU per request (waiting on D1 or Anthropic does not count) and a 3 MB compressed bundle. scrypt and loading `foods.db` with sql.js at runtime do not fit.
+- D1 has no interactive transactions, only an atomic `batch()` that cannot read halfway through.
+
+Design:
+
+- Catalog as static assets. The build turns `foods.db` into files stamped with the release hash, with a search index split by term so a query fetches only the files for its words. The server's `FoodCatalog` reads them through the assets binding on Workers and from disk on Node. Catalog updates ship with the build, and the startup sync goes away.
+- Meal items keep snapshots. When a meal is logged, the server copies the values it doses with (name, nutrients, serving) from the deployed catalog into the meal item, with `source`, `external_id` and the release as a plain reference. `catalog_releases` stays in the database and keeps its foreign key; entries do not. `food_vocabulary` uses the same reference and falls back to search when a release drops the entry.
+- Writes go through a batch: repositories read first, then send all writes together, as a D1 `batch()` or a transaction on `better-sqlite3`. With one user, read-then-batch is an acceptable race.
+- The saved API key is encrypted with a key derived by HKDF from `TASHI_SECRET_KEY`, a long random string, instead of scrypt over the password. The secret becomes required to save a key in the UI.
+- Migrations run at deploy on Workers (`wrangler d1 migrations apply --remote`) and at start on Node.
+
+Testing:
+
+- Unit tests use the in-memory fakes, as now.
+- The repository contract suite runs against `better-sqlite3` in memory and against D1 through Wrangler's local runtime (`getPlatformProxy` or `@cloudflare/vitest-pool-workers`), which is the real D1 code backed by a local SQLite file. Neither needs a server or credentials.
+- The Playwright suite runs against `wrangler dev` with local D1 and the stand-in `FoodParser`, wired by a test entry point as `packages/e2e/test-server.ts` does today.
+- A CPU budget test drives the heaviest routes in process with cold caches and fails when the median goes over 5 ms, half the Workers limit, so a regression shows up before a deploy.
+- Local runs do not enforce the CPU limit or the daily row quota. Check those on a preview deployment with the Workers metrics.
+
+Progress:
+
+- [ ] 1. HKDF over `TASHI_SECRET_KEY` instead of scrypt, while bilbo has no stored key.
+- [ ] 2. Write batches behind the repositories, checked by the contract suite on Postgres.
+- [ ] 3. Catalog as static assets with a term-split search index, behind `FoodCatalog` and its contract suite.
+- [ ] 4. SQLite schema with snapshots on meal items, `better-sqlite3` repositories, unit tests on in-memory SQLite, e2e on SQLite. Remove `pg`, sql.js at runtime and the Postgres code. Update [database-schema.md](database-schema.md).
+- [ ] 5. Move bilbo from Postgres to a SQLite file as a one-off on bilbo, rehearsed on a backup: the script writes the snapshots from the release ranges and lives in the project context directory, not in the repo. bilbo stays on Node until the Workers deploy is tested end to end.
+- [ ] 6. Workers entry point, D1 dialect, `wrangler.jsonc`, migrations at deploy, CPU measured per route.
+- [ ] 7. Export and import (below).
+- [ ] 8. Rewrite this document for the new setup, with a short section for plain Node.
+
+Open questions:
+
+- Can a fork deploy from the Cloudflare dashboard without editing the D1 `database_id`, and does automatic provisioning set jurisdiction `eu`? If not, the user creates the database in the dashboard and pastes its ID as a build variable.
+- Which D1 dialect: `kysely-d1` must be vetted against the dependency rules, and a small one written here may be simpler.
+
+The Postgres plan below is kept for its history until step 4 replaces it.
 
 Storage design. The tables below are the first cut, which mirrors the JSON files. The schema to build instead, with its review, is in [database-schema.md](database-schema.md); it replaces this list and the current migration.
 
@@ -122,7 +168,7 @@ Basic auth with one shared password is the placeholder.
 
 ### Connecting data to users
 
-No table has an owner today. The design, with the reasons for the names, is in [database-schema.md](database-schema.md#accounts-and-people-later): an **account** is a login, a **person** is the one whose data it is, and an **access** row says which account reaches which person and how (self, parent, partner, family, friend, caregiver, clinician; read, write, admin). Settings, entries and vocabulary belong to a person, never to an account. It lands as migration `0002`, with one account and one person created for bilbo's existing data.
+No table has an owner today. The design, with the reasons for the names, is in [database-schema.md](database-schema.md#accounts-and-people-later): an **account** is a login, a **person** is the one whose data it is, and an **access** row says which account reaches which person and how (self, parent, partner, family, friend, caregiver, clinician; read, write, admin). Settings, entries and vocabulary belong to a person, never to an account. It lands as a later migration, with one account and one person created for bilbo's existing data.
 
 Left open until then: whether the Anthropic key belongs to an account or to the instance, and what a caregiver sharing a person looks like in the interface.
 
