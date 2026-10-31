@@ -1,5 +1,6 @@
-import { expect, type Page, test } from "@playwright/test";
-import { atLunchtime, goTo, resetServer, SERVER } from "./helpers.js";
+import type { Page } from "@playwright/test";
+import { expect, test } from "./fixtures.js";
+import { atLunchtime, goTo, resetServer } from "./helpers.js";
 
 async function logReading(page: Page, value: string) {
   await page.getByRole("button", { name: "Glucose", exact: true }).click();
@@ -11,10 +12,16 @@ async function logReading(page: Page, value: string) {
 
 async function chooseUnit(page: Page, unit: "mg/dL" | "mmol/L") {
   await goTo(page, "Settings");
+  const saved = page.waitForResponse(
+    (response) =>
+      response.url().endsWith("/api/settings") &&
+      response.request().method() === "PUT",
+  );
   await page
     .getByRole("group", { name: "Glucose unit" })
     .getByText(unit)
     .click();
+  await saved;
 }
 
 test.describe("glucose readings", () => {
@@ -76,7 +83,7 @@ test.describe("glucose readings", () => {
       page.locator('.event[data-entry-type="glucose_reading"]'),
     ).toContainText("115");
 
-    const page1 = await request.get(`${SERVER}/api/timeline`);
+    const page1 = await request.get(`/api/timeline`);
     const body = (await page1.json()) as { entries: { value: number }[] };
     expect(body.entries[0]?.value).toBeCloseTo(115.3, 1);
   });

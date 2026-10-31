@@ -1,19 +1,19 @@
-import { expect, test } from "@playwright/test";
-import { GATED_SERVER } from "./helpers.js";
+import { expect, test } from "./fixtures.js";
+import {} from "./helpers.js";
 
 const SETUP_TOKEN = "e2e-setup-token";
 const PASSWORD = "violet tractor misty pancake";
 
 test.describe("setting up and signing in", () => {
-  test.use({ baseURL: GATED_SERVER });
+  test.use({ server: "gated" });
 
   test.beforeEach(async ({ request }) => {
-    await request.post(`${GATED_SERVER}/api/__reset`);
+    await request.post("/api/__reset");
   });
 
   test("an instance nobody has set up shows nothing", async ({ request }) => {
     for (const path of ["/", "/setup", "/setup?token=guess", "/api/settings"]) {
-      expect((await request.get(`${GATED_SERVER}${path}`)).status()).toBe(404);
+      expect((await request.get(path)).status()).toBe(404);
     }
   });
 

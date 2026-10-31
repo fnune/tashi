@@ -1,5 +1,5 @@
-import { expect, test } from "@playwright/test";
-import { atLunchtime, goTo, resetServer, SERVER } from "./helpers.js";
+import { expect, test } from "./fixtures.js";
+import { atLunchtime, goTo, resetServer } from "./helpers.js";
 
 test.describe("a dose that was not logged yet", () => {
   test.beforeEach(async ({ request, page }) => {
@@ -46,9 +46,9 @@ test.describe("a dose that was not logged yet", () => {
     await page.getByRole("button", { name: /^Log / }).click();
     await expect(page.getByText(/Logged in history/)).toBeVisible();
 
-    const timeline = (await (
-      await request.get(`${SERVER}/api/timeline`)
-    ).json()) as { entries: { type: string; timestamp: string }[] };
+    const timeline = (await (await request.get(`/api/timeline`)).json()) as {
+      entries: { type: string; timestamp: string }[];
+    };
     const insulin = timeline.entries.find((e) => e.type === "fast_insulin");
     expect(insulin?.timestamp).toBe(
       new Date(

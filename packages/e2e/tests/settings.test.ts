@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, test } from "./fixtures.js";
 import { atLunchtime, goTo, resetServer } from "./helpers.js";
 
 test.describe("settings are kept", () => {

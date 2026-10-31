@@ -1,4 +1,5 @@
 import { defineConfig, devices } from "@playwright/test";
+import { E2E_WORKERS, portsOf, SLOTS } from "./ports.js";
 
 const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
 
@@ -24,25 +25,23 @@ const servers =
   process.env.E2E_RUNTIME === "node"
     ? [
         {
-          command: "npx tsx test-server.ts",
-          port: 3100,
+          command: `npx tsx test-server.ts ${E2E_WORKERS}`,
+          port: portsOf(E2E_WORKERS - 1).gated,
           reuseExistingServer: false,
           timeout: 120_000,
         },
       ]
-    : [
-        worker(3100, "e2e-open"),
-        worker(3101, "e2e-gated", ["E2E_WITH_ACCOUNTS:yes"]),
-      ];
+    : SLOTS.flatMap((slot) => [
+        worker(portsOf(slot).open, `e2e-open-${slot}`),
+        worker(portsOf(slot).gated, `e2e-gated-${slot}`, [
+          "E2E_WITH_ACCOUNTS:yes",
+        ]),
+      ]);
 
 export default defineConfig({
   testDir: "./tests",
   timeout: 15_000,
-  // Every test resets the one shared test server, so they cannot overlap.
-  workers: 1,
-  use: {
-    baseURL: "http://localhost:3100",
-  },
+  workers: E2E_WORKERS,
   projects: [
     { name: "desktop", use: { ...devices["Desktop Chrome"] } },
     { name: "phone", use: { ...devices["Pixel 7"] } },

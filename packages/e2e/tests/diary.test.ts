@@ -1,5 +1,5 @@
-import { expect, test } from "@playwright/test";
-import { atLunchtime, resetServer, SERVER } from "./helpers.js";
+import { expect, test } from "./fixtures.js";
+import { atLunchtime, resetServer } from "./helpers.js";
 
 test.describe("a copy of the diary", () => {
   test.beforeEach(async ({ request, page }) => {
@@ -12,7 +12,7 @@ test.describe("a copy of the diary", () => {
     page,
   }, testInfo) => {
     for (let i = 0; i < 30; i++) {
-      await request.post(`${SERVER}/api/timeline`, {
+      await request.post(`/api/timeline`, {
         data: {
           type: "glucose_reading",
           value: 100 + i,

@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, test } from "./fixtures.js";
 import { atLunchtime, goTo, resetServer } from "./helpers.js";
 
 const MISSING = "Add your Anthropic API key in settings to calculate doses.";

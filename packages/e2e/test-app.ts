@@ -19,8 +19,6 @@ import type { FoodVocabEntry, ParsedFoodItem } from "@tashi/shared";
 import { DEFAULT_SETTINGS } from "@tashi/shared";
 import { Hono } from "hono";
 
-export const OPEN_PORT = 3100;
-export const GATED_PORT = 3101;
 export const SETUP_TOKEN = "e2e-setup-token";
 const OPEN_DATA_KEY = new Uint8Array(32).fill(5);
 

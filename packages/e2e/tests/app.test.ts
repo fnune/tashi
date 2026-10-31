@@ -1,4 +1,5 @@
-import { expect, type Page, test } from "@playwright/test";
+import type { Page } from "@playwright/test";
+import { expect, test } from "./fixtures.js";
 
 async function logPeriodStart(
   page: Page,
@@ -13,7 +14,7 @@ async function logPeriodStart(
 
 test.describe("full user flow", () => {
   test.beforeEach(async ({ request, page }) => {
-    await request.post("http://localhost:3100/api/__reset");
+    await request.post("/api/__reset");
     const serverLunchtime = new Date();
     serverLunchtime.setHours(13, 0, 0, 0);
     await page.clock.setFixedTime(serverLunchtime);
@@ -471,9 +472,7 @@ test.describe("full user flow", () => {
     page,
     request,
   }) => {
-    const settings = await (
-      await request.get("http://localhost:3100/api/settings")
-    ).json();
+    const settings = await (await request.get("/api/settings")).json();
     const extra = ["Night shift", "Long-haul flight", "Exam week"].map(
       (name, i) => ({
         id: `extra-${i}`,
@@ -482,7 +481,7 @@ test.describe("full user flow", () => {
         adjustment: { mode: "percent", percent: 10 },
       }),
     );
-    await request.put("http://localhost:3100/api/settings", {
+    await request.put("/api/settings", {
       data: { ...settings, profiles: [...settings.profiles, ...extra] },
     });
 

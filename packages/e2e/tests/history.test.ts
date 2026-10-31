@@ -1,29 +1,36 @@
-import {
-  type APIRequestContext,
-  expect,
-  type Page,
-  test,
-} from "@playwright/test";
-import { atLunchtime, resetServer, SERVER } from "./helpers.js";
+import type { APIRequestContext, Page } from "@playwright/test";
+import { expect, test } from "./fixtures.js";
+import { atLunchtime, resetServer } from "./helpers.js";
 
 test.describe("history", () => {
+  // Each test adds over a hundred entries, which takes seconds on local D1.
+  test.slow();
+
   test.beforeEach(async ({ request, page }) => {
     await resetServer(request);
     await atLunchtime(page);
   });
 
+  // Each reading has its own time, so they can be sent several at once.
   async function addReadings(request: APIRequestContext, count: number) {
     const ids: string[] = [];
-    for (let i = 0; i < count; i++) {
-      const response = await request.post(`${SERVER}/api/timeline`, {
-        data: {
-          type: "glucose_reading",
-          value: 100 + (i % 50),
-          unit: "mg/dL",
-          timestamp: new Date(Date.UTC(2026, 5, 1, 8, i)).toISOString(),
+    for (let start = 0; start < count; start += 10) {
+      const batch = Array.from(
+        { length: Math.min(10, count - start) },
+        async (_, offset) => {
+          const i = start + offset;
+          const response = await request.post("/api/timeline", {
+            data: {
+              type: "glucose_reading",
+              value: 100 + (i % 50),
+              unit: "mg/dL",
+              timestamp: new Date(Date.UTC(2026, 5, 1, 8, i)).toISOString(),
+            },
+          });
+          return ((await response.json()) as { id: string }).id;
         },
-      });
-      ids.push(((await response.json()) as { id: string }).id);
+      );
+      ids.push(...(await Promise.all(batch)));
     }
     return ids;
   }
@@ -136,7 +143,7 @@ test.describe("history", () => {
     request,
     page,
   }) => {
-    await request.post(`${SERVER}/api/timeline`, {
+    await request.post(`/api/timeline`, {
       data: { type: "slow_insulin", units: 10 },
     });
     await page.goto("/timeline");
@@ -162,7 +169,7 @@ test.describe("entries in another time zone", () => {
     await page.getByRole("button", { name: /^Log / }).click();
     await expect(page.getByText(/Logged in history/)).toBeVisible();
 
-    const response = await request.get(`${SERVER}/api/timeline`);
+    const response = await request.get(`/api/timeline`);
     const body = (await response.json()) as {
       entries: { type: string; time_zone: string }[];
     };

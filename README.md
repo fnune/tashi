@@ -32,6 +32,7 @@ pnpm check && pnpm typecheck
 pnpm test:unit   # runs the storage tests on temporary SQLite files and on Wrangler's local D1
 pnpm test:e2e    # builds the Worker and runs the browser tests on wrangler dev with a local D1
 E2E_RUNTIME=node pnpm --filter @tashi/e2e test   # the same browser tests on the Node server
+E2E_WORKERS=2 pnpm test:e2e  # fewer parallel workers, each with its own servers (default 4)
 ```
 
 ## Deployment

@@ -1,12 +1,12 @@
-import { expect, test } from "@playwright/test";
-import { atLunchtime, goTo, resetServer, SERVER } from "./helpers.js";
+import { expect, test } from "./fixtures.js";
+import { atLunchtime, goTo, resetServer } from "./helpers.js";
 
 test.describe("insulin on board", () => {
   test.beforeEach(async ({ request, page }) => {
     await resetServer(request);
     await atLunchtime(page);
-    const settings = await (await request.get(`${SERVER}/api/settings`)).json();
-    await request.put(`${SERVER}/api/settings`, {
+    const settings = await (await request.get(`/api/settings`)).json();
+    await request.put(`/api/settings`, {
       data: { ...settings, correction_factor: 40, insulin_action_minutes: 300 },
     });
   });
@@ -15,7 +15,7 @@ test.describe("insulin on board", () => {
     request,
     page,
   }) => {
-    await request.post(`${SERVER}/api/timeline`, {
+    await request.post(`/api/timeline`, {
       data: { type: "fast_insulin", units: 4 },
     });
     await page.goto("/");
