@@ -50,15 +50,13 @@ test.describe("settings are kept", () => {
   test("the meal windows come back in the order they were set", async ({
     page,
   }) => {
+    const windows = page.getByRole("button", {
+      name: /^(morning|lunch|dinner)/,
+    });
     await page.goto("/settings");
-    const names = await page
-      .getByRole("button", { name: /^(morning|lunch|dinner)/ })
-      .allTextContents();
+    await expect(windows).toHaveCount(3);
+    const names = await windows.allTextContents();
     await page.reload();
-    expect(
-      await page
-        .getByRole("button", { name: /^(morning|lunch|dinner)/ })
-        .allTextContents(),
-    ).toEqual(names);
+    await expect(windows).toHaveText(names);
   });
 });
