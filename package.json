@@ -14,7 +14,7 @@
     "check": "biome check . && stylelint \"packages/frontend/src/**/*.css\"",
     "check:fix": "biome check --write . && stylelint --fix \"packages/frontend/src/**/*.css\"",
     "test:unit": "pnpm --filter @tashi/shared --filter @tashi/backend --filter @tashi/frontend test",
-    "test:e2e": "pnpm --filter @tashi/shared --filter @tashi/frontend build && pnpm --filter @tashi/e2e test",
+    "test:e2e": "pnpm --filter @tashi/shared --filter @tashi/frontend build && pnpm --filter @tashi/backend build:worker && pnpm --filter @tashi/e2e test",
     "typecheck": "pnpm --filter @tashi/shared --filter @tashi/backend --filter @tashi/frontend --filter @tashi/e2e exec tsc --noEmit"
   },
   "devDependencies": {

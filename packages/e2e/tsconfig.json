@@ -7,8 +7,10 @@
   },
   "include": [
     "tests",
+    "test-app.ts",
     "test-server.ts",
-    "playwright.config.ts",
-    "../backend/src/data/sql.js.d.ts"
+    "test-worker.ts",
+    "tashi-search-index.d.ts",
+    "playwright.config.ts"
   ]
 }

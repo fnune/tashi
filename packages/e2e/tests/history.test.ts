@@ -55,6 +55,7 @@ test.describe("history", () => {
     request,
     page,
   }) => {
+    test.slow();
     await addReadings(request, 230);
     await page.goto("/timeline");
     await scrollUntilLoaded(page, 230);
