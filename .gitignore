@@ -5,6 +5,8 @@ dist/
 *.local
 packages/backend/data/
 packages/backend/catalog/
+packages/backend/worker-assets/
+.wrangler/
 data/settings.json
 data/history.json
 data/timeline.json
