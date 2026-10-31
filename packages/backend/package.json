@@ -9,6 +9,7 @@
     "./calculator": "./src/domain/calculator.ts",
     "./doses": "./src/domain/doses.ts",
     "./catalog-file": "./src/data/catalog-file.ts",
+    "./static-catalog": "./src/data/static-catalog/index.ts",
     "./food-parser": "./src/domain/food-parser.ts",
     "./ids": "./src/domain/ids.ts",
     "./keyed-food-parser": "./src/domain/keyed-food-parser.ts",
@@ -18,8 +19,9 @@
     "./timeline-service": "./src/domain/timeline-service.ts"
   },
   "scripts": {
-    "dev": "tsx watch --env-file-if-exists=../../.env src/server.ts",
-    "build": "tsc",
+    "dev": "pnpm build:catalog && tsx watch --env-file-if-exists=../../.env src/server.ts",
+    "build": "tsc && pnpm build:catalog",
+    "build:catalog": "tsx scripts/build-catalog.ts ../../data/foods.db catalog",
     "start": "node dist/server.js",
     "test": "vitest run",
     "import-usda": "tsx scripts/import-usda.ts ../../data/usda ../../data/foods.db"
@@ -32,6 +34,7 @@
     "kysely": "0.29.7",
     "pg": "8.23.1",
     "sql.js": "^1.14.1",
+    "stemmer": "2.0.1",
     "zod": "^3.24.0"
   },
   "devDependencies": {

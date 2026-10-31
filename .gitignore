@@ -4,6 +4,7 @@ dist/
 .envrc
 *.local
 packages/backend/data/
+packages/backend/catalog/
 data/settings.json
 data/history.json
 data/timeline.json

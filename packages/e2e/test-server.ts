@@ -14,6 +14,11 @@ import { KeyedFoodParser } from "@tashi/backend/keyed-food-parser";
 import { passwordGate } from "@tashi/backend/password-gate";
 import { openPostgresRepositories } from "@tashi/backend/postgres";
 import { createRoutes } from "@tashi/backend/routes";
+import {
+  catalogAssets,
+  memoryAssets,
+  StaticFoodCatalog,
+} from "@tashi/backend/static-catalog";
 import { TimelineService } from "@tashi/backend/timeline-service";
 import type { FoodVocabEntry, ParsedFoodItem } from "@tashi/shared";
 import { DEFAULT_SETTINGS } from "@tashi/shared";
@@ -144,9 +149,12 @@ async function startServer(): Promise<void> {
   const catalog = await readCatalogFile(
     join(import.meta.dirname, "../../data/foods.db"),
   );
-  const { repositories, foodCatalog } = await openPostgresRepositories(
-    database.url,
-    { newId: randomId, catalog },
+  const { repositories } = await openPostgresRepositories(database.url, {
+    newId: randomId,
+    catalog,
+  });
+  const foodCatalog = new StaticFoodCatalog(
+    memoryAssets(catalogAssets(catalog)),
   );
 
   const lunchtimeClock = () => {

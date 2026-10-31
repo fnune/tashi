@@ -12,6 +12,7 @@ describe("loadConfig", () => {
       defaultTimeZone: expect.any(String),
       basePath: "",
       foodsDbPath: undefined,
+      catalogDir: undefined,
       model: "claude-haiku-4-5-20251001",
       anthropicApiKey: undefined,
       password: undefined,

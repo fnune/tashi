@@ -34,6 +34,7 @@ stdenv.mkDerivation (finalAttrs: {
               ../packages/backend/public
               ../packages/backend/node_modules
               ../packages/backend/dist
+              ../packages/backend/catalog
               ../packages/frontend/node_modules
               ../packages/frontend/dist
               ../packages/shared/node_modules
@@ -48,7 +49,7 @@ stdenv.mkDerivation (finalAttrs: {
   pnpmDeps = fetchPnpmDeps {
     inherit (finalAttrs) pname version src;
     fetcherVersion = 2;
-    hash = "sha256-oAAFRhloonP2F5UNwJ3JRHIymZf3zAmknyKb/BX2ZLk=";
+    hash = "sha256-RpjJEsDPuY05VYaxh36Zih7CidsV1DWEEsmecSKhYsw=";
   };
 
   nativeBuildInputs = [
@@ -75,6 +76,8 @@ stdenv.mkDerivation (finalAttrs: {
     mkdir $app/data
     cp -r packages/frontend/dist $app/public
     cp data/foods.db $app/data/
+    rm -rf $app/catalog
+    cp -r packages/backend/catalog $app/catalog
 
     # The server finds its static files at ./public.
     makeWrapper ${lib.getExe nodejs_22} $out/bin/tashi \

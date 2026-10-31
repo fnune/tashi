@@ -25,6 +25,7 @@ const envSchema = z.object({
     }),
   TIME_ZONE: optionalText,
   FOODS_DB: optionalText,
+  CATALOG_DIR: optionalText,
   LLM_MODEL: z.preprocess(
     blankIsUnset,
     z.string().default("claude-haiku-4-5-20251001"),
@@ -46,6 +47,7 @@ export interface Config {
   defaultTimeZone: string;
   basePath: string;
   foodsDbPath: string | undefined;
+  catalogDir: string | undefined;
   model: string;
   anthropicApiKey: string | undefined;
   password: string | undefined;
@@ -73,6 +75,7 @@ export function loadConfig(env: Record<string, string | undefined>): Config {
       e.TIME_ZONE ?? Intl.DateTimeFormat().resolvedOptions().timeZone,
     basePath: e.BASE_PATH ?? "",
     foodsDbPath: e.FOODS_DB,
+    catalogDir: e.CATALOG_DIR,
     model: e.LLM_MODEL,
     anthropicApiKey: e.ANTHROPIC_API_KEY,
     password: e.TASHI_PASSWORD,
