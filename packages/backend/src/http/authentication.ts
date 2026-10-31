@@ -1,3 +1,4 @@
+import { MAX_PASSWORD_LENGTH } from "@tashi/shared";
 import type { Context, Hono } from "hono";
 import { deleteCookie, getCookie, setCookie } from "hono/cookie";
 import { csrf } from "hono/csrf";
@@ -10,9 +11,10 @@ import {
 } from "../domain/auth/authentication.js";
 import { DomainError } from "../domain/errors.js";
 import { apiError } from "./api-error.js";
-import { type SetupProblem, setupLanguage, setupPage } from "./setup-page.js";
 
 export const SESSION_COOKIE = "tashi_session";
+export const SETUP_COOKIE = "tashi_setup";
+const SETUP_COOKIE_SECONDS = 60 * 60;
 
 export interface SignedIn {
   Variables: { session: Session };
@@ -20,14 +22,12 @@ export interface SignedIn {
 
 const signInSchema = z.object({
   name: z.string().max(100),
-  password: z.string().max(1024),
+  password: z.string().max(MAX_PASSWORD_LENGTH),
 });
 
-const setupFormSchema = z.object({
-  token: z.string(),
-  name: z.string(),
-  password: z.string(),
-  again: z.string(),
+const setupSchema = z.object({
+  name: z.string().max(100),
+  password: z.string().max(MAX_PASSWORD_LENGTH),
 });
 
 export function authenticate(
@@ -38,8 +38,15 @@ export function authenticate(
   const at = (path: string) => `${basePath}${path}`;
   const cookiePath = basePath || "/";
 
+  // Until someone sets the instance up, it answers only to the setup link
+  // and to the browser that opened it, which carries the token in a cookie.
   app.use("*", async (c, next) => {
-    if ((await authentication.isClaimed()) || c.req.path === at("/setup")) {
+    if (
+      (await authentication.isClaimed()) ||
+      (await openToSetup(authentication, getCookie(c, SETUP_COOKIE))) ||
+      (c.req.path === at("/setup") &&
+        (await openToSetup(authentication, c.req.query("token"))))
+    ) {
       return next();
     }
     return c.text("Not found", 404);
@@ -47,45 +54,48 @@ export function authenticate(
 
   app.use("*", csrf());
 
-  app.get(at("/setup"), async (c) => {
-    const token = c.req.query("token") ?? "";
+  app.get(at("/setup"), async (c, next) => {
+    const token = c.req.query("token");
+    if (token === undefined) return next();
     if (!(await openToSetup(authentication, token))) {
       return c.text("Not found", 404);
     }
-    return c.html(
-      setupPage({
-        language: setupLanguage(c.req.header("Accept-Language")),
-        token,
-      }),
-    );
+    setCookie(c, SETUP_COOKIE, token, {
+      httpOnly: true,
+      secure: true,
+      sameSite: "Strict",
+      path: cookiePath,
+      maxAge: SETUP_COOKIE_SECONDS,
+    });
+    return c.redirect(at("/setup"), 303);
   });
 
-  app.post(at("/setup"), async (c) => {
-    const form = setupFormSchema.safeParse(await c.req.parseBody());
-    if (
-      !form.success ||
-      !(await openToSetup(authentication, form.data.token))
-    ) {
-      return c.text("Not found", 404);
+  app.post(at("/api/setup"), async (c) => {
+    const token = getCookie(c, SETUP_COOKIE);
+    if (!(await openToSetup(authentication, token)) || token === undefined) {
+      return apiError(c, "not_found", 404);
     }
-    const { token, name, password, again } = form.data;
-    const language = setupLanguage(c.req.header("Accept-Language"));
-    const showProblem = (problem: SetupProblem) =>
-      c.html(setupPage({ language, token, name, problem }), 400);
-    if (name.trim() === "") return showProblem("noName");
-    if (password !== again) return showProblem("different");
+    const parsed = setupSchema.safeParse(await c.req.json());
+    if (!parsed.success) {
+      return apiError(c, "validation_failed", 400, parsed.error.message);
+    }
     try {
-      setSessionCookie(c, await authentication.setUp(token, name, password));
+      setSessionCookie(
+        c,
+        await authentication.setUp(
+          token,
+          parsed.data.name,
+          parsed.data.password,
+        ),
+      );
     } catch (error) {
-      if (error instanceof DomainError && error.code === "password_too_short") {
-        return showProblem("tooShort");
-      }
-      if (error instanceof DomainError && error.code === "validation_failed") {
-        return showProblem("noName");
+      if (error instanceof DomainError) {
+        return apiError(c, error.code, error.code === "not_found" ? 404 : 400);
       }
       throw error;
     }
-    return c.redirect(cookiePath, 303);
+    deleteCookie(c, SETUP_COOKIE, { path: cookiePath, secure: true });
+    return c.json({ ok: true });
   });
 
   app.post(at("/api/auth/sign-in"), async (c) => {
@@ -119,7 +129,9 @@ export function authenticate(
   });
 
   app.use(at("/api/*"), async (c, next) => {
-    if (c.req.path === at("/api/health")) return next();
+    if (c.req.path === at("/api/health") || c.req.path === at("/api/setup")) {
+      return next();
+    }
     const token = getCookie(c, SESSION_COOKIE);
     const session = token ? await authentication.session(token) : null;
     if (!session) return apiError(c, "signed_out", 401);
@@ -146,9 +158,10 @@ export function authenticate(
 
 async function openToSetup(
   authentication: Authenticator,
-  token: string,
+  token: string | undefined,
 ): Promise<boolean> {
   return (
+    token !== undefined &&
     token !== "" &&
     !(await authentication.isClaimed()) &&
     (await authentication.acceptsSetupToken(token))

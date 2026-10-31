@@ -91,6 +91,7 @@ export {
   splitLongestWindow,
   windowLength,
 } from "./meal-windows.js";
+export { MAX_PASSWORD_LENGTH, MIN_PASSWORD_LENGTH } from "./passwords.js";
 export type { RatioModifier, WindowRatio } from "./profiles.js";
 export {
   activeProfile,

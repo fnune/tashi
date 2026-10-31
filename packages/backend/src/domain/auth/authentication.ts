@@ -1,3 +1,4 @@
+import { MAX_PASSWORD_LENGTH, MIN_PASSWORD_LENGTH } from "@tashi/shared";
 import type { Clock } from "../clock.js";
 import { DomainError } from "../errors.js";
 import type { IdGenerator } from "../ids.js";
@@ -8,12 +9,7 @@ import type {
   SignInFailureRepository,
 } from "../repositories.js";
 import { newDataKey, seal, sessionWrappingKey, unseal } from "./data-key.js";
-import {
-  PASSWORD_MAX_LENGTH,
-  PASSWORD_MIN_LENGTH,
-  PASSWORD_SALT_BYTES,
-  passwordKeys,
-} from "./passwords.js";
+import { PASSWORD_SALT_BYTES, passwordKeys } from "./passwords.js";
 import {
   equalInConstantTime,
   fromBase64Url,
@@ -117,7 +113,7 @@ export class Authentication implements Authenticator {
     const iterations =
       found?.password.iterations ?? this.options.passwordIterations;
     const { verifier, keyEncryptionKey } = await passwordKeys(
-      password.slice(0, PASSWORD_MAX_LENGTH),
+      password.slice(0, MAX_PASSWORD_LENGTH),
       Uint8Array.from(salt),
       iterations,
     );
@@ -212,13 +208,13 @@ function checkedName(name: string): string {
 }
 
 function checkPassword(password: string): void {
-  if (password.length < PASSWORD_MIN_LENGTH) {
+  if (password.length < MIN_PASSWORD_LENGTH) {
     throw new DomainError("password_too_short");
   }
-  if (password.length > PASSWORD_MAX_LENGTH) {
+  if (password.length > MAX_PASSWORD_LENGTH) {
     throw new DomainError(
       "validation_failed",
-      "A password of at most 256 characters",
+      `A password of at most ${MAX_PASSWORD_LENGTH} characters`,
     );
   }
 }

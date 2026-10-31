@@ -6,8 +6,10 @@ import {
   useEffect,
   useState,
 } from "react";
+import { useLocation, useNavigate } from "react-router";
 import * as api from "../api.js";
 import { savedLanguage } from "../i18n.js";
+import { SetupView } from "./SetupView.js";
 import { SignInView } from "./SignInView.js";
 
 type AuthState =
@@ -30,6 +32,8 @@ export function useAccount(): AccountActions {
 
 export function AuthGate({ children }: { children: ReactNode }) {
   const [state, setState] = useState<AuthState>({ kind: "checking" });
+  const location = useLocation();
+  const navigate = useNavigate();
 
   const check = useCallback(() => {
     api
@@ -46,6 +50,17 @@ export function AuthGate({ children }: { children: ReactNode }) {
   }, [check]);
 
   if (state.kind === "checking") return null;
+  if (state.kind === "signed_out" && location.pathname === "/setup") {
+    return (
+      <SetupView
+        lang={savedLanguage()}
+        onSetUp={() => {
+          navigate("/", { replace: true });
+          check();
+        }}
+      />
+    );
+  }
   if (state.kind === "signed_out") {
     return <SignInView lang={savedLanguage()} onSignedIn={check} />;
   }

@@ -212,6 +212,13 @@ export async function signIn(name: string, password: string): Promise<void> {
   });
 }
 
+export async function setUp(name: string, password: string): Promise<void> {
+  await request("/api/setup", {
+    method: "POST",
+    body: JSON.stringify({ name, password }),
+  });
+}
+
 export async function signOut(): Promise<void> {
   await request("/api/auth/sign-out", { method: "POST" });
 }

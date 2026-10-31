@@ -24,7 +24,8 @@ An instance with no account is unclaimed. It answers 404 with the same plain "no
 - **On Cloudflare**, the build generates a random setup token (32 bytes), bakes only its SHA-256 hash into the Worker, and prints the setup link at the end of the build's own output, in a frame that is hard to miss. The build log is visible only to people in the Cloudflare account. Each build makes a new token; once an account exists, none of them works.
     - The link is complete when the build can find the account's `workers.dev` address through Cloudflare's API with the build's own credentials. When it cannot, the frame says to open the Tashi address shown further down and add `/setup?token=…`.
 - **On Node** (a home server or a NAS), the server makes the token when it starts with no account and prints the link to its log once.
-- **The setup page** is a plain form served by the server, so no app files are needed before setup. It asks for a name and a password, twice, and creates the first account, an admin, with a password sign-in method and the instance's data key. It signs that account in straight away. The token is single-use in effect: after the first account exists, setup is closed, and the three inserts only succeed while no account exists, so two setups at once cannot both win.
+- **Opening the setup link** puts the token in a cookie (`tashi_setup`: `HttpOnly`, `Secure`, `SameSite=Strict`, one hour) and redirects to `/setup`, so the token leaves the address bar and the history. While no account exists, a request carrying a valid setup cookie is let through, so that browser can load the app; every other request still gets "not found".
+- **The setup screen** is part of the app. It asks for a name and a password, twice, and posts them to `/api/setup`, which creates the first account, an admin, with a password sign-in method and the instance's data key, signs it in and deletes the setup cookie. The token is single-use in effect: after the first account exists, setup is closed, and the three inserts only succeed while no account exists, so two setups at once cannot both win.
 
 Losing every way in has one last resort: whoever can run a new build (Cloudflare) or restart the server (Node) and read its log can reopen setup by removing the accounts. That is the same person who could delete the database, so it gives nobody new power.
 
@@ -36,7 +37,8 @@ Losing every way in has one last resort: whoever can run a new build (Cloudflare
 
 ### Passwords
 
-- At least 8 characters, no rules about composition, any length up to 256, as NIST SP 800-63B recommends.
+- At least 12 characters and up to 4,096, with no rules about composition, as NIST SP 800-63B recommends. The server enforces the length.
+- A new password must also be strong: the app estimates its strength with zxcvbn (`@zxcvbn-ts`, with English or Spanish dictionaries and the person's name), shows it as a bar with advice, and only accepts a score of 3 or 4, "safely unguessable". The estimate runs in the browser, because its dictionaries are too large for a Worker's CPU and size limits; they load only on the screens where a password is chosen.
 - Hashed with **PBKDF2-SHA256 through WebCrypto**. It is native code on Workers and on Node, which makes it the slow hash that fits a free Worker's 10 ms of CPU per request; Argon2 and scrypt exist on Workers only as JavaScript or WebAssembly, several times slower for the same strength. Only signing in and setting a password pay for it, never an ordinary request.
 - The iteration count is stored with each password, so it can be raised later and a password rehashed the next time its owner signs in. The count is as many iterations as fit in the CPU budget with room to spare (see Iterations).
 - One PBKDF2 run gives 64 bytes: the first half is the **verifier**, stored and compared in constant time; the second half is the **key-encryption key**, never stored, which unlocks the account's copy of the data key (below).
