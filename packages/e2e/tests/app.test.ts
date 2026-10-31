@@ -255,6 +255,13 @@ test.describe("full user flow", () => {
     const sheet = page.getByRole("dialog");
     await page.getByRole("button", { name: /Target blood sugar/ }).click();
     await expect(sheet).toBeVisible();
+    await sheet.evaluate((element) =>
+      Promise.all(
+        element
+          .getAnimations({ subtree: true })
+          .map((animation) => animation.finished),
+      ),
+    );
 
     const box = await sheet.boundingBox();
     if (!box) throw new Error("sheet not rendered");
