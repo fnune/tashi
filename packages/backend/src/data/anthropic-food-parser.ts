@@ -249,17 +249,7 @@ export class AnthropicFoodParser implements FoodParser {
         if (block.type !== "tool_use") continue;
         if (block.name === "search_foods") {
           const input = block.input as { query: string };
-          const results = await this.foodCatalog.search(input.query, 10);
-          const formatted = results.map((r) => ({
-            fdc_id: r.fdc_id,
-            description: r.description,
-            category: r.category,
-            net_carbs_per_100g: r.net_carbs_per_100g,
-            fiber_per_100g: r.fiber_per_100g,
-            fat_per_100g: r.fat_per_100g,
-            protein_per_100g: r.protein_per_100g,
-            match_count: r.match_count,
-          }));
+          const formatted = await this.foodCatalog.search(input.query, 10);
 
           searches.push({
             query: input.query,

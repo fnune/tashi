@@ -1,11 +1,20 @@
 import type { FoodItem } from "@tashi/shared";
 import { type CatalogBuild, foodItemOf } from "../../domain/food-catalog.js";
-import { entriesPath, idsPath, manifestPath, termsPath } from "./layout.js";
+import { entriesPath, searchIndexPath } from "./layout.js";
+import type { FoodSummary, SearchIndexData } from "./search-index.js";
 import { termsOf } from "./terms.js";
 
-type RankIndex = Record<string, number[]>;
+export interface CatalogContents {
+  searchIndex: SearchIndexData;
+  entries: Map<string, FoodItem[]>;
+}
 
 export function catalogAssets(build: CatalogBuild): Map<string, unknown> {
+  const { searchIndex, entries } = catalogContents(build);
+  return new Map<string, unknown>([[searchIndexPath, searchIndex], ...entries]);
+}
+
+export function catalogContents(build: CatalogBuild): CatalogContents {
   const inTieBreakOrder = build.records
     .flatMap((record) => {
       const item = foodItemOf(record);
@@ -20,29 +29,36 @@ export function catalogAssets(build: CatalogBuild): Map<string, unknown> {
     );
 
   const entries = new Map<string, FoodItem[]>();
-  const indexes = new Map<string, RankIndex>();
-  const index = (path: string, key: string, rank: number) => {
-    const file = indexes.get(path) ?? {};
-    const ranks = file[key] ?? [];
-    ranks.push(rank);
-    file[key] = ranks;
-    indexes.set(path, file);
+  const index: SearchIndexData = {
+    label: build.label,
+    summaries: [],
+    terms: {},
   };
   inTieBreakOrder.forEach(({ item }, rank) => {
     const path = entriesPath(rank);
     const shard = entries.get(path) ?? [];
     shard.push(item);
     entries.set(path, shard);
-    index(idsPath(item.fdc_id), String(item.fdc_id), rank);
+    index.summaries.push(summaryOf(item));
     for (const term of termsOf(item.description)) {
-      index(termsPath(term), term, rank);
+      const ranks = index.terms[term] ?? [];
+      ranks.push(rank);
+      index.terms[term] = ranks;
     }
   });
-  return new Map<string, unknown>([
-    [manifestPath, { label: build.label, count: inTieBreakOrder.length }],
-    ...entries,
-    ...indexes,
-  ]);
+  return { searchIndex: index, entries };
+}
+
+function summaryOf(item: FoodItem): FoodSummary {
+  return [
+    item.fdc_id,
+    item.description,
+    item.category,
+    item.net_carbs_per_100g,
+    item.fiber_per_100g,
+    item.fat_per_100g,
+    item.protein_per_100g,
+  ];
 }
 
 const compare = (a: string, b: string) => (a < b ? -1 : a > b ? 1 : 0);

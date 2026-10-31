@@ -8,8 +8,8 @@ import { AnthropicFoodParser } from "./data/anthropic-food-parser.js";
 import { readCatalogFile } from "./data/catalog-file.js";
 import { openPostgresRepositories } from "./data/postgres/index.js";
 import {
-  catalogLabel,
   diskAssets,
+  readSearchIndex,
   StaticFoodCatalog,
 } from "./data/static-catalog/index.js";
 import { ApiKeyStore } from "./domain/api-key-store.js";
@@ -44,14 +44,14 @@ const catalog = await readCatalogFile(foodsDbPath);
 const catalogAssets = diskAssets(
   config.catalogDir ?? join(import.meta.dirname, "../catalog"),
 );
-const builtLabel = await catalogLabel(catalogAssets);
-if (builtLabel !== catalog.label) {
+const searchIndex = await readSearchIndex(catalogAssets);
+if (searchIndex?.label !== catalog.label) {
   console.error(
-    `The built catalog (${builtLabel ?? "missing"}) does not match ${foodsDbPath} (${catalog.label}). Run pnpm build:catalog.`,
+    `The built catalog (${searchIndex?.label ?? "missing"}) does not match ${foodsDbPath} (${catalog.label}). Run pnpm build:catalog.`,
   );
   process.exit(1);
 }
-const foodCatalog = new StaticFoodCatalog(catalogAssets);
+const foodCatalog = new StaticFoodCatalog(searchIndex, catalogAssets);
 const { repositories } = await openPostgresRepositories(config.databaseUrl, {
   newId: randomId,
   catalog,

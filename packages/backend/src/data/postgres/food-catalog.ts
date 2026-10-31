@@ -3,7 +3,7 @@ import { sql } from "kysely";
 import {
   type CatalogRecord,
   type FoodCatalog,
-  type FoodMatch,
+  type FoodSearchResult,
   factAt,
   foodItemOf,
   type NutrientId,
@@ -42,7 +42,7 @@ export class PostgresFoodCatalog implements FoodCatalog {
     return null;
   }
 
-  async search(query: string, limit: number): Promise<FoodMatch[]> {
+  async search(query: string, limit: number): Promise<FoodSearchResult[]> {
     const words = query
       .toLowerCase()
       .replace(/[^a-z0-9\s]/g, " ")

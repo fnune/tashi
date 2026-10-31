@@ -33,13 +33,20 @@ export interface CatalogBuild {
   records: CatalogRecord[];
 }
 
-export interface FoodMatch extends FoodItem {
-  match_count: number;
-}
+export type FoodSearchResult = Pick<
+  FoodItem,
+  | "fdc_id"
+  | "description"
+  | "category"
+  | "net_carbs_per_100g"
+  | "fiber_per_100g"
+  | "fat_per_100g"
+  | "protein_per_100g"
+> & { match_count: number };
 
 export interface FoodCatalog {
   getByFdcId(fdcId: number): Promise<FoodItem | null>;
-  search(query: string, limit: number): Promise<FoodMatch[]>;
+  search(query: string, limit: number): Promise<FoodSearchResult[]>;
 }
 
 export function foodItemOf(record: CatalogRecord): FoodItem | null {

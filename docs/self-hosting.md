@@ -80,7 +80,7 @@ Progress:
 
 - [x] 1. HKDF over `TASHI_SECRET_KEY` instead of scrypt, while bilbo has no stored key. The password no longer doubles as the secret.
 - [x] 2. Write batches behind the repositories, checked by the contract suite on Postgres. `WriteBatch.write` takes only insert, update and delete queries, so a read inside a batch does not compile, and its own contract suite checks order, all-or-nothing and row counts. Settings no longer rely on deferred constraints: positions are shifted out of the way first.
-- [x] 3. Catalog as static assets with a term-split search index, behind `FoodCatalog` and its contract suite. `pnpm build:catalog` (part of `pnpm build` and `pnpm dev`) writes 471 JSON files from `foods.db`: foods in shards of 128 ordered by how search breaks ties, an index from id to place, and a stemmed index split by the first two letters of each term. A lookup validates only the posting list and the food it uses; validating whole shards with zod cost 2 to 7 ms each. A search with an empty cache costs about 1 to 3 ms of CPU on a laptop. The server refuses to start when the built catalog's label differs from `foods.db`. Postgres still imports the catalog for the meal item foreign keys until step 4.
+- [x] 3. Catalog as static assets behind `FoodCatalog` and its contract suite. `pnpm build:catalog` (part of `pnpm build` and `pnpm dev`) writes `search.json`, a stemmed word index with a short summary of each food (1.7 MB, 469 KB gzipped), and the full foods in shards of 16. The server reads the index once at start, which takes 9 to 32 ms with a hand-written check where zod took 62 to 242 ms; on Workers it is bundled with the Worker and parsed at startup, outside the CPU of any request (to confirm in step 6). Search runs in memory; a meal then reads one shard per food it uses. `FoodCatalog.search` returns only the fields the parser sends to the model. The server refuses to start when the index's label differs from `foods.db`. Postgres still imports the catalog for the meal item foreign keys until step 4.
 - [ ] 4. SQLite schema with snapshots on meal items, `better-sqlite3` repositories, unit tests on in-memory SQLite, e2e on SQLite. Remove `pg`, sql.js at runtime and the Postgres code. Update [database-schema.md](database-schema.md).
 - [ ] 5. Move bilbo from Postgres to a SQLite file as a one-off on bilbo, rehearsed on a backup: the script writes the snapshots from the release ranges and lives in the project context directory, not in the repo. bilbo stays on Node until the Workers deploy is tested end to end.
 - [ ] 6. Workers entry point, D1 dialect, `wrangler.jsonc`, migrations at deploy, CPU measured per route.
@@ -91,6 +91,7 @@ Open questions:
 
 - Can a fork deploy from the Cloudflare dashboard without editing the D1 `database_id`, and does automatic provisioning set jurisdiction `eu`? If not, the user creates the database in the dashboard and pastes its ID as a build variable.
 - Which D1 dialect: `kysely-d1` must be vetted against the dependency rules, and a small one written here may be simpler.
+- Whether CPU spent at Worker startup (parsing the search index) stays out of the first request's 10 ms, and whether fetches through the assets binding count toward the 50 subrequests of the Free plan. Cloudflare's docs do not say.
 
 The Postgres plan below is kept for its history until step 4 replaces it.
 

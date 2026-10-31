@@ -1,13 +1,15 @@
-import { manifestPath, manifestSchema } from "./layout.js";
+import { searchIndexPath } from "./layout.js";
+import { SearchIndex } from "./search-index.js";
 import type { ReadAsset } from "./static-food-catalog.js";
 
 export { diskAssets, memoryAssets, writeAssets } from "./assets.js";
 export { catalogAssets } from "./build.js";
+export { SearchIndex } from "./search-index.js";
 export { type ReadAsset, StaticFoodCatalog } from "./static-food-catalog.js";
 
-export async function catalogLabel(
+export async function readSearchIndex(
   readAsset: ReadAsset,
-): Promise<string | null> {
-  const manifest = await readAsset(manifestPath);
-  return manifest === null ? null : manifestSchema.parse(manifest).label;
+): Promise<SearchIndex | null> {
+  const content = await readAsset(searchIndexPath);
+  return content === null ? null : SearchIndex.parse(content);
 }

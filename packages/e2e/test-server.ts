@@ -17,6 +17,7 @@ import { createRoutes } from "@tashi/backend/routes";
 import {
   catalogAssets,
   memoryAssets,
+  readSearchIndex,
   StaticFoodCatalog,
 } from "@tashi/backend/static-catalog";
 import { TimelineService } from "@tashi/backend/timeline-service";
@@ -153,9 +154,10 @@ async function startServer(): Promise<void> {
     newId: randomId,
     catalog,
   });
-  const foodCatalog = new StaticFoodCatalog(
-    memoryAssets(catalogAssets(catalog)),
-  );
+  const catalogFiles = memoryAssets(catalogAssets(catalog));
+  const searchIndex = await readSearchIndex(catalogFiles);
+  if (!searchIndex) throw new Error("The catalog build has no search index");
+  const foodCatalog = new StaticFoodCatalog(searchIndex, catalogFiles);
 
   const lunchtimeClock = () => {
     const now = new Date();
