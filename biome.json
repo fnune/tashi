@@ -32,7 +32,8 @@
       "!!**/dist",
       "!!**/node_modules",
       "!!**/.direnv",
-      "!!**/data",
+      "!!data",
+      "!!packages/backend/data",
       "!packages/design-system/reference",
       "!packages/design-system/tokens/tokens.css"
     ]

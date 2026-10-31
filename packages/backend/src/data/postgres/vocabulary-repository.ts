@@ -13,7 +13,11 @@ export class PostgresVocabularyRepository implements VocabularyRepository {
       .innerJoin("catalog_entries", (join) =>
         join
           .onRef("catalog_entries.source", "=", "food_vocabulary.source")
-          .onRef("catalog_entries.external_id", "=", "food_vocabulary.external_id"),
+          .onRef(
+            "catalog_entries.external_id",
+            "=",
+            "food_vocabulary.external_id",
+          ),
       )
       .select([
         "food_vocabulary.description",

@@ -103,9 +103,7 @@ export async function recordsAt(
 ): Promise<Map<string, CatalogRecord>> {
   const records = new Map<string, CatalogRecord>();
   if (keys.length === 0) return records;
-  const tuples = sql.join(
-    keys.map((k) => sql`(${k.source}, ${k.externalId})`),
-  );
+  const tuples = sql.join(keys.map((k) => sql`(${k.source}, ${k.externalId})`));
   const currentOnly = release === null ? sql`AND to_release IS NULL` : sql``;
 
   const entries = await sql<{
@@ -206,11 +204,17 @@ export async function recordsAt(
     }
     const serving = factAt(servings.get(key) ?? [], release);
     if (serving) {
-      record.serving = { description: serving.description, grams: serving.grams };
+      record.serving = {
+        description: serving.description,
+        grams: serving.grams,
+      };
     }
     const food = foods.get(key);
     if (food) {
-      const bySource = group(glycemicIndexes.get(food.food_id) ?? [], (r) => r.fact_source);
+      const bySource = group(
+        glycemicIndexes.get(food.food_id) ?? [],
+        (r) => r.fact_source,
+      );
       const glycemic = [...bySource.values()]
         .map((facts) => factAt(facts, release))
         .find((fact) => fact !== undefined);

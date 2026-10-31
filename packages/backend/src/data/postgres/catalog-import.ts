@@ -1,4 +1,4 @@
-import { type Transaction, sql } from "kysely";
+import { sql, type Transaction } from "kysely";
 import {
   type CatalogBuild,
   type CatalogRecord,
@@ -79,7 +79,10 @@ async function syncEntries(trx: Trx, records: CatalogRecord[]): Promise<void> {
     const known = existing.get(entryKey(record.source, record.externalId));
     if (!known) {
       added.push(record);
-    } else if (known.name !== record.name || known.category !== record.category) {
+    } else if (
+      known.name !== record.name ||
+      known.category !== record.category
+    ) {
       await trx
         .updateTable("catalog_entries")
         .set({ name: record.name, category: record.category })
@@ -175,7 +178,9 @@ async function syncRangedFacts(
 
   const keyTuples = (rows: Row[]) =>
     sql.join(
-      rows.map((row) => sql`(${sql.join(keyColumns.map((c) => row[c] as Value))})`),
+      rows.map(
+        (row) => sql`(${sql.join(keyColumns.map((c) => row[c] as Value))})`,
+      ),
     );
   const keyList = sql.join(keyColumns.map((c) => sql.ref(c)));
   for (const part of chunks(outdated.filter((r) => r.from_release < release))) {
@@ -184,7 +189,9 @@ async function syncRangedFacts(
       WHERE to_release IS NULL AND (${keyList}) IN (${keyTuples(part)})
     `.execute(trx);
   }
-  for (const part of chunks(outdated.filter((r) => r.from_release >= release))) {
+  for (const part of chunks(
+    outdated.filter((r) => r.from_release >= release),
+  )) {
     await sql`
       DELETE FROM ${sql.table(table)}
       WHERE to_release IS NULL AND (${keyList}) IN (${keyTuples(part)})
@@ -213,7 +220,9 @@ async function syncCuratedFoods(
   records: CatalogRecord[],
 ): Promise<void> {
   const curated = records.flatMap((record) =>
-    record.food ? [{ record, food: record.food, id: foodId(record.food.slug) }] : [],
+    record.food
+      ? [{ record, food: record.food, id: foodId(record.food.slug) }]
+      : [],
   );
 
   const slugs = new Map(curated.map(({ food, id }) => [id, food.slug]));
@@ -226,7 +235,10 @@ async function syncCuratedFoods(
   }
 
   const links = new Map(
-    curated.map(({ record, id }) => [entryKey(record.source, record.externalId), id]),
+    curated.map(({ record, id }) => [
+      entryKey(record.source, record.externalId),
+      id,
+    ]),
   );
   const inBuild = new Set(
     records.map((record) => entryKey(record.source, record.externalId)),
@@ -279,14 +291,26 @@ async function syncCuratedFoods(
   for (const part of chunks([...names])) {
     await trx
       .insertInto("food_names")
-      .values(part.map(([food_id, name]) => ({ food_id, language: "es" as const, name })))
+      .values(
+        part.map(([food_id, name]) => ({
+          food_id,
+          language: "es" as const,
+          name,
+        })),
+      )
       .execute();
   }
 
   const factors = curated.flatMap(({ food, id }) =>
     food.cookingMultiplier === null
       ? []
-      : [{ food_id: id, multiplier: food.cookingMultiplier, fact_source: "curated" }],
+      : [
+          {
+            food_id: id,
+            multiplier: food.cookingMultiplier,
+            fact_source: "curated",
+          },
+        ],
   );
   if (syncedFoods.length > 0) {
     await trx
