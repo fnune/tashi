@@ -9,6 +9,7 @@
     "dev": "concurrently -k --names sh,be,fe --prefix-colors gray,blue,magenta \"pnpm --filter @tashi/shared dev\" \"pnpm --filter @tashi/backend dev\" \"pnpm --filter @tashi/frontend dev\"",
     "dev:backend": "pnpm --filter @tashi/backend dev",
     "dev:frontend": "pnpm --filter @tashi/frontend dev",
+    "build:cloudflare": "pnpm --filter @tashi/shared --filter @tashi/frontend build && pnpm --filter @tashi/backend build:worker",
     "build": "pnpm --filter @tashi/shared --filter @tashi/backend --filter @tashi/frontend build && node -e \"const fs=require('fs');fs.rmSync('packages/backend/public',{recursive:true,force:true});fs.cpSync('packages/frontend/dist','packages/backend/public',{recursive:true})\"",
     "start": "pnpm --filter @tashi/backend start",
     "check": "biome check . && stylelint \"packages/frontend/src/**/*.css\"",
@@ -20,6 +21,7 @@
   "devDependencies": {
     "@biomejs/biome": "2.4.16",
     "concurrently": "^9.2.1",
-    "stylelint": "^17.16.0"
+    "stylelint": "^17.16.0",
+    "wrangler": "4.152.0"
   }
 }

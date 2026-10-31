@@ -1,0 +1,15 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "tashi",
+  "main": "packages/backend/src/worker.ts",
+  "compatibility_date": "2026-10-01",
+  "build": { "command": "pnpm build:cloudflare" },
+  "alias": { "tashi-search-index": "./packages/backend/catalog/search.json" },
+  "assets": {
+    "directory": "./packages/backend/worker-assets",
+    "binding": "ASSETS",
+    "not_found_handling": "single-page-application",
+    "run_worker_first": true
+  },
+  "d1_databases": [{ "binding": "DB", "database_name": "tashi" }]
+}

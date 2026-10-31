@@ -12,6 +12,7 @@
     "./catalog-file": "./src/data/catalog-file.ts",
     "./catalog-layout": "./src/data/static-catalog/layout.ts",
     "./d1": "./src/data/d1/index.ts",
+    "./d1-migrate": "./src/data/d1/migrate.ts",
     "./fetched-assets": "./src/data/static-catalog/fetched-assets.ts",
     "./food-catalog": "./src/domain/food-catalog.ts",
     "./repositories": "./src/domain/repositories.ts",

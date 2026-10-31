@@ -363,12 +363,4 @@ describe("the migration", () => {
     );
     expect(statementsOf(blocks.join("\n\n"))).toEqual(statements);
   });
-
-  it("is what Wrangler applies to D1", async () => {
-    const d1Migration = await readFile(
-      join(import.meta.dirname, "../../migrations/0001_initial.sql"),
-      "utf-8",
-    );
-    expect(statementsOf(d1Migration)).toEqual(statements);
-  });
 });

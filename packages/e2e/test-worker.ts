@@ -1,6 +1,7 @@
 import type { D1Database } from "@cloudflare/workers-types";
 import { CATALOG_ASSETS_PATH } from "@tashi/backend/catalog-layout";
 import { d1Repositories } from "@tashi/backend/d1";
+import { migrateD1 } from "@tashi/backend/d1-migrate";
 import {
   type AssetFetcher,
   fetchedAssets,
@@ -20,7 +21,7 @@ interface Env {
 }
 
 const searchIndex = SearchIndex.parse(searchIndexJson);
-let app: Hono | undefined;
+let ready: Promise<Hono> | undefined;
 
 function appFor(env: Env): Hono {
   const built = buildTestApp({
@@ -45,8 +46,8 @@ function appFor(env: Env): Hono {
 }
 
 export default {
-  fetch(request: Request, env: Env): Response | Promise<Response> {
-    app ??= appFor(env);
-    return app.fetch(request);
+  async fetch(request: Request, env: Env): Promise<Response> {
+    ready ??= migrateD1(env.DB, new Date()).then(() => appFor(env));
+    return (await ready).fetch(request);
   },
 };

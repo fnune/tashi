@@ -17,6 +17,9 @@ importers:
       stylelint:
         specifier: ^17.16.0
         version: 17.16.0(typescript@5.9.3)
+      wrangler:
+        specifier: 4.152.0
+        version: 4.152.0(@cloudflare/workers-types@5.20261023.1)(@types/node@22.19.17)
 
   packages/backend:
     dependencies:

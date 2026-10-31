@@ -1,9 +1,10 @@
 import type { D1Database } from "@cloudflare/workers-types";
-import type { Hono } from "hono";
+import { Hono } from "hono";
 import searchIndexJson from "tashi-search-index";
 import { createApp } from "./app.js";
-import { loadAppConfig } from "./config.js";
+import { type AppConfig, ConfigError, loadAppConfig } from "./config.js";
 import { d1Repositories } from "./data/d1/index.js";
+import { migrateD1 } from "./data/d1/migrate.js";
 import {
   type AssetFetcher,
   fetchedAssets,
@@ -21,11 +22,20 @@ interface Env extends Record<string, unknown> {
 
 const searchIndex = SearchIndex.parse(searchIndexJson);
 
-let app: Hono | undefined;
+let ready: Promise<Hono> | undefined;
 
-function appFor(env: Env): Hono {
-  const { app: built } = createApp({
-    config: loadAppConfig(env),
+async function start(env: Env): Promise<Hono> {
+  let config: AppConfig;
+  try {
+    config = loadAppConfig(env);
+  } catch (error) {
+    if (error instanceof ConfigError) return setupPage(error.message);
+    throw error;
+  }
+  if (!config.password) return setupPage(PASSWORD_MISSING);
+  await migrateD1(env.DB, systemClock());
+  const { app } = createApp({
+    config,
     repositories: d1Repositories(env.DB, {
       newId: randomId,
       catalogRelease: searchIndex.label,
@@ -38,13 +48,37 @@ function appFor(env: Env): Hono {
     clock: systemClock,
     newId: randomId,
   });
-  built.all("*", (c) => env.ASSETS.fetch(c.req.raw));
-  return built;
+  app.all("*", (c) => env.ASSETS.fetch(c.req.raw));
+  return app;
+}
+
+const PASSWORD_MISSING =
+  "Tashi is installed but has no password yet, so it shows nothing. In the Cloudflare dashboard, open this Worker, go to Settings, then Variables and Secrets, and add a secret named TASHI_PASSWORD. Tashi starts as soon as it is saved.";
+
+function setupPage(problem: string): Hono {
+  const page = new Hono();
+  page.all("*", (c) =>
+    c.html(
+      `<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>Tashi</title><main style="font-family: system-ui; max-width: 36rem; margin: 3rem auto; padding: 0 1rem; line-height: 1.5"><h1>Tashi needs one more step</h1><p>${escapeHtml(problem)}</p></main>`,
+      503,
+    ),
+  );
+  return page;
+}
+
+function escapeHtml(text: string): string {
+  return text
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;");
 }
 
 export default {
-  fetch(request: Request, env: Env): Response | Promise<Response> {
-    app ??= appFor(env);
-    return app.fetch(request);
+  async fetch(request: Request, env: Env): Promise<Response> {
+    ready ??= start(env).catch((error: unknown) => {
+      ready = undefined;
+      throw error;
+    });
+    return (await ready).fetch(request);
   },
 };

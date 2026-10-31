@@ -12,7 +12,6 @@ function worker(port: number, state: string, vars: string[] = []) {
   return {
     command: [
       `rm -rf .wrangler/${state}`,
-      `CI=1 ${wrangler} d1 migrations apply DB --local ${config} ${persist}`,
       `CI=1 ${wrangler} dev ${config} ${persist} --port ${port} --inspector-port 0 ${flags}`,
     ].join(" && "),
     port,

@@ -12,8 +12,7 @@
   "d1_databases": [
     {
       "binding": "DB",
-      "database_name": "tashi-e2e",
-      "migrations_dir": "../backend/migrations"
+      "database_name": "tashi-e2e"
     }
   ]
 }

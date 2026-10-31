@@ -6,8 +6,8 @@ import { getPlatformProxy } from "wrangler";
 import { D1Dialect } from "../data/d1/d1-dialect.js";
 import { d1WriteBatch } from "../data/d1/d1-write-batch.js";
 import { d1Repositories } from "../data/d1/index.js";
+import { migrateD1 } from "../data/d1/migrate.js";
 import type { Database } from "../data/database.js";
-import { statements } from "../data/migrations/0001-initial.js";
 import { repositoryContract } from "./repository-contract.js";
 import { sequentialIds } from "./sequential-ids.js";
 import { writeBatchContract } from "./write-batch-contract.js";
@@ -37,7 +37,7 @@ beforeAll(async () => {
   });
   database = proxy.env.DB;
   dispose = proxy.dispose;
-  await database.batch(statements.map((s) => database.prepare(s)));
+  await migrateD1(database, new Date());
 }, 60_000);
 
 afterAll(async () => {
@@ -69,6 +69,14 @@ writeBatchContract("d1", async () => {
 });
 
 describe("d1", () => {
+  it("applies each migration once, however often it is asked", async () => {
+    expect(await migrateD1(database, new Date())).toEqual([]);
+    const { results } = await database
+      .prepare("SELECT name FROM tashi_migrations")
+      .all();
+    expect(results).toEqual([{ name: "0001-initial" }]);
+  });
+
   it("refuses a statement with more parameters than D1 takes, as Cloudflare does", async () => {
     const db = new Kysely<Database>({
       dialect: new D1Dialect(await emptied()),
