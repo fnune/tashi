@@ -2,28 +2,16 @@ import { existsSync } from "node:fs";
 import { join } from "node:path";
 import { serve } from "@hono/node-server";
 import { serveStatic } from "@hono/node-server/serve-static";
-import { Hono } from "hono";
+import { createApp } from "./app.js";
 import { ConfigError, loadConfig } from "./config.js";
-import { AnthropicFoodParser } from "./data/anthropic-food-parser.js";
 import { openSqliteRepositories } from "./data/sqlite/index.js";
 import {
   diskAssets,
   readSearchIndex,
   StaticFoodCatalog,
 } from "./data/static-catalog/index.js";
-import { ApiKeyStore } from "./domain/api-key-store.js";
-import { Calculator } from "./domain/calculator.js";
 import { systemClock } from "./domain/clock.js";
-import { DiaryImport } from "./domain/diary-import.js";
-import { Doses } from "./domain/doses.js";
 import { randomId } from "./domain/ids.js";
-import {
-  anthropicAcceptsKey,
-  KeyedFoodParser,
-} from "./domain/keyed-food-parser.js";
-import { TimelineService } from "./domain/timeline-service.js";
-import { passwordGate } from "./http/password-gate.js";
-import { createRoutes } from "./http/routes.js";
 
 function configOrExit() {
   try {
@@ -52,38 +40,17 @@ const { repositories } = await openSqliteRepositories(config.databasePath, {
 });
 console.log(`Food catalog ${searchIndex.label}: ${searchIndex.size} foods`);
 
-const apiKeys = new ApiKeyStore(repositories.apiKey, {
-  encryptionSecret: config.encryptionSecret,
-  environmentKey: config.anthropicApiKey,
-  verify: anthropicAcceptsKey,
+const { app, apiKeys } = createApp({
+  config,
+  repositories,
+  foodCatalog,
+  fetch,
+  clock: systemClock,
+  newId: randomId,
 });
 if (!(await apiKeys.status()).configured) {
   console.warn("No Anthropic API key yet: add one in the settings");
 }
-
-const parser = new KeyedFoodParser(
-  apiKeys,
-  (apiKey) => new AnthropicFoodParser(apiKey, foodCatalog, fetch, config.model),
-);
-const calculator = new Calculator(parser, foodCatalog, systemClock, randomId);
-
-const app = new Hono();
-
-app.get(`${basePath}/api/health`, (c) => c.json({ ok: true }));
-
-if (config.password) {
-  app.use("*", passwordGate(config.password));
-}
-
-const routes = createRoutes({
-  doses: new Doses(repositories, calculator, systemClock),
-  timeline: new TimelineService(repositories, systemClock, randomId),
-  diaryImport: new DiaryImport(repositories),
-  repositories,
-  apiKeys,
-  defaultTimeZone: config.defaultTimeZone,
-});
-app.route(basePath || "/", routes);
 
 if (existsSync("./public")) {
   app.use(

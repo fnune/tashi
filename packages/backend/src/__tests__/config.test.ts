@@ -59,9 +59,9 @@ describe("loadConfig", () => {
       expect(() => loadConfig({ ...minimal, ...env })).toThrow(ConfigError);
     }
     expect(() => loadConfig({ DATABASE_PATH: "" })).toThrow(ConfigError);
-    expect(() =>
-      loadConfig({ ...minimal, PORT: "abc", BASE_PATH: "x" }),
-    ).toThrow(/PORT.*BASE_PATH/);
+    const both = () => loadConfig({ ...minimal, PORT: "abc", BASE_PATH: "x" });
+    expect(both).toThrow(/PORT/);
+    expect(both).toThrow(/BASE_PATH/);
   });
 
   it("accepts a base path under a prefix", () => {

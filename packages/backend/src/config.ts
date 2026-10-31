@@ -4,11 +4,7 @@ const blankIsUnset = (value: unknown) => (value === "" ? undefined : value);
 
 const optionalText = z.preprocess(blankIsUnset, z.string().optional());
 
-const envSchema = z.object({
-  PORT: z.preprocess(
-    blankIsUnset,
-    z.coerce.number().int().min(1).max(65535).default(3000),
-  ),
+const appEnvSchema = z.object({
   BASE_PATH: z.preprocess(
     blankIsUnset,
     z
@@ -18,9 +14,7 @@ const envSchema = z.object({
       })
       .optional(),
   ),
-  DATABASE_PATH: z.string({ required_error: "required" }).min(1, "required"),
   TIME_ZONE: optionalText,
-  CATALOG_DIR: optionalText,
   LLM_MODEL: z.preprocess(
     blankIsUnset,
     z.string().default("claude-haiku-4-5-20251001"),
@@ -36,16 +30,28 @@ const envSchema = z.object({
   ),
 });
 
-export interface Config {
-  port: number;
-  databasePath: string;
+const nodeEnvSchema = appEnvSchema.extend({
+  PORT: z.preprocess(
+    blankIsUnset,
+    z.coerce.number().int().min(1).max(65535).default(3000),
+  ),
+  DATABASE_PATH: z.string({ required_error: "required" }).min(1, "required"),
+  CATALOG_DIR: optionalText,
+});
+
+export interface AppConfig {
   defaultTimeZone: string;
   basePath: string;
-  catalogDir: string | undefined;
   model: string;
   anthropicApiKey: string | undefined;
   password: string | undefined;
   encryptionSecret: string | undefined;
+}
+
+export interface Config extends AppConfig {
+  port: number;
+  databasePath: string;
+  catalogDir: string | undefined;
 }
 
 export class ConfigError extends Error {
@@ -58,17 +64,29 @@ export class ConfigError extends Error {
   }
 }
 
-export function loadConfig(env: Record<string, string | undefined>): Config {
-  const parsed = envSchema.safeParse(env);
+export function loadAppConfig(env: Record<string, unknown>): AppConfig {
+  const parsed = appEnvSchema.safeParse(env);
+  if (!parsed.success) throw new ConfigError(parsed.error);
+  return appConfigOf(parsed.data);
+}
+
+export function loadConfig(env: Record<string, unknown>): Config {
+  const parsed = nodeEnvSchema.safeParse(env);
   if (!parsed.success) throw new ConfigError(parsed.error);
   const e = parsed.data;
   return {
+    ...appConfigOf(e),
     port: e.PORT,
     databasePath: e.DATABASE_PATH,
+    catalogDir: e.CATALOG_DIR,
+  };
+}
+
+function appConfigOf(e: z.infer<typeof appEnvSchema>): AppConfig {
+  return {
     defaultTimeZone:
       e.TIME_ZONE ?? Intl.DateTimeFormat().resolvedOptions().timeZone,
     basePath: e.BASE_PATH ?? "",
-    catalogDir: e.CATALOG_DIR,
     model: e.LLM_MODEL,
     anthropicApiKey: e.ANTHROPIC_API_KEY,
     password: e.TASHI_PASSWORD,
