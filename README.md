@@ -29,8 +29,9 @@ Tashi stores its data in SQLite through Node's built-in `node:sqlite`, so a runn
 
 ```sh
 pnpm check && pnpm typecheck
-pnpm test:unit   # runs the storage tests against temporary SQLite files
-pnpm test:e2e    # starts the app on a temporary SQLite file
+pnpm test:unit   # runs the storage tests on temporary SQLite files and on Wrangler's local D1
+pnpm test:e2e    # builds the Worker and runs the browser tests on wrangler dev with a local D1
+E2E_RUNTIME=node pnpm --filter @tashi/e2e test   # the same browser tests on the Node server
 ```
 
 ## Deployment

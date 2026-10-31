@@ -240,7 +240,7 @@ export interface TimelinePageResponse {
 
 export const DIARY_FORMAT = "tashi-diary";
 export const DIARY_VERSION = 1;
-export const IMPORT_ENTRIES_PER_REQUEST = 25;
+export const IMPORT_ENTRIES_PER_REQUEST = 5;
 
 export interface Diary {
   format: typeof DIARY_FORMAT;
