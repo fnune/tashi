@@ -1,6 +1,7 @@
 node_modules/
 dist/
 .env
+.envrc
 *.local
 packages/backend/data/
 data/settings.json
