@@ -11,6 +11,7 @@ import {
 } from "react-router";
 import * as api from "./api.js";
 import { AppHeader } from "./components/AppHeader.js";
+import { AuthGate } from "./components/AuthGate.js";
 import {
   type CalculatorFormState,
   CalculatorView,
@@ -20,7 +21,7 @@ import { SettingsView } from "./components/SettingsView.js";
 import { TabBar } from "./components/TabBar.js";
 import { TimelineView } from "./components/TimelineView.js";
 import { Notice } from "./components/ui/Notice.js";
-import type { Language } from "./i18n.js";
+import { type Language, savedLanguage } from "./i18n.js";
 import { type PagedListHandle, usePagedList } from "./paging/use-paged-list.js";
 import {
   type KeyValueStore,
@@ -47,17 +48,11 @@ function deviceStore(): KeyValueStore | null {
 
 const IOB_REFRESH_INTERVAL_MS = 30_000;
 
-function getSavedLanguage(): Language {
-  const saved = localStorage.getItem("tashi-lang");
-  if (saved === "es" || saved === "en") return saved;
-  return DEFAULT_SETTINGS.language;
-}
-
 function AppShell() {
   const navigate = useNavigate();
   const [settings, setSettings] = useState<Settings>({
     ...DEFAULT_SETTINGS,
-    language: getSavedLanguage(),
+    language: savedLanguage(),
   });
   const [settingsLoaded, setSettingsLoaded] = useState(false);
   const timeline = usePagedList(api.getTimelinePage, (entry) => entry.id);
@@ -276,7 +271,9 @@ declare const __BASE_PATH__: string;
 export function App() {
   return (
     <BrowserRouter basename={__BASE_PATH__ || "/"}>
-      <AppShell />
+      <AuthGate>
+        <AppShell />
+      </AuthGate>
     </BrowserRouter>
   );
 }

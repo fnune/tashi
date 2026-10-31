@@ -10,8 +10,13 @@ import {
   readSearchIndex,
   StaticFoodCatalog,
 } from "./data/static-catalog/index.js";
+import {
+  newSetupToken,
+  setupTokenWithHash,
+} from "./domain/auth/setup-token.js";
 import { systemClock } from "./domain/clock.js";
 import { randomId } from "./domain/ids.js";
+import { setupLinkLines, setupLinkMessage } from "./setup-link.js";
 
 function configOrExit() {
   try {
@@ -40,14 +45,27 @@ const { repositories } = await openSqliteRepositories(config.databasePath, {
 });
 console.log(`Food catalog ${searchIndex.label}: ${searchIndex.size} foods`);
 
-const { app, apiKeys } = createApp({
+const setup = await newSetupToken();
+const { app, apiKeys, authentication } = createApp({
   config,
+  setupToken: setupTokenWithHash(setup.sha256Hex),
   repositories,
   foodCatalog,
   fetch,
   clock: systemClock,
   newId: randomId,
 });
+if (!(await authentication.isClaimed())) {
+  console.log(
+    setupLinkMessage([
+      ...setupLinkLines(
+        `http://localhost:${config.port}${basePath}/setup?token=${setup.token}`,
+      ),
+      "Behind another address, keep the part from /setup onwards.",
+      "",
+    ]),
+  );
+}
 if (!(await apiKeys.status()).configured) {
   console.warn("No Anthropic API key yet: add one in the settings");
 }

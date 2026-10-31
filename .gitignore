@@ -6,6 +6,7 @@ dist/
 packages/backend/data/
 packages/backend/catalog/
 packages/backend/worker-assets/
+packages/backend/generated/
 .wrangler/
 data/settings.json
 data/history.json

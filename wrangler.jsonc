@@ -6,7 +6,10 @@
   "workers_dev": true,
   "preview_urls": false,
   "build": { "command": "pnpm build:cloudflare" },
-  "alias": { "tashi-search-index": "./packages/backend/catalog/search.json" },
+  "alias": {
+    "tashi-search-index": "./packages/backend/catalog/search.json",
+    "tashi-setup-token": "./packages/backend/generated/setup-token.json"
+  },
   "assets": {
     "directory": "./packages/backend/worker-assets",
     "binding": "ASSETS",

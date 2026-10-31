@@ -275,6 +275,10 @@ export type ApiErrorCode =
   | "api_key_missing"
   | "api_key_invalid"
   | "api_key_storage_unavailable"
+  | "signed_out"
+  | "sign_in_failed"
+  | "sign_in_throttled"
+  | "password_too_short"
   | "validation_failed"
   | "not_found"
   | "internal_error";

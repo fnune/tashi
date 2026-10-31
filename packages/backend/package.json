@@ -6,6 +6,8 @@
   "type": "module",
   "exports": {
     "./api-key-store": "./src/domain/api-key-store.ts",
+    "./authenticate": "./src/http/authentication.ts",
+    "./authentication": "./src/domain/auth/authentication.ts",
     "./calculator": "./src/domain/calculator.ts",
     "./diary-import": "./src/domain/diary-import.ts",
     "./doses": "./src/domain/doses.ts",
@@ -31,7 +33,7 @@
     "dev": "pnpm build:catalog && NODE_OPTIONS=--disable-warning=ExperimentalWarning tsx watch --env-file-if-exists=../../.env src/server.ts",
     "build": "tsc && pnpm build:catalog",
     "build:catalog": "tsx scripts/build-catalog.ts ../../data/foods.db catalog",
-    "build:worker": "pnpm build:catalog && tsx scripts/build-worker-assets.ts ../frontend/dist catalog worker-assets",
+    "build:worker": "pnpm build:catalog && tsx scripts/build-worker-assets.ts ../frontend/dist catalog worker-assets && tsx scripts/build-setup-link.ts ../../wrangler.jsonc generated/setup-token.json",
     "start": "node --disable-warning=ExperimentalWarning dist/server.js",
     "test": "vitest run",
     "import-usda": "tsx scripts/import-usda.ts ../../data/usda ../../data/foods.db"

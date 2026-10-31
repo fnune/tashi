@@ -4,7 +4,8 @@ import { join } from "node:path";
 import { DatabaseSync } from "node:sqlite";
 import { DEFAULT_SETTINGS, FOOD_SOURCES } from "@tashi/shared";
 import { describe, expect, it } from "vitest";
-import { statements, statementsOf } from "../data/migrations/0001-initial.js";
+import { statementsOf } from "../data/migrations/0001-initial.js";
+import { migrationStatements } from "../data/migrations/index.js";
 import { migrate, openSqlite } from "../data/sqlite/connection.js";
 import { openSqliteRepositories } from "../data/sqlite/index.js";
 import { StoredDataError } from "../data/stored-data-error.js";
@@ -81,6 +82,7 @@ describe("sqlite storage", () => {
     await second.close();
     expect(first.query("SELECT name FROM kysely_migration")).toEqual([
       { name: "0001-initial" },
+      { name: "0002-accounts" },
     ]);
     await first.close();
   });
@@ -361,6 +363,8 @@ describe("the migration", () => {
     const blocks = [...doc.matchAll(/```sql\n([\s\S]*?)```/g)].map((m) =>
       (m[1] ?? "").trim(),
     );
-    expect(statementsOf(blocks.join("\n\n"))).toEqual(statements);
+    expect(statementsOf(blocks.join("\n\n"))).toEqual(
+      migrationStatements.flatMap((migration) => migration.statements),
+    );
   });
 });

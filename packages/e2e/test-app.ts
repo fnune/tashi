@@ -2,6 +2,11 @@ import {
   ApiKeyStore,
   type ApiKeyStoreOptions,
 } from "@tashi/backend/api-key-store";
+import { authenticate, type SignedIn } from "@tashi/backend/authenticate";
+import {
+  Authentication,
+  type Authenticator,
+} from "@tashi/backend/authentication";
 import { Calculator } from "@tashi/backend/calculator";
 import { DiaryImport } from "@tashi/backend/diary-import";
 import { Doses } from "@tashi/backend/doses";
@@ -9,7 +14,6 @@ import type { FoodCatalog } from "@tashi/backend/food-catalog";
 import type { FoodParser, ParseOutcome } from "@tashi/backend/food-parser";
 import { randomId } from "@tashi/backend/ids";
 import { KeyedFoodParser } from "@tashi/backend/keyed-food-parser";
-import { passwordGate } from "@tashi/backend/password-gate";
 import type { Repositories } from "@tashi/backend/repositories";
 import { createRoutes } from "@tashi/backend/routes";
 import { TimelineService } from "@tashi/backend/timeline-service";
@@ -19,10 +23,15 @@ import { Hono } from "hono";
 
 export const OPEN_PORT = 3100;
 export const GATED_PORT = 3101;
-export const GATE_PASSWORD = "e2e-password";
+export const SETUP_TOKEN = "e2e-setup-token";
 export const ENVIRONMENT_KEY = "sk-ant-from-the-server";
 
 export const USER_TABLES = [
+  "sessions",
+  "sign_in_failures",
+  "password_methods",
+  "sign_in_methods",
+  "accounts",
   "settings",
   "profile_window_ratios",
   "profiles",
@@ -41,7 +50,7 @@ export interface TestAppOptions {
   foodCatalog: FoodCatalog;
   timeZone: string;
   clearTables: () => Promise<void>;
-  password?: string | undefined;
+  withAccounts?: boolean;
 }
 
 export function lunchtimeIn(timeZone: string, now: Date): Date {
@@ -72,7 +81,7 @@ export function lunchtimeIn(timeZone: string, now: Date): Date {
   );
 }
 
-export function buildTestApp(options: TestAppOptions): Hono {
+export function buildTestApp(options: TestAppOptions): Hono<SignedIn> {
   const { repositories, foodCatalog } = options;
   const lunchtimeClock = () => lunchtimeIn(options.timeZone, new Date());
   const keyOptions: ApiKeyStoreOptions = {
@@ -98,11 +107,22 @@ export function buildTestApp(options: TestAppOptions): Hono {
     defaultTimeZone: options.timeZone,
   });
 
-  const app = new Hono();
-  if (options.password) app.use("*", passwordGate(options.password));
+  const app = new Hono<SignedIn>();
+  const newAuthentication = () =>
+    new Authentication({
+      accounts: repositories.accounts,
+      sessions: repositories.sessions,
+      signInFailures: repositories.signInFailures,
+      setupToken: { accepts: async (token) => token === SETUP_TOKEN },
+      clock: () => new Date(),
+      newId: randomId,
+      passwordIterations: 1000,
+    });
+  let authentication = newAuthentication();
 
   app.post("/api/__reset", async (c) => {
     await options.clearTables();
+    authentication = newAuthentication();
     keyOptions.environmentKey =
       c.req.query("key") === "none" ? undefined : ENVIRONMENT_KEY;
     await apiKeys.clear();
@@ -124,6 +144,21 @@ export function buildTestApp(options: TestAppOptions): Hono {
   app.get("/api/__vocabulary", async (c) =>
     c.json(await repositories.vocabulary.list()),
   );
+
+  if (options.withAccounts) {
+    const current: Authenticator = {
+      isClaimed: () => authentication.isClaimed(),
+      acceptsSetupToken: (token) => authentication.acceptsSetupToken(token),
+      setUp: (token, name, password) =>
+        authentication.setUp(token, name, password),
+      signIn: (name, password) => authentication.signIn(name, password),
+      session: (token) => authentication.session(token),
+      signOut: (token) => authentication.signOut(token),
+    };
+    authenticate(app, current, "");
+  } else {
+    app.get("/api/auth/me", (c) => c.json({ name: "E2E", role: "admin" }));
+  }
 
   app.route("/", routes);
   return app;

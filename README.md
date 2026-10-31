@@ -38,7 +38,7 @@ E2E_RUNTIME=node pnpm --filter @tashi/e2e test   # the same browser tests on the
 
 Runs on bilbo as the `tashi` app (`nixos/tashi.nix` in fnune/bilbo), from this flake's default package. To ship, push to `main`, then in bilbo run `nix flake update tashi` and rebuild.
 
-`DATABASE_PATH` (the SQLite file) is required; the schema is created and updated at startup. Set `TASHI_PASSWORD` to require HTTP Basic auth (any username, that password) on everything except `GET /api/health`. Leave it unset for no gate. Set `TASHI_SECRET_KEY` to a random string of at least 32 characters (for example `openssl rand -base64 32`) to save the Anthropic API key from the settings; without it, only `ANTHROPIC_API_KEY` works.
+`DATABASE_PATH` (the SQLite file) is required; the schema is created and updated at startup. On its first start without an account, the server prints a setup link to its log; open it to choose a name and password. Until then every address answers "not found". Set `TASHI_SECRET_KEY` to a random string of at least 32 characters (for example `openssl rand -base64 32`) to save the Anthropic API key from the settings; without it, only `ANTHROPIC_API_KEY` works.
 
 ## License
 

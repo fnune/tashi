@@ -343,6 +343,60 @@ Everything else is `NOT NULL`.
 
 D1 has no interactive transactions, only an atomic batch that cannot read halfway through. Every repository write therefore reads what it needs first and sends all its writes as one batch (`WriteBatch`), which applies them in order or not at all: a D1 `batch()` on Workers, a transaction on Node. The batch type accepts only inserts, updates and deletes, so a read inside one does not compile. With one person writing, read-then-write is an acceptable race.
 
+## Accounts and sign-in
+
+Who signs in, how, and their sessions. The reasoning is in [authentication.md](authentication.md); this is the storage. Migration `0002-accounts` creates it.
+
+```sql
+CREATE TABLE accounts (
+  id TEXT PRIMARY KEY,
+  name TEXT NOT NULL CHECK (name <> '' AND length(name) <= 100),
+  name_key TEXT NOT NULL UNIQUE,
+  role TEXT NOT NULL CHECK (role IN ('admin', 'member')),
+  created_at TEXT NOT NULL CHECK (created_at IS strftime('%Y-%m-%dT%H:%M:%fZ', created_at))
+) STRICT;
+
+CREATE TABLE sign_in_methods (
+  id TEXT PRIMARY KEY,
+  account_id TEXT NOT NULL REFERENCES accounts (id) ON DELETE CASCADE,
+  kind TEXT NOT NULL CHECK (kind IN ('password')),
+  created_at TEXT NOT NULL CHECK (created_at IS strftime('%Y-%m-%dT%H:%M:%fZ', created_at)),
+  UNIQUE (id, kind)
+) STRICT;
+CREATE UNIQUE INDEX sign_in_methods_one_password ON sign_in_methods (account_id) WHERE kind = 'password';
+
+CREATE TABLE password_methods (
+  method_id TEXT PRIMARY KEY,
+  kind TEXT NOT NULL DEFAULT 'password' CHECK (kind = 'password'),
+  salt BLOB NOT NULL CHECK (length(salt) = 16),
+  iterations INTEGER NOT NULL CHECK (iterations > 0),
+  verifier BLOB NOT NULL CHECK (length(verifier) = 32),
+  wrapped_data_key BLOB NOT NULL CHECK (length(wrapped_data_key) > 0),
+  FOREIGN KEY (method_id, kind) REFERENCES sign_in_methods (id, kind) ON DELETE CASCADE
+) STRICT;
+
+CREATE TABLE sessions (
+  token_hash BLOB PRIMARY KEY CHECK (length(token_hash) = 32),
+  account_id TEXT NOT NULL REFERENCES accounts (id) ON DELETE CASCADE,
+  stage TEXT NOT NULL CHECK (stage IN ('second_factor', 'signed_in')),
+  created_at TEXT NOT NULL CHECK (created_at IS strftime('%Y-%m-%dT%H:%M:%fZ', created_at)),
+  expires_at TEXT NOT NULL CHECK (expires_at IS strftime('%Y-%m-%dT%H:%M:%fZ', expires_at)),
+  wrapped_data_key BLOB NOT NULL CHECK (length(wrapped_data_key) > 0)
+) STRICT;
+CREATE INDEX sessions_by_account ON sessions (account_id);
+
+CREATE TABLE sign_in_failures (
+  name_key TEXT PRIMARY KEY,
+  failures INTEGER NOT NULL CHECK (failures > 0),
+  last_failure_at TEXT NOT NULL CHECK (last_failure_at IS strftime('%Y-%m-%dT%H:%M:%fZ', last_failure_at))
+) STRICT;
+```
+
+- An account's `name_key` is its name trimmed, normalised and lower-cased by the application, so "Ana" and "ana " are one account.
+- A sign-in method's own fields live in a table per kind. The composite foreign key and the fixed `kind` of `password_methods` keep a password row on a password method; the partial unique index allows one password per account.
+- Sessions and password methods hold their own encrypted copy of the instance's data key. A session stores only the SHA-256 hash of its token; the copy of the data key in it can only be opened with the token, which the database never sees.
+- `sign_in_failures` is keyed by the name tried, whether or not an account has it, so failing for a name that does not exist looks the same as failing for one that does.
+
 ## Accounts and people (later)
 
 No table has an owner today. When sign-in arrives, the model separates who signs in from whose data it is, because they are not always the same human: a parent keeps a diary for a child, a partner looks after another's.

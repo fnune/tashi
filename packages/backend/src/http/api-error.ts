@@ -15,6 +15,10 @@ const FALLBACK_MESSAGES: Record<ApiErrorCode, string> = {
     "Anthropic rejected the API key. Check it in settings and try again.",
   api_key_storage_unavailable:
     "Saving a key needs a secret key set on the server (TASHI_SECRET_KEY).",
+  signed_out: "Sign in to continue.",
+  sign_in_failed: "That name and password do not match.",
+  sign_in_throttled: "Too many attempts. Wait a moment and try again.",
+  password_too_short: "The password needs at least 8 characters.",
   validation_failed: "Invalid request.",
   not_found: "Not found.",
   internal_error: "Something went wrong.",
@@ -23,7 +27,7 @@ const FALLBACK_MESSAGES: Record<ApiErrorCode, string> = {
 export function apiError(
   c: Context,
   code: ApiErrorCode,
-  status: 400 | 404 | 500,
+  status: 400 | 401 | 404 | 429 | 500,
   detail?: string,
 ) {
   const body: ErrorResponse = {

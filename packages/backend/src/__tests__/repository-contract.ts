@@ -4,6 +4,7 @@ import {
   type Settings,
 } from "@tashi/shared";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { nameKeyOf } from "../domain/auth/authentication.js";
 import type { Repositories, TimelineCursor } from "../domain/repositories.js";
 import { seal } from "../domain/secret-box.js";
 import {
@@ -362,6 +363,122 @@ export function repositoryContract(
           { ...vocabEntry("Rice", 1), source: "usda_survey" },
         ]);
         expect(await repositories.vocabulary.list()).toHaveLength(2);
+      });
+    });
+
+    describe("accounts", () => {
+      const ana = { id: uuidNumber(901), name: "Ana", role: "admin" as const };
+      const password = {
+        id: uuidNumber(902),
+        salt: new Uint8Array(16).fill(1),
+        iterations: 1000,
+        verifier: new Uint8Array(32).fill(2),
+        wrappedDataKey: new Uint8Array(60).fill(3),
+      };
+      const at = new Date("2026-06-13T12:00:00.000Z");
+
+      it("starts without an account", async () => {
+        expect(await repositories.accounts.any()).toBe(false);
+        expect(await repositories.accounts.withPassword("ana")).toBeNull();
+      });
+
+      it("keeps the first account with its password, found by name in any case", async () => {
+        expect(await repositories.accounts.createFirst(ana, password, at)).toBe(
+          true,
+        );
+        expect(await repositories.accounts.any()).toBe(true);
+        expect(
+          await repositories.accounts.withPassword(nameKeyOf(" ANA ")),
+        ).toEqual({ account: ana, password });
+        expect(await repositories.accounts.get(ana.id)).toEqual(ana);
+      });
+
+      it("refuses a second first account", async () => {
+        await repositories.accounts.createFirst(ana, password, at);
+        const other = { ...ana, id: uuidNumber(903), name: "Eve" };
+        const otherPassword = { ...password, id: uuidNumber(904) };
+        expect(
+          await repositories.accounts.createFirst(other, otherPassword, at),
+        ).toBe(false);
+        expect(await repositories.accounts.withPassword("eve")).toBeNull();
+        expect(await repositories.accounts.get(other.id)).toBeNull();
+      });
+    });
+
+    describe("sessions", () => {
+      const tokenHash = new Uint8Array(32).fill(7);
+      const at = new Date("2026-06-13T12:00:00.000Z");
+
+      async function withAccount() {
+        await repositories.accounts.createFirst(
+          { id: uuidNumber(911), name: "Ana", role: "admin" },
+          {
+            id: uuidNumber(912),
+            salt: new Uint8Array(16),
+            iterations: 1000,
+            verifier: new Uint8Array(32),
+            wrappedDataKey: new Uint8Array(60),
+          },
+          at,
+        );
+        return {
+          accountId: uuidNumber(911),
+          stage: "signed_in" as const,
+          expiresAt: new Date("2026-07-13T12:00:00.000Z"),
+          wrappedDataKey: new Uint8Array(60).fill(9),
+        };
+      }
+
+      it("finds a session by its token hash until it is deleted", async () => {
+        const session = await withAccount();
+        await repositories.sessions.create(tokenHash, session, at);
+        expect(await repositories.sessions.get(tokenHash)).toEqual(session);
+        expect(
+          await repositories.sessions.get(new Uint8Array(32).fill(8)),
+        ).toBeNull();
+        await repositories.sessions.delete(tokenHash);
+        expect(await repositories.sessions.get(tokenHash)).toBeNull();
+      });
+
+      it("deletes an account's expired sessions and keeps the rest", async () => {
+        const session = await withAccount();
+        const expired = new Uint8Array(32).fill(5);
+        await repositories.sessions.create(
+          expired,
+          { ...session, expiresAt: new Date("2026-06-01T00:00:00.000Z") },
+          at,
+        );
+        await repositories.sessions.create(tokenHash, session, at);
+        await repositories.sessions.deleteExpired(session.accountId, at);
+        expect(await repositories.sessions.get(expired)).toBeNull();
+        expect(await repositories.sessions.get(tokenHash)).toEqual(session);
+      });
+
+      it("moves the end of a session", async () => {
+        const session = await withAccount();
+        await repositories.sessions.create(tokenHash, session, at);
+        const later = new Date("2026-08-01T00:00:00.000Z");
+        await repositories.sessions.extend(tokenHash, later);
+        expect(await repositories.sessions.get(tokenHash)).toEqual({
+          ...session,
+          expiresAt: later,
+        });
+      });
+    });
+
+    describe("sign-in failures", () => {
+      it("counts failures for a name until cleared", async () => {
+        const first = new Date("2026-06-13T12:00:00.000Z");
+        const second = new Date("2026-06-13T12:01:00.000Z");
+        expect(await repositories.signInFailures.get("ana")).toBeNull();
+        await repositories.signInFailures.record("ana", first);
+        await repositories.signInFailures.record("ana", second);
+        expect(await repositories.signInFailures.get("ana")).toEqual({
+          failures: 2,
+          lastFailureAt: second,
+        });
+        await repositories.signInFailures.clear("ana");
+        expect(await repositories.signInFailures.get("ana")).toBeNull();
       });
     });
 

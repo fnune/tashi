@@ -23,6 +23,13 @@ import type { Page } from "./paging/paged-list.js";
 declare const __BASE_PATH__: string;
 const BASE = __BASE_PATH__;
 
+export const SIGNED_OUT_EVENT = "tashi:signed-out";
+
+export interface SignedInAccount {
+  name: string;
+  role: "admin" | "member";
+}
+
 export class ApiError extends Error {
   code?: ApiErrorCode;
   constructor(message: string, code?: ApiErrorCode) {
@@ -56,6 +63,9 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
 
   if (!res.ok) {
     const err = body as ErrorResponse;
+    if (err.code === "signed_out") {
+      window.dispatchEvent(new Event(SIGNED_OUT_EVENT));
+    }
     throw new ApiError(err.error ?? `Request failed: ${res.status}`, err.code);
   }
 
@@ -172,3 +182,18 @@ export const diaryApi: DiaryApi = {
   startImport,
   importEntries,
 };
+
+export function getAccount(): Promise<SignedInAccount> {
+  return request<SignedInAccount>("/api/auth/me");
+}
+
+export async function signIn(name: string, password: string): Promise<void> {
+  await request("/api/auth/sign-in", {
+    method: "POST",
+    body: JSON.stringify({ name, password }),
+  });
+}
+
+export async function signOut(): Promise<void> {
+  await request("/api/auth/sign-out", { method: "POST" });
+}

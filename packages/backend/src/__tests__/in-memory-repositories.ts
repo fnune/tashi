@@ -1,8 +1,13 @@
 import type { FoodVocabEntry, Settings, TimelineEntry } from "@tashi/shared";
 import { DEFAULT_SETTINGS } from "@tashi/shared";
+import { nameKeyOf } from "../domain/auth/authentication.js";
 import {
+  type Account,
   cursorAfter,
+  type PasswordMethod,
   type Repositories,
+  type SignInFailures,
+  type StoredSession,
   type TimelineCursor,
 } from "../domain/repositories.js";
 import type { SealedSecret } from "../domain/secret-box.js";
@@ -24,6 +29,13 @@ export function createInMemoryRepositories(): Repositories {
   let timeline: TimelineEntry[] = [];
   const vocabulary: FoodVocabEntry[] = [];
   let apiKey: SealedSecret | null = null;
+  const accounts = new Map<
+    string,
+    { account: Account; password: PasswordMethod }
+  >();
+  const sessions = new Map<string, StoredSession>();
+  const failures = new Map<string, SignInFailures>();
+  const keyOf = (bytes: Uint8Array) => [...bytes].join(",");
 
   return {
     settings: {
@@ -98,6 +110,58 @@ export function createInMemoryRepositories(): Repositories {
       },
       delete: async () => {
         apiKey = null;
+      },
+    },
+    accounts: {
+      any: async () => accounts.size > 0,
+      createFirst: async (account, password) => {
+        if (accounts.size > 0) return false;
+        accounts.set(
+          nameKeyOf(account.name),
+          structuredClone({ account, password }),
+        );
+        return true;
+      },
+      withPassword: async (nameKey) =>
+        structuredClone(accounts.get(nameKey) ?? null),
+      get: async (id) =>
+        structuredClone(
+          [...accounts.values()].find((a) => a.account.id === id)?.account ??
+            null,
+        ),
+    },
+    sessions: {
+      create: async (tokenHash, session) => {
+        sessions.set(keyOf(tokenHash), structuredClone(session));
+      },
+      get: async (tokenHash) =>
+        structuredClone(sessions.get(keyOf(tokenHash)) ?? null),
+      extend: async (tokenHash, expiresAt) => {
+        const session = sessions.get(keyOf(tokenHash));
+        if (session) session.expiresAt = expiresAt;
+      },
+      delete: async (tokenHash) => {
+        sessions.delete(keyOf(tokenHash));
+      },
+      deleteExpired: async (accountId, now) => {
+        for (const [key, session] of sessions) {
+          if (session.accountId === accountId && session.expiresAt <= now) {
+            sessions.delete(key);
+          }
+        }
+      },
+    },
+    signInFailures: {
+      get: async (nameKey) => structuredClone(failures.get(nameKey) ?? null),
+      record: async (nameKey, at) => {
+        const known = failures.get(nameKey);
+        failures.set(nameKey, {
+          failures: (known?.failures ?? 0) + 1,
+          lastFailureAt: at,
+        });
+      },
+      clear: async (nameKey) => {
+        failures.delete(nameKey);
       },
     },
   };

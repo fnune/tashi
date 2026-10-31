@@ -1,4 +1,5 @@
 import type { D1Database } from "@cloudflare/workers-types";
+import type { SignedIn } from "@tashi/backend/authenticate";
 import { CATALOG_ASSETS_PATH } from "@tashi/backend/catalog-layout";
 import { d1Repositories } from "@tashi/backend/d1";
 import { migrateD1 } from "@tashi/backend/d1-migrate";
@@ -17,13 +18,13 @@ interface Env {
   DB: D1Database;
   ASSETS: AssetFetcher;
   E2E_TIME_ZONE: string;
-  E2E_PASSWORD?: string;
+  E2E_WITH_ACCOUNTS?: string;
 }
 
 const searchIndex = SearchIndex.parse(searchIndexJson);
-let ready: Promise<Hono> | undefined;
+let ready: Promise<Hono<SignedIn>> | undefined;
 
-function appFor(env: Env): Hono {
+function appFor(env: Env): Hono<SignedIn> {
   const built = buildTestApp({
     repositories: d1Repositories(env.DB, {
       newId: randomId,
@@ -39,7 +40,7 @@ function appFor(env: Env): Hono {
         USER_TABLES.map((table) => env.DB.prepare(`DELETE FROM ${table}`)),
       );
     },
-    password: env.E2E_PASSWORD,
+    withAccounts: env.E2E_WITH_ACCOUNTS === "yes",
   });
   built.all("*", (c) => env.ASSETS.fetch(c.req.raw));
   return built;

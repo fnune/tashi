@@ -13,6 +13,11 @@ import { sequentialIds } from "./sequential-ids.js";
 import { writeBatchContract } from "./write-batch-contract.js";
 
 const USER_TABLES = [
+  "sessions",
+  "sign_in_failures",
+  "password_methods",
+  "sign_in_methods",
+  "accounts",
   "settings",
   "profile_window_ratios",
   "profiles",
@@ -74,7 +79,10 @@ describe("d1", () => {
     const { results } = await database
       .prepare("SELECT name FROM tashi_migrations")
       .all();
-    expect(results).toEqual([{ name: "0001-initial" }]);
+    expect(results).toEqual([
+      { name: "0001-initial" },
+      { name: "0002-accounts" },
+    ]);
   });
 
   it("refuses a statement with more parameters than D1 takes, as Cloudflare does", async () => {

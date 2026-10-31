@@ -41,6 +41,7 @@ export function TextField({
   value,
   placeholder,
   secret,
+  autoComplete,
   onChange,
 }: {
   label: string;
@@ -48,6 +49,7 @@ export function TextField({
   value: string;
   placeholder?: string;
   secret?: boolean;
+  autoComplete?: string;
   onChange: (value: string) => void;
 }) {
   return (
@@ -57,7 +59,7 @@ export function TextField({
           id={id}
           className="field-input"
           type={secret ? "password" : undefined}
-          autoComplete={secret ? "off" : undefined}
+          autoComplete={autoComplete ?? (secret ? "off" : undefined)}
           spellCheck={secret ? false : undefined}
           value={value}
           placeholder={placeholder}

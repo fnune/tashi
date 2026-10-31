@@ -1,9 +1,12 @@
 import type { IdGenerator } from "../../domain/ids.js";
 import type { Repositories } from "../../domain/repositories.js";
 import { transactionWriteBatch } from "../write-batch.js";
+import { SqliteAccountRepository } from "./account-repository.js";
 import { SqliteApiKeyRepository } from "./api-key-repository.js";
 import { migrate, openSqlite } from "./connection.js";
+import { SqliteSessionRepository } from "./session-repository.js";
 import { SqliteSettingsRepository } from "./settings-repository.js";
+import { SqliteSignInFailureRepository } from "./sign-in-failure-repository.js";
 import { SqliteTimelineRepository } from "./timeline-repository.js";
 import { SqliteVocabularyRepository } from "./vocabulary-repository.js";
 
@@ -31,6 +34,9 @@ export async function openSqliteRepositories(
         ),
         vocabulary: new SqliteVocabularyRepository(db, batch),
         apiKey: new SqliteApiKeyRepository(db),
+        accounts: new SqliteAccountRepository(db, batch),
+        sessions: new SqliteSessionRepository(db),
+        signInFailures: new SqliteSignInFailureRepository(db),
       },
       close: () => db.destroy(),
     };

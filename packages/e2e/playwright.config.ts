@@ -32,7 +32,7 @@ const servers =
       ]
     : [
         worker(3100, "e2e-open"),
-        worker(3101, "e2e-gated", ["E2E_PASSWORD:e2e-password"]),
+        worker(3101, "e2e-gated", ["E2E_WITH_ACCOUNTS:yes"]),
       ];
 
 export default defineConfig({

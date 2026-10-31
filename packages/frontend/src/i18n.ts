@@ -249,6 +249,17 @@ const translations = {
     injectedAt: "Injected at",
     pendingDose: "A dose is waiting to be logged",
     injection_in_future: "The injection time is in the future.",
+    signInTitle: "Sign in to Tashi",
+    signInName: "Name",
+    signInPassword: "Password",
+    signIn: "Sign in",
+    signOut: "Sign out",
+    accountTitle: "Account",
+    signedInAs: "Signed in as",
+    signed_out: "Sign in to continue.",
+    sign_in_failed: "That name and password do not match.",
+    sign_in_throttled: "Too many attempts. Wait a moment and try again.",
+    password_too_short: "The password needs at least 8 characters.",
     validation_failed: "Please check the values you entered.",
     not_found: "Not found.",
     internal_error: "Something went wrong. Please try again.",
@@ -560,6 +571,18 @@ const translations = {
     injectedAt: "Inyectado a las",
     pendingDose: "Hay una dosis sin registrar",
     injection_in_future: "La hora de la inyección está en el futuro.",
+    signInTitle: "Entra en Tashi",
+    signInName: "Nombre",
+    signInPassword: "Contraseña",
+    signIn: "Entrar",
+    signOut: "Salir",
+    accountTitle: "Cuenta",
+    signedInAs: "Has entrado como",
+    signed_out: "Entra para continuar.",
+    sign_in_failed: "Ese nombre y esa contraseña no coinciden.",
+    sign_in_throttled:
+      "Demasiados intentos. Espera un momento y vuelve a intentarlo.",
+    password_too_short: "La contraseña necesita al menos 8 caracteres.",
     validation_failed: "Revisa los valores introducidos.",
     not_found: "No encontrado.",
     internal_error: "Algo salió mal. Inténtalo de nuevo.",
@@ -633,4 +656,14 @@ export function apiErrorText(lang: Language, err: unknown): string {
     return t(lang, err.code);
   }
   return err instanceof Error ? err.message : "Unknown error";
+}
+
+export function savedLanguage(): Language {
+  try {
+    const saved = localStorage.getItem("tashi-lang");
+    if (saved === "es" || saved === "en") return saved;
+  } catch {
+    return navigator.language.startsWith("es") ? "es" : "en";
+  }
+  return navigator.language.startsWith("es") ? "es" : "en";
 }

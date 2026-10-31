@@ -193,6 +193,45 @@ export interface AnthropicApiKeyTable {
   ciphertext: Uint8Array;
 }
 
+export interface AccountsTable {
+  id: string;
+  name: string;
+  name_key: string;
+  role: "admin" | "member";
+  created_at: Instant;
+}
+
+export interface SignInMethodsTable {
+  id: string;
+  account_id: string;
+  kind: "password";
+  created_at: Instant;
+}
+
+export interface PasswordMethodsTable {
+  method_id: string;
+  kind: Generated<"password">;
+  salt: Uint8Array;
+  iterations: number;
+  verifier: Uint8Array;
+  wrapped_data_key: Uint8Array;
+}
+
+export interface SessionsTable {
+  token_hash: Uint8Array;
+  account_id: string;
+  stage: "second_factor" | "signed_in";
+  created_at: Instant;
+  expires_at: Instant;
+  wrapped_data_key: Uint8Array;
+}
+
+export interface SignInFailuresTable {
+  name_key: string;
+  failures: number;
+  last_failure_at: Instant;
+}
+
 export interface Database {
   insulin_products: InsulinProductsTable;
   food_sources: FoodSourcesTable;
@@ -213,6 +252,11 @@ export interface Database {
   timeline: TimelineView;
   food_vocabulary: FoodVocabularyTable;
   anthropic_api_key: AnthropicApiKeyTable;
+  accounts: AccountsTable;
+  sign_in_methods: SignInMethodsTable;
+  password_methods: PasswordMethodsTable;
+  sessions: SessionsTable;
+  sign_in_failures: SignInFailuresTable;
 }
 
 export type Db = Kysely<Database>;

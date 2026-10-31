@@ -24,7 +24,7 @@ An instance with no account is unclaimed. It answers 404 with the same plain "no
 - **On Cloudflare**, the build generates a random setup token (32 bytes), bakes only its SHA-256 hash into the Worker, and prints the setup link at the end of the build's own output, in a frame that is hard to miss. The build log is visible only to people in the Cloudflare account. Each build makes a new token; once an account exists, none of them works.
     - The link is complete when the build can find the account's `workers.dev` address through Cloudflare's API with the build's own credentials. When it cannot, the frame says to open the Tashi address shown further down and add `/setup?token=…`.
 - **On Node** (a home server or a NAS), the server makes the token when it starts with no account and prints the link to its log once.
-- **The setup page** asks for a name and a password and creates the first account, an admin, with a password sign-in method. It signs that account in straight away. The token is single-use in effect: after the first account exists, setup is closed.
+- **The setup page** is a plain form served by the server, so no app files are needed before setup. It asks for a name and a password, twice, and creates the first account, an admin, with a password sign-in method and the instance's data key. It signs that account in straight away. The token is single-use in effect: after the first account exists, setup is closed, and the three inserts only succeed while no account exists, so two setups at once cannot both win.
 
 Losing every way in has one last resort: whoever can run a new build (Cloudflare) or restart the server (Node) and read its log can reopen setup by removing the accounts. That is the same person who could delete the database, so it gives nobody new power.
 
@@ -39,7 +39,7 @@ Losing every way in has one last resort: whoever can run a new build (Cloudflare
 - At least 8 characters, no rules about composition, any length up to 256, as NIST SP 800-63B recommends.
 - Hashed with **PBKDF2-SHA256 through WebCrypto**. It is native code on Workers and on Node, which makes it the slow hash that fits a free Worker's 10 ms of CPU per request; Argon2 and scrypt exist on Workers only as JavaScript or WebAssembly, several times slower for the same strength. Only signing in and setting a password pay for it, never an ordinary request.
 - The iteration count is stored with each password, so it can be raised later and a password rehashed the next time its owner signs in. The count is as many iterations as fit in the CPU budget with room to spare (see Iterations).
-- One PBKDF2 run gives 64 bytes, split by HKDF into a **verifier**, stored and compared in constant time, and a **key-encryption key**, never stored, which unlocks the account's copy of the data key (below).
+- One PBKDF2 run gives 64 bytes: the first half is the **verifier**, stored and compared in constant time; the second half is the **key-encryption key**, never stored, which unlocks the account's copy of the data key (below).
 - **Repeated failures** slow down: after 5 failed attempts for a name, each further attempt has to wait twice as long as the last, up to 15 minutes, recorded in the database. A failure for a name that does not exist costs the same time and gives the same answer.
 
 ## Sessions
@@ -48,7 +48,8 @@ The design described by the Lucia guide (lucia-auth.com) and the Copenhagen Book
 
 - A session token is 32 random bytes, sent in a cookie: `HttpOnly`, `Secure`, `SameSite=Lax`, `Path` set to the instance's base path.
 - The database stores only the SHA-256 hash of the token, so a leaked database cannot be used to sign in.
-- A session lasts 30 days from its last use, extended when it is past half its life, so a phone that opens Tashi daily stays signed in.
+- A session lasts 30 days from its last use: used with less than 15 days left, it is extended to 30 days again, so a phone that opens Tashi every couple of weeks stays signed in. An expired session is refused and deleted when its cookie comes back, and an account's expired sessions are deleted whenever it signs in, so abandoned ones do not stay in the database.
+- The cookie lives as long as its session and is sent again whenever the session is extended, so the browser forgets it when the server does.
 - A session has a **stage**: `signed_in`, or `second_factor` when a password is checked and a code is still due. Without a second factor, a session starts `signed_in`.
 - Signing out deletes the session. Changing a password deletes every other session of that account.
 - Requests that change anything must come from Tashi's own pages: Hono's `csrf` middleware checks the `Origin` header.
@@ -62,7 +63,7 @@ The key is stored encrypted, and only a signed-in session can use it.
 - Each sign-in method that can unlock the data key keeps its own copy, encrypted with that method's key-encryption key: envelope encryption, as password managers use to share a vault. A password method derives its key-encryption key from the password at sign-in.
 - At sign-in, the data key is unlocked and encrypted again with a key derived from the session token (HKDF). The session row keeps that copy. A request carrying the cookie can unlock the data key; the database alone cannot, since it never holds the token.
 - `ANTHROPIC_API_KEY` in the environment works as well and needs none of this.
-- Without a data key in the session (a session started before the key was saved, say), saving the key creates the data key if none exists yet, wraps it for the account saving it, and puts it in the session.
+- The data key is created at setup, so every password method and every session has its copy from the start.
 
 ## More accounts, later
 
@@ -78,23 +79,24 @@ The key is stored encrypted, and only a signed-in session can use it.
 
 ## Iterations
 
-PBKDF2-SHA256 through WebCrypto costs about 22 ms of CPU per 100,000 iterations in Node on a laptop; the figure for a deployed Worker is measured from its metrics. Tashi uses the count that keeps signing in under the Worker's CPU limit, and records it with each password.
+PBKDF2-SHA256 through WebCrypto costs about 22 ms of CPU per 100,000 iterations in Node on a laptop. New passwords use 30,000 iterations (`PASSWORD_ITERATIONS`), about 7 ms, to keep signing in under a free Worker's 10 ms of CPU; the figure for a deployed Worker comes from its metrics. Each password records its own count, so raising it later rehashes a password the next time its owner signs in.
 
 ## Data
 
 New tables, in a migration of their own; the SQL goes into `database-schema.md` with the migration.
 
 - `accounts`: id, name (unique, case-insensitive), role, created_at.
-- `sign_in_methods`: id, account_id, kind (`password`), created_at, and the password's salt, iteration count, verifier and copy of the data key, required when the kind is `password`.
+- `sign_in_methods`: what every method shares: id, account_id, kind, created_at. One password method per account at most.
+- One table per kind, every column required. `password_methods`: method_id, salt, iteration count, verifier and the method's copy of the data key. A composite foreign key `(method_id, kind)` to `sign_in_methods (id, kind)`, with the kind fixed by a check, keeps a password row on a password method. Authenticator codes and passkeys get tables of their own the same way.
 - `sessions`: token hash, account_id, stage, created_at, expires_at, and the copy of the data key for the session.
 - `sign_in_failures`: the name tried, the number of failures and when the last one was.
 - `anthropic_api_key`: the Anthropic key, encrypted with the data key.
 
 ## Order of work
 
-- [ ] 1. An unclaimed instance answers 404 everywhere; the setup token from the build (Cloudflare) or the server's start (Node), and the framed link at the end of the build output.
-- [ ] 2. Accounts, password sign-in methods and the setup page.
-- [ ] 3. Sessions, the sign-in page, signing out, slowing repeated failures, the `csrf` check.
+- [x] 1. An unclaimed instance answers 404 everywhere; the setup token from the build (Cloudflare) or the server's start (Node), and the framed link at the end of the build output.
+- [x] 2. Accounts, password sign-in methods and the setup page.
+- [x] 3. Sessions, the sign-in page, signing out, slowing repeated failures, the `csrf` check.
 - [ ] 4. The data key and the Anthropic key saved in Settings.
 - [ ] 5. The Cloudflare guide in `self-hosting.md` without any dashboard secrets.
 

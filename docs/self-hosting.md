@@ -10,7 +10,7 @@ This tracks what stands between the repo and that setup.
 
 - Server needs no `ANTHROPIC_API_KEY` at startup. The key is entered in settings, verified against Anthropic, encrypted at rest in the database and never returned by any endpoint. The env var still works as a fallback.
 - Saving a key in the UI requires `TASHI_SECRET_KEY`, a random string of at least 32 characters. The key is encrypted with AES-256-GCM under a key derived from it by HKDF, which costs microseconds where scrypt over the password cost tens of milliseconds. Changing the secret makes the saved key unreadable, so the user enters it again.
-- Optional single-password gate (`TASHI_PASSWORD`, HTTP Basic auth, any username). Off when unset.
+- Accounts with a sign-in page and sessions, set up from a link in the build or server log ([authentication.md](authentication.md)).
 - Unrestricted CORS removed.
 - `GET /api/health`, unauthenticated.
 - Meal windows use the browser's time zone instead of the server's (`X-Timezone` header, falls back to server time).
@@ -31,10 +31,10 @@ The guide below is a draft: it gets corrected by following it on a fresh Cloudfl
 3. Create a free Cloudflare account at dash.cloudflare.com (no card). When asked, choose a name for the free address; it becomes `tashi.that-name.workers.dev`.
 4. In Cloudflare: **Workers & Pages**, **Create application**, **Connect GitHub**. GitHub asks which repositories Cloudflare may see: choose only `tashi`. Back in Cloudflare, pick it, keep the name `tashi`, leave every setting as it is, and press **Create and deploy**.
     - Workers Builds clones the fork, installs the dependencies and runs `wrangler deploy` from the root. `wrangler.jsonc` holds the build command (`pnpm build:cloudflare`: shared code, frontend, food catalog, static files), so no field needs filling in. Wrangler creates the D1 database on the first deploy because its binding has no id.
-5. Wait for the build, a few minutes, then open the address Cloudflare shows. The page says "Tashi needs one more step".
-6. In the Worker: **Settings**, **Variables and Secrets**, **Add**. Type **Secret**, name `TASHI_PASSWORD`, value a password of their choice. Add a second secret, `ANTHROPIC_API_KEY`, with a key from console.anthropic.com (an Anthropic account with a little prepaid credit; each calculation costs a fraction of a cent).
-    - Secrets are encrypted by Cloudflare and given to the Worker at runtime. Without `TASHI_PASSWORD` the Worker shows only the setup page, so an instance is never open to the internet. `TASHI_SECRET_KEY` is not needed on Cloudflare: the key is already a Cloudflare secret.
-7. Open the address again. The browser asks for a username (anything) and the password. Add the page to the phone's home screen.
+5. Wait for the build, about a minute. At the end of the build log, a framed block says **TASHI IS READY TO BE SET UP** with a link. Open it, choose a name and a password, and Tashi opens, signed in.
+    - The build makes a one-time setup token and prints the link; until someone uses it, the Tashi address answers "not found" to everything, so a stranger who finds it can do nothing. See [authentication.md](authentication.md).
+6. In the Worker: **Settings**, **Runtime variables**, **Add variable**. Name `ANTHROPIC_API_KEY`, tick **Secret**, value a key from console.anthropic.com (an Anthropic account with a little prepaid credit; each calculation costs a fraction of a cent), then **Add variable and deploy**.
+7. Add the address to the phone's home screen, and choose the insulin and ratios in **Settings**.
     - On the first visit Tashi creates its tables in the database (`migrateD1`); later versions apply their own migrations the same way.
 8. Optional, before step 4: keep the data in the EU. To be settled on a real account: whether creating a D1 database named `tashi` in the EU in the dashboard first (**Storage & Databases**, **D1**, **Create**, data location **European Union**) makes Wrangler use it instead of creating one, or what else does it without editing a file.
 9. Updates: on their fork's GitHub page, a notice says the branch is behind. Press **Sync fork**, then **Update branch**; Cloudflare builds and deploys the new version within minutes, and the data stays.
@@ -105,7 +105,7 @@ Left open until then: whether the Anthropic key belongs to an account or to the 
 ### Platform setup and documentation
 
 - Platform config for the recommended host (build command, start command, region, health check).
-- `.env.example` listing every variable (`DATABASE_URL`, `TASHI_PASSWORD`, `TASHI_SECRET_KEY`, `ANTHROPIC_API_KEY`, `LLM_MODEL`, `PORT`, `DATA_DIR`, `BASE_PATH`, `FOODS_DB`). Not updated so far because the file was unreadable in the working session.
+- `.env.example` listing every variable (`DATABASE_PATH`, `TASHI_SECRET_KEY`, `ANTHROPIC_API_KEY`, `LLM_MODEL`, `PORT`, `BASE_PATH`, `CATALOG_DIR`, `TIME_ZONE`). Not updated so far because the file was unreadable in the working session.
 - A DIY README: fork, connect a platform, add a database, set the password, open the URL, paste the key.
 - `BASE_PATH` is baked into the frontend at build time. Document that the platform root URL needs it empty.
 

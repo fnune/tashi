@@ -42,6 +42,7 @@ import {
   ratioUnit,
 } from "../ratioLabels.js";
 import { savedTheme, saveTheme, type ThemePreference } from "../theme.js";
+import { AccountSettings } from "./AccountSettings.js";
 import { ApiKeySettings } from "./ApiKeySettings.js";
 import { RATIOS_ANCHOR } from "./AppHeader.js";
 import { CycleSettings } from "./CycleSettings.js";
@@ -457,6 +458,8 @@ export function SettingsView({
       <ApiKeySettings id="api-key" lang={lang} />
 
       <DiarySettings id="data" lang={lang} onReplaced={onDiaryReplaced} />
+
+      <AccountSettings id="account" lang={lang} />
 
       <DataSources lang={lang} />
 

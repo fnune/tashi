@@ -14,7 +14,6 @@ import {
 } from "@tashi/backend/static-catalog";
 import {
   buildTestApp,
-  GATE_PASSWORD,
   GATED_PORT,
   OPEN_PORT,
   USER_TABLES,
@@ -38,9 +37,9 @@ const { repositories } = await openSqliteRepositories(databasePath, {
 });
 const sql = new DatabaseSync(databasePath);
 
-for (const [port, password] of [
-  [OPEN_PORT, undefined],
-  [GATED_PORT, GATE_PASSWORD],
+for (const [port, withAccounts] of [
+  [OPEN_PORT, false],
+  [GATED_PORT, true],
 ] as const) {
   const app = buildTestApp({
     repositories,
@@ -51,7 +50,7 @@ for (const [port, password] of [
     clearTables: async () => {
       sql.exec(USER_TABLES.map((table) => `DELETE FROM ${table};`).join("\n"));
     },
-    password,
+    withAccounts,
   });
   app.use("/*", serveStatic({ root: "../frontend/dist" }));
   app.get("/*", async (c) =>

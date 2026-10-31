@@ -20,7 +20,6 @@ const appEnvSchema = z.object({
     z.string().default("claude-haiku-4-5-20251001"),
   ),
   ANTHROPIC_API_KEY: optionalText,
-  TASHI_PASSWORD: optionalText,
   TASHI_SECRET_KEY: z.preprocess(
     blankIsUnset,
     z
@@ -44,7 +43,6 @@ export interface AppConfig {
   basePath: string;
   model: string;
   anthropicApiKey: string | undefined;
-  password: string | undefined;
   encryptionSecret: string | undefined;
 }
 
@@ -89,7 +87,6 @@ function appConfigOf(e: z.infer<typeof appEnvSchema>): AppConfig {
     basePath: e.BASE_PATH ?? "",
     model: e.LLM_MODEL,
     anthropicApiKey: e.ANTHROPIC_API_KEY,
-    password: e.TASHI_PASSWORD,
     encryptionSecret: e.TASHI_SECRET_KEY,
   };
 }

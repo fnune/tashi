@@ -14,7 +14,6 @@ describe("loadConfig", () => {
       catalogDir: undefined,
       model: "claude-haiku-4-5-20251001",
       anthropicApiKey: undefined,
-      password: undefined,
       encryptionSecret: undefined,
     });
   });
@@ -27,23 +26,18 @@ describe("loadConfig", () => {
     const config = loadConfig({
       ...minimal,
       PORT: "",
-      TASHI_PASSWORD: "",
       ANTHROPIC_API_KEY: "",
       TIME_ZONE: "",
     });
     expect(config.port).toBe(3000);
-    expect(config.password).toBeUndefined();
     expect(config.anthropicApiKey).toBeUndefined();
   });
 
-  it("encrypts with TASHI_SECRET_KEY only, never with the password", () => {
+  it("encrypts with TASHI_SECRET_KEY", () => {
     const secret = "a".repeat(32);
+    expect(loadConfig(minimal).encryptionSecret).toBeUndefined();
     expect(
-      loadConfig({ ...minimal, TASHI_PASSWORD: "pw" }).encryptionSecret,
-    ).toBeUndefined();
-    expect(
-      loadConfig({ ...minimal, TASHI_PASSWORD: "pw", TASHI_SECRET_KEY: secret })
-        .encryptionSecret,
+      loadConfig({ ...minimal, TASHI_SECRET_KEY: secret }).encryptionSecret,
     ).toBe(secret);
   });
 

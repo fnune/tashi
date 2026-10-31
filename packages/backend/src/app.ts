@@ -2,6 +2,10 @@ import { Hono } from "hono";
 import type { AppConfig } from "./config.js";
 import { AnthropicFoodParser } from "./data/anthropic-food-parser.js";
 import { ApiKeyStore } from "./domain/api-key-store.js";
+import {
+  Authentication,
+  type SetupToken,
+} from "./domain/auth/authentication.js";
 import { Calculator } from "./domain/calculator.js";
 import type { Clock } from "./domain/clock.js";
 import { DiaryImport } from "./domain/diary-import.js";
@@ -14,11 +18,12 @@ import {
 } from "./domain/keyed-food-parser.js";
 import type { Repositories } from "./domain/repositories.js";
 import { TimelineService } from "./domain/timeline-service.js";
-import { passwordGate } from "./http/password-gate.js";
+import { authenticate, type SignedIn } from "./http/authentication.js";
 import { createRoutes } from "./http/routes.js";
 
 export interface AppDependencies {
   config: AppConfig;
+  setupToken: SetupToken;
   repositories: Repositories;
   foodCatalog: FoodCatalog;
   fetch: typeof globalThis.fetch;
@@ -26,14 +31,21 @@ export interface AppDependencies {
   newId: IdGenerator;
 }
 
+export const PASSWORD_ITERATIONS = 30_000;
+
 export function createApp({
   config,
+  setupToken,
   repositories,
   foodCatalog,
   fetch,
   clock,
   newId,
-}: AppDependencies): { app: Hono; apiKeys: ApiKeyStore } {
+}: AppDependencies): {
+  app: Hono<SignedIn>;
+  apiKeys: ApiKeyStore;
+  authentication: Authentication;
+} {
   const apiKeys = new ApiKeyStore(repositories.apiKey, {
     encryptionSecret: config.encryptionSecret,
     environmentKey: config.anthropicApiKey,
@@ -46,9 +58,19 @@ export function createApp({
   );
   const calculator = new Calculator(parser, foodCatalog, clock, newId);
 
-  const app = new Hono();
+  const authentication = new Authentication({
+    accounts: repositories.accounts,
+    sessions: repositories.sessions,
+    signInFailures: repositories.signInFailures,
+    setupToken,
+    clock,
+    newId,
+    passwordIterations: PASSWORD_ITERATIONS,
+  });
+
+  const app = new Hono<SignedIn>();
+  authenticate(app, authentication, config.basePath);
   app.get(`${config.basePath}/api/health`, (c) => c.json({ ok: true }));
-  if (config.password) app.use("*", passwordGate(config.password));
   app.route(
     config.basePath || "/",
     createRoutes({
@@ -60,5 +82,5 @@ export function createApp({
       defaultTimeZone: config.defaultTimeZone,
     }),
   );
-  return { app, apiKeys };
+  return { app, apiKeys, authentication };
 }
