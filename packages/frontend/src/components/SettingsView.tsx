@@ -154,11 +154,12 @@ export function SettingsView({
 
   async function persist(next: Settings) {
     const previous = settings;
+    const savedFrom = editing;
     setError(null);
     onSave(next);
     try {
       onSave(await api.saveSettings(next));
-      setEditing(null);
+      setEditing((current) => (current === savedFrom ? null : current));
     } catch (e) {
       onSave(previous);
       setError(apiErrorText(lang, e));
