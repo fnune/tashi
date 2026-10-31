@@ -1,6 +1,6 @@
 # Engineering principles
 
-Principles and conventions for this repo. Adapted from the openmusa engineering README to Tashi's stack.
+Principles and conventions for this repository.
 
 ## Principles
 
@@ -22,18 +22,18 @@ Reference: [Mark Seemann](https://blog.ploeh.dk/), [_Dependency Injection Princi
 - Constructor Injection is the default. Property Injection and Method Injection only when justified.
 - Inject Volatile Dependencies: anything with side effects (IO, database, file system, network), nondeterministic behaviour (time, randomness), a runtime configuration requirement, or that does not exist yet.
 - Do not inject Stable Dependencies: deterministic, side-effect-free types such as stdlib primitives, value objects, and pure functions (the dose math in `@tashi/shared` is one).
-- The Composition Root is the single place where the object graph is composed: `packages/backend/src/server.ts`. Nothing else knows the concrete implementations of Volatile Dependencies.
+- The Composition Root is where the object graph is composed: `packages/backend/src/app.ts` builds the app from the dependencies it is given, and the two entry points, `server.ts` (Node) and `worker.ts` (Cloudflare), give it their storage, clock and catalog. Nothing else knows the concrete implementations of Volatile Dependencies.
 - Prefer Pure DI (hand-wired at the Composition Root) over a container.
 - Service Locator is an anti-pattern: receive dependencies as constructor parameters.
 - Ambient Context (implicit access to time, randomness, configuration, the current user) is an anti-pattern: inject it. This includes `new Date()`, `Date.now()`, `crypto.randomUUID()` and `process.env` outside the Composition Root.
-- Default arguments that construct a Volatile Dependency (`apiKeys = new ApiKeyStore(storage)`) hide wiring: pass it explicitly.
+- Default arguments that construct a Volatile Dependency (`aiConnections = new AiConnections(records)`) hide wiring: pass it explicitly.
 - A growing constructor argument list is a smell that the class has too many responsibilities.
 - Tests follow the seams DI creates. Real implementations of Stable Dependencies. Hand-written in-memory fakes for Volatile ones. Integration tests hit real databases and services where reasonable; do not mock what you own.
 
 ### Layered architecture and abstraction ownership
 
-- Split the backend into layers, one folder each under `packages/backend/src`: `http/` (routes, request schemas, error mapping), `domain/` (calculation, timeline rules, API key handling, the services the routes call, and the interfaces it needs), `data/` (file storage, the foods database, the Anthropic client).
-- `server.ts` and `config.ts` sit above the layers: they are the Composition Root. `__tests__/layers.test.ts` fails when a layer imports one it must not.
+- Split the backend into layers, one folder each under `packages/backend/src`: `http/` (routes, request schemas, error mapping), `domain/` (calculation, timeline rules, API key handling, the services the routes call, and the interfaces it needs), `data/` (SQLite and D1 storage, the food catalog, the Anthropic client).
+- `app.ts`, `server.ts`, `worker.ts` and `config.ts` sit above the layers: they are the Composition Root. `__tests__/layers.test.ts` fails when a layer imports one it must not.
 - Each layer declares the abstractions it consumes. The interface belongs to the consumer, not the implementer.
 - The domain declares the storage interfaces it needs. Data access imports and implements them. The domain does not depend on data access.
 - Reject naive layering, where each layer depends on the next one down. That is not Dependency Inversion.
@@ -54,7 +54,7 @@ Reference: [Mark Seemann](https://blog.ploeh.dk/), [_Dependency Injection Princi
 
 ### Dependency hygiene
 
-- Start with the platform: `fetch`, `crypto.randomUUID()`, `node:util.parseArgs`, `node --env-file`, `Intl`, native array methods.
+- Start with the platform: `fetch`, `crypto.randomUUID()`, `node:util.parseArgs`, `Intl`, native array methods.
 - Vet every dependency: can the platform do it; size of the transitive tree; active maintenance.
 - Prefer governance-neutral dependencies over OSS that exists to feed a vendor's hosted SaaS. Use such a dependency only when no neutral alternative exists, and document the choice in the PR.
 - If it is under 50 lines, write it. Vendor utilities under 100 lines with attribution and the original license.
@@ -72,7 +72,7 @@ Reference: [Mark Seemann](https://blog.ploeh.dk/), [_Dependency Injection Princi
 ### Local checks before pushing
 
 - Run the cheap checks locally: formatter, linter, type-check, and the tests that exercise the touched code.
-- `pnpm check`, `pnpm typecheck`, `pnpm test:unit` cover the workspace. `pnpm --filter <name>` scopes to one package. `prek.toml` runs the first two on commit.
+- `pnpm check`, `pnpm typecheck`, `pnpm test:unit` cover the workspace. `pnpm --filter <name>` scopes to one package. `prek.toml` runs the first two on commit, and recomputes the Nix hash of the dependencies (`pnpm nix:hash`) when a commit changes them. CI runs all of them, both browser test runs and the Nix build on every pull request.
 
 ### Version control
 

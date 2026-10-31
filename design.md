@@ -290,3 +290,4 @@ This is not a CGM app, meal planner, diet tracker, or insulin pump controller. I
 - Photo input via LLM vision? Accuracy is improving. Could be a v2 feature.
 - Barcode scanning for packaged foods via Open Food Facts?
 - CGM integration (e.g. LibreView) to auto-fill glucose and add a glucose chart to History; needs its own plan.
+- Voice input with speech to text, preferably the platform's own, so it costs nothing extra.

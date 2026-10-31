@@ -9,22 +9,14 @@ Either way, everything about the instance itself is set in Tashi: the first acco
 
 ## Installing on Cloudflare
 
-The person installing has a GitHub account, a Cloudflare account and an Anthropic account, and does everything in a browser. Cloudflare's dashboard builds code only from a GitHub or GitLab repository the person controls, so they install from a fork.
+[INSTALL.md](../INSTALL.md) is the guide, written for someone who has never deployed anything. In short, and what happens underneath:
 
-This guide is checked by following it on a fresh Cloudflare account, with a screenshot for each step that shows a GitHub or Cloudflare screen.
-
-1. Create a free GitHub account at github.com.
-2. Open the Tashi repository on GitHub, press **Fork**, then **Create fork**. This makes your own copy, `your-name/tashi`.
-3. Create a free Cloudflare account at dash.cloudflare.com (no card). When asked, choose a name for the free address; it becomes `tashi.that-name.workers.dev`.
-4. In Cloudflare: **Workers & Pages**, **Create application**, **Connect GitHub**. GitHub asks which repositories Cloudflare may see: choose only `tashi`. Back in Cloudflare, pick it, keep the name `tashi`, leave every setting as it is, and press **Create and deploy**.
-    - Workers Builds clones the fork, installs the dependencies and runs `wrangler deploy` from the root. `wrangler.jsonc` holds the build command (`pnpm build:cloudflare`: shared code, frontend, food catalog, static files), so no field needs filling in. Wrangler creates the D1 database on the first deploy because its binding has no id.
-5. Wait for the build, about a minute. At the end of the build log, a framed block says **TASHI IS READY TO BE SET UP** with a link. Open it, choose a name and a strong password, and Tashi opens, signed in.
-    - The build makes a one-time setup token and prints the link. Until someone uses it, the Tashi address answers "not found" to everything, so a stranger who finds it can do nothing. See [authentication.md](authentication.md).
-6. Create an Anthropic account at console.anthropic.com, add a little prepaid credit (each calculation costs a fraction of a cent) and create an API key. In Tashi, open **Settings**, **AI food reading**, **Anthropic API key**, paste it and save. Tashi checks the key with Anthropic before keeping it, encrypted.
-7. Add the address to the phone's home screen, and choose the insulin and ratios in **Settings**.
-    - On the first visit Tashi creates its tables in the database; later versions apply their own migrations the same way.
-8. Updates: on the fork's GitHub page, a notice says the branch is behind. Press **Sync fork**, then **Update branch**; Cloudflare builds and deploys the new version within minutes, and the data stays.
-9. Backups: Tashi's **Settings**, **Your data**, **Download a copy**, from time to time. Cloudflare also keeps 7 days of point-in-time recovery of the database.
+- The person forks the repository on GitHub, because Cloudflare's dashboard builds code only from a GitHub or GitLab repository they control.
+- Workers Builds clones the fork, installs the dependencies and runs `wrangler deploy` from the root. `wrangler.jsonc` holds the build command (`pnpm build:cloudflare`: shared code, frontend, food catalog, static files), so no field needs filling in. Wrangler creates the D1 database on the first deploy because its binding has no id.
+- The build makes a one-time setup token, bakes only its hash into the Worker and prints the setup link at the end of the build log ([authentication.md](authentication.md#setting-up-an-instance)).
+- The Anthropic key and the model are set in Tashi's settings. Cloudflare needs no variables or secrets.
+- On the first request, the Worker creates or migrates its tables in D1.
+- Updating is **Sync fork** on GitHub; Cloudflare builds the new version.
 
 Not settled yet, to check on the first real install:
 
@@ -93,11 +85,4 @@ Open questions:
 
 - **Data that belongs to people.** No table has an owner. The design is in [database-schema.md](database-schema.md#accounts-and-people-later): an **account** is a login, a **person** is the one whose data it is, and an **access** row says which account reaches which person and how. Settings, entries and vocabulary belong to a person, never to an account. Still open: what a caregiver sharing a person looks like in the interface.
 - **More AI providers.** Connections are stored per kind ([database-schema.md](database-schema.md#ai-connections)); Anthropic is the only kind.
-- **Repository tooling**, before the repository is published:
-    - `renovate.json5`: weekly, a 7 day minimum release age, exact pins, no automatic merge, security updates without delay.
-    - A pnpm catalog so shared dependency versions are pinned once, and exact versions in place of `^` ranges.
-    - A Biome plugin that makes `as` type assertions an error, then removing the ones it finds.
-    - `AGENTS.md` pointing to `docs/engineering.md` and listing the checks to run before calling work done.
-    - `CHANGELOG.md` with an Unreleased section, because people updating a fork need to know what changed.
-    - A pull request template with a test plan.
-    - A CI workflow running `pnpm check`, `pnpm typecheck` and `pnpm test:unit`.
+- **A Biome rule against type assertions.** `as` still appears where a schema or narrowing should do the work; a Biome plugin would make it an error, and the ones it finds would go.
