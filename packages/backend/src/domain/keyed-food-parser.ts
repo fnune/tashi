@@ -1,7 +1,11 @@
 import Anthropic from "@anthropic-ai/sdk";
 import type { FoodVocabEntry } from "@tashi/shared";
 import type { ApiKeyStore } from "./api-key-store.js";
-import { InvalidApiKeyError, MissingApiKeyError } from "./errors.js";
+import {
+  DomainError,
+  InvalidApiKeyError,
+  MissingApiKeyError,
+} from "./errors.js";
 import type { FoodParser, ParseOutcome } from "./food-parser.js";
 
 export class KeyedFoodParser implements FoodParser {
@@ -32,9 +36,18 @@ export class KeyedFoodParser implements FoodParser {
       if (e instanceof Anthropic.AuthenticationError) {
         throw new InvalidApiKeyError();
       }
+      if (creditRanOut(e)) throw new DomainError("credit_exhausted");
       throw e;
     }
   }
+}
+
+function creditRanOut(error: unknown): boolean {
+  return (
+    error instanceof Anthropic.APIError &&
+    (error.status === 402 ||
+      (error.status === 400 && /credit balance/i.test(error.message)))
+  );
 }
 
 export async function anthropicAcceptsKey(apiKey: string): Promise<boolean> {

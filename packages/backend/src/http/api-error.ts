@@ -16,6 +16,8 @@ const FALLBACK_MESSAGES: Record<ApiErrorCode, string> = {
   api_key_storage_unavailable:
     "Saving a key needs a secret key set on the server (TASHI_SECRET_KEY).",
   signed_out: "Sign in to continue.",
+  credit_exhausted:
+    "The Anthropic credit has run out. Add credit at console.anthropic.com, under Billing, then calculate again.",
   sign_in_failed: "That name and password do not match.",
   sign_in_throttled: "Too many attempts. Wait a moment and try again.",
   password_too_short: "The password needs at least 8 characters.",

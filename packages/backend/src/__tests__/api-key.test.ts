@@ -1,3 +1,4 @@
+import Anthropic from "@anthropic-ai/sdk";
 import { type ApiKeyStatus, DEFAULT_SETTINGS } from "@tashi/shared";
 import { beforeEach, describe, expect, it } from "vitest";
 import { ApiKeyStore } from "../domain/api-key-store.js";
@@ -240,6 +241,41 @@ describe("api key routes", () => {
     });
     await calculate(app);
     expect(created).toEqual([KEY, "sk-ant-env"]);
+  });
+
+  it("says the Anthropic credit ran out, however Anthropic phrases it", async () => {
+    const keys = new ApiKeyStore(repositories.apiKey, { environmentKey: KEY });
+    for (const error of [
+      Anthropic.APIError.generate(
+        402,
+        { type: "error", error: { type: "billing_error", message: "Billing" } },
+        "Billing",
+        new Headers(),
+      ),
+      Anthropic.APIError.generate(
+        400,
+        {
+          type: "error",
+          error: {
+            type: "invalid_request_error",
+            message:
+              "Your credit balance is too low to access the Anthropic API.",
+          },
+        },
+        "Your credit balance is too low to access the Anthropic API.",
+        new Headers(),
+      ),
+    ]) {
+      const parser = new KeyedFoodParser(keys, () => ({
+        parse: async () => {
+          throw error;
+        },
+      }));
+      const res = await calculate(routesFor(parser, keys));
+      expect(await res.json()).toMatchObject({
+        code: "credit_exhausted",
+      });
+    }
   });
 
   it("reports a rejected key from the provider as api_key_invalid", async () => {

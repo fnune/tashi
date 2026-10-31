@@ -257,6 +257,8 @@ const translations = {
     accountTitle: "Account",
     signedInAs: "Signed in as",
     signed_out: "Sign in to continue.",
+    credit_exhausted:
+      "Your Anthropic credit has run out. Add credit at console.anthropic.com, under Billing, then calculate again.",
     sign_in_failed: "That name and password do not match.",
     sign_in_throttled: "Too many attempts. Wait a moment and try again.",
     password_too_short: "The password needs at least 8 characters.",
@@ -579,6 +581,8 @@ const translations = {
     accountTitle: "Cuenta",
     signedInAs: "Has entrado como",
     signed_out: "Entra para continuar.",
+    credit_exhausted:
+      "Se ha acabado tu crédito de Anthropic. Añade crédito en console.anthropic.com, en Billing, y vuelve a calcular.",
     sign_in_failed: "Ese nombre y esa contraseña no coinciden.",
     sign_in_throttled:
       "Demasiados intentos. Espera un momento y vuelve a intentarlo.",

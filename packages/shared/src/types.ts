@@ -276,6 +276,7 @@ export type ApiErrorCode =
   | "api_key_invalid"
   | "api_key_storage_unavailable"
   | "signed_out"
+  | "credit_exhausted"
   | "sign_in_failed"
   | "sign_in_throttled"
   | "password_too_short"
