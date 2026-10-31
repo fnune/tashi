@@ -39,21 +39,21 @@
     "import-usda": "tsx scripts/import-usda.ts ../../data/usda ../../data/foods.db"
   },
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.52.0",
-    "@hono/node-server": "^1.14.0",
+    "@anthropic-ai/sdk": "0.52.0",
+    "@hono/node-server": "catalog:",
     "@tashi/shared": "workspace:*",
-    "hono": "^4.7.0",
+    "hono": "catalog:",
     "kysely": "0.29.7",
     "stemmer": "2.0.1",
-    "zod": "^3.24.0"
+    "zod": "3.25.76"
   },
   "devDependencies": {
-    "@cloudflare/workers-types": "5.20261023.1",
-    "@types/node": "^22.0.0",
-    "sql.js": "^1.14.1",
-    "tsx": "^4.19.0",
-    "typescript": "^5.8.0",
-    "vitest": "^3.2.0",
-    "wrangler": "4.152.0"
+    "@cloudflare/workers-types": "catalog:",
+    "@types/node": "catalog:",
+    "sql.js": "1.14.1",
+    "tsx": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:",
+    "wrangler": "catalog:"
   }
 }

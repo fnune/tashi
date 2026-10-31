@@ -1,0 +1,28 @@
+#!/usr/bin/env bash
+# Recomputes the hash of the pnpm dependencies in nix/package.nix after the
+# lockfile changes. It always builds with a placeholder: with the old hash,
+# Nix would reuse the dependencies it built before and never notice.
+set -euo pipefail
+cd "$(dirname "$0")/.."
+
+file=nix/package.nix
+placeholder="sha256-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="
+old=$(sed -n 's/^ *hash = "\(sha256-[^"]*\)";/\1/p' "$file")
+
+sed -i "s|$old|$placeholder|" "$file"
+output=$(nix build .#default.pnpmDeps --no-link 2>&1 || true)
+new=$(sed -n 's/^ *got: *\(sha256-[^ ]*\)$/\1/p' <<<"$output")
+
+if [ -z "$new" ]; then
+  sed -i "s|$placeholder|$old|" "$file"
+  echo "Building the pnpm dependencies failed for another reason:" >&2
+  echo "$output" >&2
+  exit 1
+fi
+
+sed -i "s|$placeholder|$new|" "$file"
+if [ "$new" = "$old" ]; then
+  echo "The pnpm dependency hash is up to date: $new"
+else
+  echo "Updated the pnpm dependency hash: $old -> $new"
+fi

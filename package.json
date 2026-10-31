@@ -16,13 +16,14 @@
     "check:fix": "biome check --write . && stylelint --fix \"packages/frontend/src/**/*.css\"",
     "test:unit": "pnpm --filter @tashi/shared --filter @tashi/backend --filter @tashi/frontend test",
     "test:e2e": "pnpm --filter @tashi/shared --filter @tashi/frontend build && pnpm --filter @tashi/backend build:worker && pnpm --filter @tashi/e2e test",
-    "typecheck": "pnpm --filter @tashi/shared --filter @tashi/backend --filter @tashi/frontend --filter @tashi/e2e exec tsc --noEmit"
+    "typecheck": "pnpm --filter @tashi/shared --filter @tashi/backend --filter @tashi/frontend --filter @tashi/e2e exec tsc --noEmit",
+    "nix:hash": "scripts/update-nix-hash"
   },
   "devDependencies": {
     "@biomejs/biome": "2.4.16",
-    "concurrently": "^9.2.1",
-    "stylelint": "^17.16.0",
-    "wrangler": "4.152.0"
+    "concurrently": "9.2.1",
+    "stylelint": "17.16.0",
+    "wrangler": "catalog:"
   },
   "pnpm": {
     "ignoredBuiltDependencies": [

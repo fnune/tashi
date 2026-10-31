@@ -12,3 +12,9 @@ hooks = [
     { id = "stylelint", name = "stylelint", entry = "pnpm stylelint", language = "system", types_or = ["css"], pass_filenames = true },
     { id = "typecheck", name = "typecheck", entry = "pnpm typecheck", language = "system", pass_filenames = false, types_or = ["ts", "tsx"] },
 ]
+
+[[repos]]
+repo = "local"
+hooks = [
+    { id = "nix-hash", name = "pnpm dependency hash for Nix", entry = "scripts/update-nix-hash", language = "system", files = "(^|/)(package\\.json|pnpm-lock\\.yaml|pnpm-workspace\\.yaml)$", pass_filenames = false },
+]
