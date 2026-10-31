@@ -1,6 +1,7 @@
 import type { FoodVocabEntry, Settings, TimelineEntry } from "@tashi/shared";
 import { DEFAULT_SETTINGS } from "@tashi/shared";
 import { nameKeyOf } from "../domain/auth/authentication.js";
+import type { ModelUsage, ModelUsageTotal } from "../domain/model-usage.js";
 import {
   type Account,
   cursorAfter,
@@ -35,6 +36,7 @@ export function createInMemoryRepositories(): Repositories {
   >();
   const sessions = new Map<string, StoredSession>();
   const failures = new Map<string, SignInFailures>();
+  const usage: { usage: ModelUsage; at: Date }[] = [];
   const keyOf = (bytes: Uint8Array) => [...bytes].join(",");
 
   return {
@@ -162,6 +164,34 @@ export function createInMemoryRepositories(): Repositories {
       },
       clear: async (nameKey) => {
         failures.delete(nameKey);
+      },
+    },
+    modelUsage: {
+      record: async (recorded, at) => {
+        usage.push({ usage: { ...recorded }, at });
+      },
+      totalsSince: async (since) => {
+        const totals = new Map<string, ModelUsageTotal>();
+        for (const { usage: u, at } of usage) {
+          if (at < since) continue;
+          const total = totals.get(u.model) ?? {
+            model: u.model,
+            calculations: 0,
+            inputTokens: 0,
+            outputTokens: 0,
+            cacheWriteTokens: 0,
+            cacheReadTokens: 0,
+          };
+          total.calculations += 1;
+          total.inputTokens += u.inputTokens;
+          total.outputTokens += u.outputTokens;
+          total.cacheWriteTokens += u.cacheWriteTokens;
+          total.cacheReadTokens += u.cacheReadTokens;
+          totals.set(u.model, total);
+        }
+        return [...totals.values()].sort((a, b) =>
+          a.model.localeCompare(b.model),
+        );
       },
     },
   };

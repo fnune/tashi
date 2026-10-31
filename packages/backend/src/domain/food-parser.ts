@@ -1,13 +1,15 @@
 import type { FoodVocabEntry, ParsedFoodItem, ParseTrace } from "@tashi/shared";
+import type { ModelUsage } from "./model-usage.js";
 
-export type ParseOutcome =
+export type ParseOutcome = (
   | { status: "ok"; items: ParsedFoodItem[]; trace: ParseTrace }
   | {
       status: "needs_clarification";
       message: string;
       trace: ParseTrace;
     }
-  | { status: "rejected"; message: string; trace: ParseTrace };
+  | { status: "rejected"; message: string; trace: ParseTrace }
+) & { usage: ModelUsage };
 
 export interface FoodParser {
   parse(

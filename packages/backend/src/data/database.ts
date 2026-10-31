@@ -232,6 +232,16 @@ export interface SignInFailuresTable {
   last_failure_at: Instant;
 }
 
+export interface ModelUsageTable {
+  id: Generated<number>;
+  used_at: Instant;
+  model: string;
+  input_tokens: number;
+  output_tokens: number;
+  cache_write_tokens: number;
+  cache_read_tokens: number;
+}
+
 export interface Database {
   insulin_products: InsulinProductsTable;
   food_sources: FoodSourcesTable;
@@ -257,6 +267,7 @@ export interface Database {
   password_methods: PasswordMethodsTable;
   sessions: SessionsTable;
   sign_in_failures: SignInFailuresTable;
+  model_usage: ModelUsageTable;
 }
 
 export type Db = Kysely<Database>;

@@ -5,6 +5,7 @@ import type { Repositories } from "../../domain/repositories.js";
 import type { Database } from "../database.js";
 import { SqliteAccountRepository } from "../sqlite/account-repository.js";
 import { SqliteApiKeyRepository } from "../sqlite/api-key-repository.js";
+import { SqliteModelUsageRepository } from "../sqlite/model-usage-repository.js";
 import { SqliteSessionRepository } from "../sqlite/session-repository.js";
 import { SqliteSettingsRepository } from "../sqlite/settings-repository.js";
 import { SqliteSignInFailureRepository } from "../sqlite/sign-in-failure-repository.js";
@@ -32,5 +33,6 @@ export function d1Repositories(
     accounts: new SqliteAccountRepository(db, batch),
     sessions: new SqliteSessionRepository(db),
     signInFailures: new SqliteSignInFailureRepository(db),
+    modelUsage: new SqliteModelUsageRepository(db),
   };
 }

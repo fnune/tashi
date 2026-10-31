@@ -4,8 +4,13 @@ import type { ApiKeyStore } from "../domain/api-key-store.js";
 import type { DiaryImport } from "../domain/diary-import.js";
 import type { Doses } from "../domain/doses.js";
 import { DomainError } from "../domain/errors.js";
+import { usageSince } from "../domain/model-usage.js";
 import type { Repositories } from "../domain/repositories.js";
-import { settingsSchema, timeZoneSchema } from "../domain/schemas.js";
+import {
+  isoTimestampSchema,
+  settingsSchema,
+  timeZoneSchema,
+} from "../domain/schemas.js";
 import type { TimelineService } from "../domain/timeline-service.js";
 import { apiError } from "./api-error.js";
 import { decodeCursor, encodeCursor } from "./cursor.js";
@@ -73,6 +78,16 @@ export function createRoutes({
     }
     await apiKeys.save(parsed.data.api_key);
     return c.json(await apiKeys.status());
+  });
+
+  api.get("/api/usage", async (c) => {
+    const since = isoTimestampSchema.safeParse(c.req.query("since"));
+    if (!since.success) {
+      return apiError(c, "validation_failed", 400, since.error.message);
+    }
+    return c.json(
+      await usageSince(repositories.modelUsage, new Date(since.data)),
+    );
   });
 
   api.delete("/api/api-key", async (c) => {

@@ -62,6 +62,11 @@ const translations = {
     apiKeyDetail: "Reads the foods and weights in your meal descriptions",
     apiKeySaved: "Saved",
     apiKeyFromServer: "Set on the server",
+    usageThisMonth: "This month",
+    usageCalculation: "calculation",
+    usageCalculations: "calculations",
+    usagePricesOf: "estimate at prices of",
+    usageCostUnknown: "Cost unknown",
     apiKeyExplainer:
       "Tashi sends each meal description to Anthropic to read the foods and weights, and you pay Anthropic for that use. The key stays on your server, encrypted, and is never shown again.",
     apiKeyGet: "Get a key at console.anthropic.com",
@@ -383,6 +388,11 @@ const translations = {
     apiKeyDetail: "Lee los alimentos y pesos de tus descripciones de comidas",
     apiKeySaved: "Guardada",
     apiKeyFromServer: "Definida en el servidor",
+    usageThisMonth: "Este mes",
+    usageCalculation: "cálculo",
+    usageCalculations: "cálculos",
+    usagePricesOf: "estimado con precios del",
+    usageCostUnknown: "Coste desconocido",
     apiKeyExplainer:
       "Tashi envía cada descripción de comida a Anthropic para leer los alimentos y pesos, y pagas a Anthropic por ese uso. La clave se queda en tu servidor, cifrada, y no se vuelve a mostrar.",
     apiKeyGet: "Consigue una clave en console.anthropic.com",

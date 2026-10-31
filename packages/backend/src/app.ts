@@ -16,6 +16,7 @@ import {
   anthropicAcceptsKey,
   KeyedFoodParser,
 } from "./domain/keyed-food-parser.js";
+import { MeteredFoodParser } from "./domain/model-usage.js";
 import type { Repositories } from "./domain/repositories.js";
 import { TimelineService } from "./domain/timeline-service.js";
 import { authenticate, type SignedIn } from "./http/authentication.js";
@@ -56,7 +57,12 @@ export function createApp({
     (apiKey) =>
       new AnthropicFoodParser(apiKey, foodCatalog, fetch, config.model),
   );
-  const calculator = new Calculator(parser, foodCatalog, clock, newId);
+  const calculator = new Calculator(
+    new MeteredFoodParser(parser, repositories.modelUsage, clock),
+    foodCatalog,
+    clock,
+    newId,
+  );
 
   const authentication = new Authentication({
     accounts: repositories.accounts,

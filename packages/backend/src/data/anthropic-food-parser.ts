@@ -6,6 +6,7 @@ import type {
 } from "@tashi/shared";
 import type { FoodCatalog } from "../domain/food-catalog.js";
 import type { FoodParser, ParseOutcome } from "../domain/food-parser.js";
+import type { ModelUsage } from "../domain/model-usage.js";
 
 const SYSTEM_PROMPT = `You are a food parsing assistant for a diabetes insulin calculator.
 
@@ -186,6 +187,13 @@ export class AnthropicFoodParser implements FoodParser {
 
     const searches: SearchTraceEntry[] = [];
     const startMs = Date.now();
+    const usage: ModelUsage = {
+      model: this.model,
+      inputTokens: 0,
+      outputTokens: 0,
+      cacheWriteTokens: 0,
+      cacheReadTokens: 0,
+    };
 
     for (let round = 0; round < MAX_TOOL_ROUNDS; round++) {
       const response = await this.client.messages.create({
@@ -195,6 +203,10 @@ export class AnthropicFoodParser implements FoodParser {
         tools: [SEARCH_TOOL],
         messages,
       });
+      usage.inputTokens += response.usage.input_tokens;
+      usage.outputTokens += response.usage.output_tokens;
+      usage.cacheWriteTokens += response.usage.cache_creation_input_tokens ?? 0;
+      usage.cacheReadTokens += response.usage.cache_read_input_tokens ?? 0;
 
       if (response.stop_reason === "end_turn") {
         const text = response.content.find((b) => b.type === "text");
@@ -212,6 +224,7 @@ export class AnthropicFoodParser implements FoodParser {
             message:
               "The assistant returned an empty response. Please rephrase your meal description.",
             trace,
+            usage,
           };
         }
 
@@ -228,16 +241,18 @@ export class AnthropicFoodParser implements FoodParser {
             status: "needs_clarification",
             message: truncate(rawResponse, CLARIFICATION_FALLBACK_MAX_CHARS),
             trace,
+            usage,
           };
         }
 
         if (envelope.status === "ok") {
-          return { status: "ok", items: envelope.items, trace };
+          return { status: "ok", items: envelope.items, trace, usage };
         }
         return {
           status: envelope.status,
           message: envelope.message,
           trace,
+          usage,
         };
       }
 

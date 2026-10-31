@@ -83,6 +83,7 @@ describe("sqlite storage", () => {
     expect(first.query("SELECT name FROM kysely_migration")).toEqual([
       { name: "0001-initial" },
       { name: "0002-accounts" },
+      { name: "0003-model-usage" },
     ]);
     await first.close();
   });

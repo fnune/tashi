@@ -397,6 +397,26 @@ CREATE TABLE sign_in_failures (
 - Sessions and password methods hold their own encrypted copy of the instance's data key. A session stores only the SHA-256 hash of its token; the copy of the data key in it can only be opened with the token, which the database never sees.
 - `sign_in_failures` is keyed by the name tried, whether or not an account has it, so failing for a name that does not exist looks the same as failing for one that does.
 
+## Model usage
+
+The tokens each calculation spent, so Settings can show this month's calculations and their estimated cost. Migration `0003-model-usage` creates it.
+
+```sql
+CREATE TABLE model_usage (
+  id INTEGER PRIMARY KEY,
+  used_at TEXT NOT NULL CHECK (used_at IS strftime('%Y-%m-%dT%H:%M:%fZ', used_at)),
+  model TEXT NOT NULL CHECK (model <> ''),
+  input_tokens INTEGER NOT NULL CHECK (input_tokens >= 0),
+  output_tokens INTEGER NOT NULL CHECK (output_tokens >= 0),
+  cache_write_tokens INTEGER NOT NULL CHECK (cache_write_tokens >= 0),
+  cache_read_tokens INTEGER NOT NULL CHECK (cache_read_tokens >= 0)
+) STRICT;
+CREATE INDEX model_usage_by_time ON model_usage (used_at);
+```
+
+- One row per calculation, logged or not, with the tokens of all its rounds added up. A calculation that fails halfway records nothing.
+- Rows hold tokens, not money: the price per model lives in code (`model-usage.ts`) with the date it was last checked, so a price change needs no migration and the cost of past months follows the current prices.
+
 ## Accounts and people (later)
 
 No table has an owner today. When sign-in arrives, the model separates who signs in from whose data it is, because they are not always the same human: a parent keeps a diary for a child, a partner looks after another's.

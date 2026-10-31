@@ -482,6 +482,33 @@ export function repositoryContract(
       });
     });
 
+    describe("model usage", () => {
+      it("adds up each model's calculations since a moment", async () => {
+        const usage = (model: string, tokens: number) => ({
+          model,
+          inputTokens: tokens,
+          outputTokens: tokens / 10,
+          cacheWriteTokens: tokens / 100,
+          cacheReadTokens: tokens / 1000,
+        });
+        const october = new Date("2026-10-31T23:00:00.000Z");
+        const november = new Date("2026-11-01T00:00:00.000Z");
+        await repositories.modelUsage.record(usage("small", 1000), october);
+        await repositories.modelUsage.record(usage("small", 2000), november);
+        await repositories.modelUsage.record(usage("small", 3000), november);
+        await repositories.modelUsage.record(usage("large", 1000), november);
+        expect(await repositories.modelUsage.totalsSince(november)).toEqual([
+          { ...usage("large", 1000), calculations: 1 },
+          { ...usage("small", 5000), calculations: 2 },
+        ]);
+      });
+
+      it("has nothing to add up when nothing was used since", async () => {
+        const later = new Date("2030-01-01T00:00:00.000Z");
+        expect(await repositories.modelUsage.totalsSince(later)).toEqual([]);
+      });
+    });
+
     describe("api key", () => {
       it("starts without a record", async () => {
         expect(await repositories.apiKey.get()).toBeNull();

@@ -82,6 +82,7 @@ describe("d1", () => {
     expect(results).toEqual([
       { name: "0001-initial" },
       { name: "0002-accounts" },
+      { name: "0003-model-usage" },
     ]);
   });
 

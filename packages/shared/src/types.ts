@@ -284,6 +284,12 @@ export type ApiErrorCode =
   | "not_found"
   | "internal_error";
 
+export interface UsageSummary {
+  calculations: number;
+  estimated_cost_usd: number | null;
+  prices_checked_on: string;
+}
+
 export interface ApiKeyStatus {
   configured: boolean;
   source: "settings" | "environment" | null;

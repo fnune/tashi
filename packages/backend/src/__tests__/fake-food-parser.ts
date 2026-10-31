@@ -9,6 +9,8 @@ type FakeOutcome =
 export class FakeFoodParser implements FoodParser {
   private responses: Map<string, FakeOutcome> = new Map();
 
+  constructor(private model = "fake") {}
+
   setResponse(description: string, items: ParsedFoodItem[]): void {
     this.responses.set(description, { status: "ok", items });
   }
@@ -39,13 +41,26 @@ export class FakeFoodParser implements FoodParser {
     const trace = {
       searches: [],
       raw_response: JSON.stringify(response),
-      model: "fake",
+      model: this.model,
       duration_ms: 0,
     };
 
+    const usage = {
+      model: this.model,
+      inputTokens: 1000,
+      outputTokens: 200,
+      cacheWriteTokens: 0,
+      cacheReadTokens: 0,
+    };
+
     if (response.status === "ok") {
-      return { status: "ok", items: response.items, trace };
+      return { status: "ok", items: response.items, trace, usage };
     }
-    return { status: response.status, message: response.message, trace };
+    return {
+      status: response.status,
+      message: response.message,
+      trace,
+      usage,
+    };
   }
 }

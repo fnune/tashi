@@ -43,6 +43,7 @@ export const USER_TABLES = [
   "ratio_versions",
   "food_vocabulary",
   "anthropic_api_key",
+  "model_usage",
 ];
 
 export interface TestAppOptions {
@@ -266,6 +267,13 @@ class FakeFoodParser implements FoodParser {
         raw_response: JSON.stringify(items),
         model: "fake",
         duration_ms: 0,
+      },
+      usage: {
+        model: "claude-haiku-4-5",
+        inputTokens: 1000,
+        outputTokens: 200,
+        cacheWriteTokens: 0,
+        cacheReadTokens: 0,
       },
     };
   }

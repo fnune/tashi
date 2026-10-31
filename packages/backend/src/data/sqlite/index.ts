@@ -4,6 +4,7 @@ import { transactionWriteBatch } from "../write-batch.js";
 import { SqliteAccountRepository } from "./account-repository.js";
 import { SqliteApiKeyRepository } from "./api-key-repository.js";
 import { migrate, openSqlite } from "./connection.js";
+import { SqliteModelUsageRepository } from "./model-usage-repository.js";
 import { SqliteSessionRepository } from "./session-repository.js";
 import { SqliteSettingsRepository } from "./settings-repository.js";
 import { SqliteSignInFailureRepository } from "./sign-in-failure-repository.js";
@@ -37,6 +38,7 @@ export async function openSqliteRepositories(
         accounts: new SqliteAccountRepository(db, batch),
         sessions: new SqliteSessionRepository(db),
         signInFailures: new SqliteSignInFailureRepository(db),
+        modelUsage: new SqliteModelUsageRepository(db),
       },
       close: () => db.destroy(),
     };

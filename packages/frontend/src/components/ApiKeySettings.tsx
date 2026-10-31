@@ -1,10 +1,10 @@
-import type { ApiKeyStatus } from "@tashi/shared";
+import type { ApiKeyStatus, UsageSummary } from "@tashi/shared";
 import { useEffect, useState } from "react";
 import * as api from "../api.js";
 import { apiErrorText, type Language, t } from "../i18n.js";
 import { Button } from "./ui/Button.js";
 import { TextField } from "./ui/Field.js";
-import { ListButton, ListGroup } from "./ui/List.js";
+import { ListButton, ListGroup, ListRow } from "./ui/List.js";
 import { Notice } from "./ui/Notice.js";
 import { Sheet } from "./ui/Sheet.js";
 import "./ApiKeySettings.css";
@@ -14,6 +14,7 @@ const CONSOLE_URL = "https://console.anthropic.com/settings/keys";
 export function ApiKeySettings({ id, lang }: { id: string; lang: Language }) {
   const [status, setStatus] = useState<ApiKeyStatus | null>(null);
   const [editing, setEditing] = useState(false);
+  const [usage, setUsage] = useState<UsageSummary | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -21,6 +22,10 @@ export function ApiKeySettings({ id, lang }: { id: string; lang: Language }) {
       .getApiKeyStatus()
       .then(setStatus)
       .catch((err) => setLoadError(apiErrorText(lang, err)));
+    api
+      .getUsageSince(startOfThisMonth())
+      .then(setUsage)
+      .catch(() => setUsage(null));
   }, [lang]);
 
   function valueText(): string {
@@ -39,6 +44,7 @@ export function ApiKeySettings({ id, lang }: { id: string; lang: Language }) {
           value={status ? valueText() : ""}
           onClick={() => setEditing(true)}
         />
+        {usage && <UsageRow lang={lang} usage={usage} />}
       </ListGroup>
       {loadError && <Notice tone="danger">{loadError}</Notice>}
 
@@ -58,6 +64,39 @@ export function ApiKeySettings({ id, lang }: { id: string; lang: Language }) {
         />
       </Sheet>
     </div>
+  );
+}
+
+function startOfThisMonth(): Date {
+  const now = new Date();
+  return new Date(now.getFullYear(), now.getMonth(), 1);
+}
+
+function UsageRow({ lang, usage }: { lang: Language; usage: UsageSummary }) {
+  const dollars = new Intl.NumberFormat(lang, {
+    style: "currency",
+    currency: "USD",
+  });
+  const cost = usage.estimated_cost_usd;
+  const value =
+    cost === null
+      ? t(lang, "usageCostUnknown")
+      : cost > 0 && cost < 0.01
+        ? `< ${dollars.format(0.01)}`
+        : `≈ ${dollars.format(cost)}`;
+  const calculations = `${usage.calculations} ${t(
+    lang,
+    usage.calculations === 1 ? "usageCalculation" : "usageCalculations",
+  )}`;
+  const checkedOn = new Date(
+    `${usage.prices_checked_on}T00:00:00`,
+  ).toLocaleDateString(lang, { dateStyle: "medium" });
+  return (
+    <ListRow
+      label={t(lang, "usageThisMonth")}
+      detail={`${calculations} · ${t(lang, "usagePricesOf")} ${checkedOn}`}
+      value={value}
+    />
   );
 }
 

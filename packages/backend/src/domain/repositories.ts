@@ -1,4 +1,5 @@
 import type { FoodVocabEntry, Settings, TimelineEntry } from "@tashi/shared";
+import type { ModelUsage, ModelUsageTotal } from "./model-usage.js";
 import type { SealedSecret } from "./secret-box.js";
 
 export interface SettingsRepository {
@@ -102,6 +103,11 @@ export interface SignInFailureRepository {
   clear(nameKey: string): Promise<void>;
 }
 
+export interface ModelUsageRepository {
+  record(usage: ModelUsage, at: Date): Promise<void>;
+  totalsSince(since: Date): Promise<ModelUsageTotal[]>;
+}
+
 export interface Repositories {
   settings: SettingsRepository;
   timeline: TimelineRepository;
@@ -110,6 +116,7 @@ export interface Repositories {
   accounts: AccountRepository;
   sessions: SessionRepository;
   signInFailures: SignInFailureRepository;
+  modelUsage: ModelUsageRepository;
 }
 
 export function cursorAfter(entry: TimelineEntry): TimelineCursor {

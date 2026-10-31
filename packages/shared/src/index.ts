@@ -136,6 +136,7 @@ export type {
   TimelineEntry,
   TimelinePageResponse,
   UpdateTimelineRequest,
+  UsageSummary,
   UserCarbs,
 } from "./types.js";
 export {

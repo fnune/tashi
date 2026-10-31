@@ -17,6 +17,7 @@ import type {
   TimelineEntry,
   TimelinePageResponse,
   UpdateTimelineRequest,
+  UsageSummary,
 } from "@tashi/shared";
 import type { Page } from "./paging/paged-list.js";
 
@@ -155,6 +156,12 @@ export function saveApiKey(apiKey: string): Promise<ApiKeyStatus> {
 
 export function deleteApiKey(): Promise<ApiKeyStatus> {
   return request<ApiKeyStatus>("/api/api-key", { method: "DELETE" });
+}
+
+export function getUsageSince(since: Date): Promise<UsageSummary> {
+  return request<UsageSummary>(
+    `/api/usage?since=${encodeURIComponent(since.toISOString())}`,
+  );
 }
 
 export function getVocabulary(): Promise<FoodVocabEntry[]> {
