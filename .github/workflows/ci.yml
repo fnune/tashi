@@ -1,0 +1,78 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  checks:
+    name: Lint, types and unit tests
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v5
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter @tashi/shared build
+      - run: pnpm check
+      - run: pnpm typecheck
+      - run: pnpm test:unit
+
+  e2e:
+    name: Browser tests
+    runs-on: ubuntu-24.04
+    env:
+      E2E_WORKERS: 2
+    steps:
+      - uses: actions/checkout@v5
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter @tashi/e2e exec playwright install --with-deps chromium
+      - name: On a Cloudflare Worker with local D1
+        run: pnpm test:e2e
+      - name: On the Node server
+        run: pnpm --filter @tashi/e2e test
+        env:
+          E2E_RUNTIME: node
+
+  nix:
+    name: Nix package
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ github.head_ref || github.ref }}
+      - uses: cachix/install-nix-action@v31
+      # A dependency update changes the hash of the pnpm dependencies; on a
+      # branch of this repository, such as Renovate's, the job commits the
+      # new one instead of failing.
+      - run: scripts/update-nix-hash
+      - run: nix build .#default
+      - name: Commit the new hash
+        if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
+        run: |
+          git diff --quiet nix/package.nix && exit 0
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit --all --message "Update the Nix hash of the pnpm dependencies"
+          git push
+      - name: Fail on a stale hash elsewhere
+        if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name != github.repository
+        run: git diff --exit-code nix/package.nix
