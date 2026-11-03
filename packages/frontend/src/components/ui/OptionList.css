@@ -20,12 +20,12 @@
   cursor: pointer;
 }
 
-.option:has(:checked) {
+.option[data-checked] {
   background: var(--color-accent);
   color: var(--color-on-accent);
 }
 
-.option:has(:checked) .option-detail {
+.option[data-checked] .option-detail {
   color: var(--color-on-accent);
 }
 
@@ -37,7 +37,7 @@
   border: var(--border-width-heavy) solid var(--color-fg-muted);
 }
 
-.option:has(:checked) .option-dot {
+.option[data-checked] .option-dot {
   border: var(--space-1) solid var(--color-on-accent);
 }
 
@@ -55,7 +55,7 @@
   color: var(--color-fg-muted);
 }
 
-.option:has(:focus-visible) {
+.option[data-focus-visible] {
   outline: var(--size-focus-ring) solid var(--color-accent);
   outline-offset: var(--focus-offset);
 }

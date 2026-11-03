@@ -17,7 +17,7 @@
   cursor: pointer;
 }
 
-.segmented label:has(:focus-visible) {
+.segmented label[data-focus-visible] {
   outline: var(--size-focus-ring) solid var(--color-accent);
   outline-offset: var(--focus-offset);
 }
@@ -33,7 +33,7 @@
   border-radius: calc(var(--radius-md) - var(--space-hair));
 }
 
-.segmented[data-variant="track"] label:has(:checked) {
+.segmented[data-variant="track"] label[data-checked] {
   background: var(--color-bg);
   color: var(--color-fg);
   font-weight: var(--font-weight-bold);
@@ -50,7 +50,7 @@
   background: var(--color-fill);
 }
 
-.segmented[data-variant="pills"] label:has(:checked) {
+.segmented[data-variant="pills"] label[data-checked] {
   background: var(--color-inverse-bg);
   color: var(--color-inverse-fg);
   font-weight: var(--font-weight-bold);

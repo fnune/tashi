@@ -71,6 +71,6 @@
   }
 }
 
-:root:has(.sheet[open]) {
+:root.sheet-open {
   overflow: hidden;
 }

@@ -24,12 +24,12 @@
   cursor: pointer;
 }
 
-.icon-picker label:has(:checked) {
+.icon-picker label[data-checked] {
   background: var(--color-accent);
   color: var(--color-on-accent);
 }
 
-.icon-picker label:has(:focus-visible) {
+.icon-picker label[data-focus-visible] {
   outline: var(--size-focus-ring) solid var(--color-accent);
   outline-offset: var(--focus-offset);
 }

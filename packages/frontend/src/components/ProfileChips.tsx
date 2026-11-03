@@ -4,6 +4,7 @@ import { useEffect, useId, useRef, useState } from "react";
 import { type Language, t } from "../i18n.js";
 import { profileIcon, profileName, profileSummary } from "../profileLabels.js";
 import { Icon } from "./ui/Icon.js";
+import { flag, useFocusVisible } from "./ui/useFocusVisible.js";
 import "./ProfileChips.css";
 
 export function ProfileChips({
@@ -22,6 +23,7 @@ export function ProfileChips({
   onSelect: (profileId: string) => void;
 }) {
   const name = useId();
+  const { isFocusVisible, focusHandlers } = useFocusVisible<string>();
   const active = activeProfile(settings);
   const row = useRef<HTMLDivElement>(null);
   const [moreChips, setMoreChips] = useState({ start: false, end: false });
@@ -88,6 +90,8 @@ export function ProfileChips({
               className="profile-chip"
               data-profile-id={profile.id}
               data-editable={editable || undefined}
+              data-checked={flag(profile.id === active.id)}
+              data-focus-visible={flag(isFocusVisible(profile.id))}
             >
               <label className="profile-chip-select">
                 <input
@@ -96,6 +100,7 @@ export function ProfileChips({
                   name={name}
                   checked={profile.id === active.id}
                   onChange={() => onSelect(profile.id)}
+                  {...focusHandlers(profile.id)}
                 />
                 {icon && <Icon name={icon} />}
                 {profileName(profile, lang)}

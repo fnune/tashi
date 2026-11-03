@@ -19,6 +19,7 @@ import { Icon } from "./ui/Icon.js";
 import { Notice } from "./ui/Notice.js";
 import { Segmented } from "./ui/Segmented.js";
 import { Stepper } from "./ui/Stepper.js";
+import { flag, useFocusVisible } from "./ui/useFocusVisible.js";
 import "./ProfileEditor.css";
 
 const PERCENT_STEP = 5;
@@ -52,6 +53,7 @@ export function ProfileEditor({
   onDelete?: () => void;
 }) {
   const iconGroup = useId();
+  const { isFocusVisible, focusHandlers } = useFocusVisible<string>();
   const [name, setName] = useState(
     profile.name || (isNew ? "" : profileName(profile, lang)),
   );
@@ -108,7 +110,12 @@ export function ProfileEditor({
       <fieldset className="icon-picker">
         <legend>{t(lang, "profileIcon")}</legend>
         {PROFILE_ICONS.map((option) => (
-          <label key={option} title={t(lang, `profileIcon_${option}`)}>
+          <label
+            key={option}
+            title={t(lang, `profileIcon_${option}`)}
+            data-checked={flag(option === icon)}
+            data-focus-visible={flag(isFocusVisible(option))}
+          >
             <input
               type="radio"
               className="visually-hidden"
@@ -116,6 +123,7 @@ export function ProfileEditor({
               checked={option === icon}
               aria-label={t(lang, `profileIcon_${option}`)}
               onChange={() => setIcon(option)}
+              {...focusHandlers(option)}
             />
             <Icon name={option} />
           </label>

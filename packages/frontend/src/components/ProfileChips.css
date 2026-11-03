@@ -94,17 +94,17 @@
   color: var(--color-fg-muted);
 }
 
-.profile-chip:has(:checked) {
+.profile-chip[data-checked] {
   background: var(--color-accent);
   color: var(--color-on-accent);
 }
 
-.profile-chip:has(:checked) small,
-.profile-chip:has(:checked) .icon {
+.profile-chip[data-checked] small,
+.profile-chip[data-checked] .icon {
   color: var(--color-on-accent);
 }
 
-.profile-chip:has(.profile-chip-select :focus-visible) {
+.profile-chip[data-focus-visible] {
   outline: var(--size-focus-ring) solid var(--color-accent);
   outline-offset: var(--focus-offset);
 }

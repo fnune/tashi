@@ -29,5 +29,15 @@
     "typescript": "catalog:",
     "vite": "6.4.2",
     "vitest": "catalog:"
-  }
+  },
+  "browserslist": [
+    "last 2 chrome versions",
+    "last 2 edge versions",
+    "last 2 firefox versions",
+    "firefox >= 115",
+    "safari >= 16.4",
+    "ios_saf >= 16.4",
+    "last 2 and_chr versions",
+    "last 2 samsung versions"
+  ]
 }

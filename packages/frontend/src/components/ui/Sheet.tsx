@@ -93,6 +93,12 @@ export function Sheet({
     }
   }, [open]);
 
+  useEffect(() => {
+    if (!open) return;
+    document.documentElement.classList.add("sheet-open");
+    return () => document.documentElement.classList.remove("sheet-open");
+  }, [open]);
+
   return (
     // biome-ignore lint/a11y/useKeyWithClickEvents: Escape already closes a modal dialog natively.
     <dialog
