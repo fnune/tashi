@@ -124,6 +124,7 @@ export function buildTestApp(options: TestAppOptions): Hono<SignedIn> {
     if (!options.withAccounts && c.req.query("key") !== "none") {
       await aiConnections.connect(OPEN_DATA_KEY, "sk-ant-e2e");
     }
+    if (c.req.query("settings") === "none") return c.json({ ok: true });
     await repositories.settings.save({
       ...DEFAULT_SETTINGS,
       correction_factor: null,

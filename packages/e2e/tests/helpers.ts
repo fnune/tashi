@@ -2,10 +2,13 @@ import type { APIRequestContext, Page } from "@playwright/test";
 
 export async function resetServer(
   request: APIRequestContext,
-  options: { withKey?: boolean } = {},
+  options: { withKey?: boolean; fresh?: boolean } = {},
 ) {
-  const withoutKey = options.withKey === false ? "?key=none" : "";
-  await request.post(`/api/__reset${withoutKey}`);
+  const query = new URLSearchParams();
+  if (options.withKey === false) query.set("key", "none");
+  if (options.fresh) query.set("settings", "none");
+  const search = query.size > 0 ? `?${query}` : "";
+  await request.post(`/api/__reset${search}`);
 }
 
 export async function atLunchtime(page: Page) {
