@@ -10,5 +10,6 @@ What changes between versions of Tashi, for people who run their own copy. Each 
 - Settings shows this month's calculations and their estimated cost, and Tashi says plainly when the Anthropic credit has run out.
 - Tashi logs each API request, every unexpected error and sign-in outcomes as structured events, without names or diary data. On Cloudflare they appear under the Worker's **Observability** tab; a D1 query that does not answer within 10 s now fails its request instead of leaving it waiting.
 - **Report a problem**, in Settings and on the sign-in screen, opens a GitHub issue filled in with what went wrong: the last 50 errors the server recorded (for an admin) and what failed in the browser, without meals, readings or names. The server keeps those errors in a new table, created when it starts.
+- Your copy on GitHub can update itself every day. Turn it on once, as step 4 of [making your copy](INSTALL.md#1-make-your-copy-of-tashi-on-github) describes.
 - When the server does not answer for 15 s, or a screen fails, Tashi says so and offers to report it, instead of staying on a blank screen.
 - The Node server takes command-line options: `--database`, `--port` and `--base-path` (`tashi --help`).

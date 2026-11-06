@@ -15,6 +15,7 @@ Your Tashi runs in your own accounts, and your diary stays in them. Nobody else,
 1. Go to [github.com/signup](https://github.com/signup) and create a free account. Confirm your email when GitHub asks.
 2. Open [github.com/fnune/tashi](https://github.com/fnune/tashi).
 3. Press **Fork** near the top right, then **Create fork**.
+4. In your copy, open the **Actions** tab, choose **Stay up to date** on the left, and enable it if GitHub asks. This lets your copy update itself every day ([Keeping Tashi up to date](#keeping-tashi-up-to-date)).
 
 You now have your own copy at `github.com/your-name/tashi`. Leave that tab open.
 
@@ -73,12 +74,9 @@ That's it. Tashi is ready to use.
 
 ## Keeping Tashi up to date
 
-When there is a new version of Tashi, your copy on GitHub shows a notice that your branch is behind.
+Your copy updates itself every day, and Cloudflare builds the new version. Your diary and settings stay. The [changelog](CHANGELOG.md) says what changed. To turn this off, or on again if GitHub paused it, open **Actions**, choose **Stay up to date**, and disable or enable it.
 
-1. Open your copy on GitHub (`github.com/your-name/tashi`).
-2. Press **Sync fork**, then **Update branch**.
-
-Cloudflare builds the new version within a few minutes. Your diary and your settings stay. The [changelog](CHANGELOG.md) says what changed and whether you need to do anything.
+To update by hand, for example when GitHub emails you that an update failed, open your copy on GitHub and press **Sync fork**, then **Update branch**.
 
 ## Keeping a copy of your diary
 

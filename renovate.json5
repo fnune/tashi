@@ -13,6 +13,12 @@
       matchUpdateTypes: ["minor", "patch", "pin", "digest"],
       groupName: "minor and patch updates",
     },
+    {
+      description: "Update GitHub Actions monthly: a fork's daily sync cannot bring in workflow changes and stops until synced by hand",
+      matchManagers: ["github-actions"],
+      groupName: "GitHub Actions",
+      schedule: ["before 6am on the first day of the month"],
+    },
   ],
   vulnerabilityAlerts: { schedule: ["at any time"], minimumReleaseAge: null },
   nix: { enabled: true },
