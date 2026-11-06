@@ -13,6 +13,7 @@ import type {
   InsulinOnBoard,
   LogMealRequest,
   LogMealResponse,
+  ProblemsResponse,
   Settings,
   StartImportRequest,
   TimelineEntry,
@@ -20,6 +21,7 @@ import type {
   UpdateTimelineRequest,
   UsageSummary,
 } from "@tashi/shared";
+import { type ClientProblemKind, clientProblems } from "./client-problems.js";
 import type { Page } from "./paging/paged-list.js";
 
 export const BASE_PATH = new URL(document.baseURI).pathname.replace(/\/$/, "");
@@ -41,18 +43,48 @@ export class ApiError extends Error {
   }
 }
 
-async function request<T>(path: string, options?: RequestInit): Promise<T> {
-  const res = await fetch(`${BASE}${path}`, {
-    ...options,
-    headers: {
-      "Content-Type": "application/json",
-      "X-Timezone": Intl.DateTimeFormat().resolvedOptions().timeZone,
-      ...options?.headers,
-    },
-  });
+export const NO_ANSWER_MS = 15_000;
+const CALCULATION_NO_ANSWER_MS = 90_000;
 
-  const text = await res.text();
+async function request<T>(path: string, options?: RequestInit): Promise<T> {
+  const method = options?.method ?? "GET";
+  const route = path.split("?")[0] ?? path;
+  const problem = (kind: ClientProblemKind, detail: string) =>
+    clientProblems.record({
+      at: new Date(),
+      kind,
+      method,
+      path: route,
+      detail,
+    });
+  const patience =
+    route === "/api/calculate" ? CALCULATION_NO_ANSWER_MS : NO_ANSWER_MS;
+  const unanswered = setTimeout(
+    () => problem("no_answer", `no answer after ${patience / 1000} s`),
+    patience,
+  );
+
+  let res: Response;
+  let text: string;
+  try {
+    res = await fetch(`${BASE}${path}`, {
+      ...options,
+      headers: {
+        "Content-Type": "application/json",
+        "X-Timezone": Intl.DateTimeFormat().resolvedOptions().timeZone,
+        ...options?.headers,
+      },
+    });
+    text = await res.text();
+  } catch (error) {
+    problem("network", error instanceof Error ? error.message : String(error));
+    throw error;
+  } finally {
+    clearTimeout(unanswered);
+  }
+
   if (!text) {
+    problem("unreadable_response", `empty response with status ${res.status}`);
     throw new Error(`Empty response (${res.status}). Is the backend running?`);
   }
 
@@ -60,11 +92,18 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
   try {
     body = JSON.parse(text);
   } catch {
+    problem(
+      "unreadable_response",
+      `status ${res.status}, not JSON: ${text.slice(0, 100)}`,
+    );
     throw new Error(`Expected JSON but got: ${text.slice(0, 200)}`);
   }
 
   if (!res.ok) {
     const err = body as ErrorResponse;
+    if (res.status >= 500) {
+      problem("server_error", `${res.status} ${err.code ?? ""}: ${err.error}`);
+    }
     if (err.code === "signed_out") {
       window.dispatchEvent(new Event(SIGNED_OUT_EVENT));
     }
@@ -221,4 +260,8 @@ export async function setUp(name: string, password: string): Promise<void> {
 
 export async function signOut(): Promise<void> {
   await request("/api/auth/sign-out", { method: "POST" });
+}
+
+export function getProblems(signal: AbortSignal): Promise<ProblemsResponse> {
+  return request<ProblemsResponse>("/api/problems", { signal });
 }

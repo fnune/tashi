@@ -2,6 +2,7 @@ import { useState } from "react";
 import * as api from "../api.js";
 import { apiErrorText, type Language, t } from "../i18n.js";
 import { Logo } from "./Logo.js";
+import { ProblemReportSheet } from "./ProblemReportSheet.js";
 import { Button } from "./ui/Button.js";
 import { TextField } from "./ui/Field.js";
 import { Notice } from "./ui/Notice.js";
@@ -18,6 +19,7 @@ export function SignInView({
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [reporting, setReporting] = useState(false);
 
   async function submit(event: React.FormEvent) {
     event.preventDefault();
@@ -56,6 +58,14 @@ export function SignInView({
           {t(lang, "signIn")}
         </Button>
       </form>
+      <Button variant="text" onClick={() => setReporting(true)}>
+        {t(lang, "reportProblem")}
+      </Button>
+      <ProblemReportSheet
+        open={reporting}
+        lang={lang}
+        onClose={() => setReporting(false)}
+      />
     </main>
   );
 }

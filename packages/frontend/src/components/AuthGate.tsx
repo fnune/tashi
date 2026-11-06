@@ -8,12 +8,14 @@ import {
 } from "react";
 import { useLocation, useNavigate } from "react-router";
 import * as api from "../api.js";
-import { savedLanguage } from "../i18n.js";
+import { apiErrorText, savedLanguage, t } from "../i18n.js";
 import { SetupView } from "./SetupView.js";
 import { SignInView } from "./SignInView.js";
+import { TroubleScreen, WaitingForServer } from "./TroubleScreen.js";
 
 type AuthState =
   | { kind: "checking" }
+  | { kind: "unreachable"; reason: string }
   | { kind: "signed_out" }
   | { kind: "signed_in"; account: api.SignedInAccount };
 
@@ -39,7 +41,16 @@ export function AuthGate({ children }: { children: ReactNode }) {
     api
       .getAccount()
       .then((account) => setState({ kind: "signed_in", account }))
-      .catch(() => setState({ kind: "signed_out" }));
+      .catch((error: unknown) =>
+        setState(
+          error instanceof api.ApiError && error.code === "signed_out"
+            ? { kind: "signed_out" }
+            : {
+                kind: "unreachable",
+                reason: apiErrorText(savedLanguage(), error),
+              },
+        ),
+      );
   }, []);
 
   useEffect(() => {
@@ -49,7 +60,17 @@ export function AuthGate({ children }: { children: ReactNode }) {
     return () => window.removeEventListener(api.SIGNED_OUT_EVENT, signedOut);
   }, [check]);
 
-  if (state.kind === "checking") return null;
+  if (state.kind === "checking") {
+    return <WaitingForServer lang={savedLanguage()} />;
+  }
+  if (state.kind === "unreachable") {
+    const lang = savedLanguage();
+    return (
+      <TroubleScreen lang={lang} title={t(lang, "unreachableTitle")}>
+        <p>{state.reason}</p>
+      </TroubleScreen>
+    );
+  }
   if (state.kind === "signed_out" && location.pathname === "/setup") {
     return (
       <SetupView

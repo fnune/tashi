@@ -1,0 +1,19 @@
+.trouble {
+  max-width: var(--layout-max-width);
+  margin: 0 auto;
+  padding: var(--space-6) var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.trouble-logo {
+  width: calc(var(--space-6) * 2);
+  height: calc(var(--space-6) * 2);
+}
+
+.trouble-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}

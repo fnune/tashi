@@ -30,6 +30,24 @@ const translations = {
     loadMore: "Load more",
     loadMoreFailed: "Could not load more.",
     tryAgain: "Try again",
+    reportProblem: "Report a problem",
+    reportIntro:
+      "This opens a new issue on GitHub, where anyone can read it. Read it first: it lists what failed and when, without meals, readings or names.",
+    reportGathering: "Gathering the report…",
+    reportOpen: "Open on GitHub",
+    reportCopy: "Copy the report",
+    reportCopied: "Copied.",
+    reportCopyFailed: "Could not copy. Select the text and copy it by hand.",
+    reportServerAdminOnly:
+      "Only an admin who is signed in can add what the server recorded.",
+    notAnsweringTitle: "Tashi is not answering",
+    notAnsweringText:
+      "Its server has not answered for a while. Try again in a moment. If it keeps happening, report the problem.",
+    unreachableTitle: "Tashi could not load",
+    crashTitle: "Something went wrong on this screen",
+    crashText:
+      "Reload Tashi to carry on. If it happens again, report the problem.",
+    reload: "Reload",
     clearTimeline: "Clear history",
     confirmClearTimeline: "Delete the whole history?",
     dateTime: "Date and time",
@@ -378,6 +396,25 @@ const translations = {
     loadMore: "Cargar más",
     loadMoreFailed: "No se pudo cargar más.",
     tryAgain: "Reintentar",
+    reportProblem: "Informar de un problema",
+    reportIntro:
+      "Esto abre una incidencia nueva en GitHub, que cualquiera puede leer. Léela antes: dice qué falló y cuándo, sin comidas, lecturas ni nombres.",
+    reportGathering: "Preparando el informe…",
+    reportOpen: "Abrir en GitHub",
+    reportCopy: "Copiar el informe",
+    reportCopied: "Copiado.",
+    reportCopyFailed:
+      "No se pudo copiar. Selecciona el texto y cópialo a mano.",
+    reportServerAdminOnly:
+      "Solo una cuenta de administración con la sesión iniciada puede añadir lo que registró el servidor.",
+    notAnsweringTitle: "Tashi no responde",
+    notAnsweringText:
+      "Su servidor lleva un rato sin responder. Vuelve a intentarlo en un momento. Si sigue pasando, informa del problema.",
+    unreachableTitle: "Tashi no ha podido cargar",
+    crashTitle: "Algo ha fallado en esta pantalla",
+    crashText:
+      "Recarga Tashi para seguir. Si vuelve a pasar, informa del problema.",
+    reload: "Recargar",
     clearTimeline: "Borrar historial",
     confirmClearTimeline: "¿Borrar todo el historial?",
     dateTime: "Fecha y hora",

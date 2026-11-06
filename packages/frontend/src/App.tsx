@@ -16,12 +16,14 @@ import {
   type CalculatorFormState,
   CalculatorView,
 } from "./components/CalculatorView.js";
+import { CrashBoundary } from "./components/CrashBoundary.js";
 import { DoseExplainerView } from "./components/DoseExplainerView.js";
 import { SettingsView } from "./components/SettingsView.js";
 import { TabBar } from "./components/TabBar.js";
 import { TimelineView } from "./components/TimelineView.js";
+import { TroubleScreen, WaitingForServer } from "./components/TroubleScreen.js";
 import { Notice } from "./components/ui/Notice.js";
-import { type Language, savedLanguage } from "./i18n.js";
+import { type Language, savedLanguage, t } from "./i18n.js";
 import { type PagedListHandle, usePagedList } from "./paging/use-paged-list.js";
 import {
   type KeyValueStore,
@@ -136,13 +138,13 @@ function AppShell() {
 
   if (loadError) {
     return (
-      <div className="app">
+      <TroubleScreen lang={lang} title={t(lang, "unreachableTitle")}>
         <Notice tone="danger">{loadError}</Notice>
-      </div>
+      </TroubleScreen>
     );
   }
 
-  if (!settingsLoaded) return null;
+  if (!settingsLoaded) return <WaitingForServer lang={lang} />;
 
   return (
     <div className="app">
@@ -268,10 +270,12 @@ function TimelineRoute({
 
 export function App() {
   return (
-    <BrowserRouter basename={api.BASE_PATH || "/"}>
-      <AuthGate>
-        <AppShell />
-      </AuthGate>
-    </BrowserRouter>
+    <CrashBoundary>
+      <BrowserRouter basename={api.BASE_PATH || "/"}>
+        <AuthGate>
+          <AppShell />
+        </AuthGate>
+      </BrowserRouter>
+    </CrashBoundary>
   );
 }

@@ -91,7 +91,7 @@ In Tashi, open **Settings**, then **Your data**, then **Download a copy**, from 
 - **I lost the setup link.** In Cloudflare, open your `tashi` Worker, then **Deployments**, and press **Retry build** on the latest one. The new build prints a new link.
 - **Calculating says the Anthropic key is missing or rejected.** Open **Settings**, **AI food reading**, and save a key again. Check that you copied all of it.
 - **Calculating says the Anthropic credit has run out.** Add credit at [console.anthropic.com](https://console.anthropic.com) under **Billing**, then calculate again.
-- **Tashi stays on a black screen or signing in never finishes.** In Cloudflare, open your `tashi` Worker, then **Observability**, and look for events marked as errors around the time it happened. [Open an issue](https://github.com/fnune/tashi/issues) with what you find.
+- **Tashi says it is not answering, or something else fails.** Press **Report a problem** (in **Settings**, on the sign-in screen, or on the screen that says what went wrong). It opens a GitHub issue with what Tashi recorded; read it, add what you were doing, and submit it. For more detail, open your `tashi` Worker in Cloudflare, then **Observability**, and look for events marked as errors around that time.
 - **I forgot my password.** There is no reset yet, which is why a password manager and a copy of your diary matter. [Open an issue](https://github.com/fnune/tashi/issues) and we'll help you start over without losing the diary.
 
 ## Running Tashi on your own server instead
