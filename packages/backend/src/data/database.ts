@@ -247,6 +247,16 @@ export interface ModelUsageTable {
   cache_read_tokens: number;
 }
 
+export interface ProblemsTable {
+  id: Generated<number>;
+  occurred_at: Instant;
+  method: string;
+  path: string;
+  error: string;
+  message: string;
+  cause: string | null;
+}
+
 export interface Database {
   insulin_products: InsulinProductsTable;
   food_sources: FoodSourcesTable;
@@ -272,6 +282,7 @@ export interface Database {
   sessions: SessionsTable;
   sign_in_failures: SignInFailuresTable;
   model_usage: ModelUsageTable;
+  problems: ProblemsTable;
   ai_connections: AiConnectionsTable;
   anthropic_connections: AnthropicConnectionsTable;
 }

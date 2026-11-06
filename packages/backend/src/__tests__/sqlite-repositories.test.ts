@@ -85,6 +85,7 @@ describe("sqlite storage", () => {
       { name: "0002-accounts" },
       { name: "0003-model-usage" },
       { name: "0004-ai-connections" },
+      { name: "0005-problems" },
     ]);
     await first.close();
   });

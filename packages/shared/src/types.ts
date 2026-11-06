@@ -283,6 +283,19 @@ export type ApiErrorCode =
   | "not_found"
   | "internal_error";
 
+export interface ServerProblem {
+  occurred_at: string;
+  method: string;
+  path: string;
+  error: string;
+  message: string;
+  cause: string | null;
+}
+
+export interface ProblemsResponse {
+  problems: ServerProblem[];
+}
+
 export interface UsageSummary {
   calculations: number;
   estimated_cost_usd: number | null;

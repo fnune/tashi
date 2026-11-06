@@ -3,6 +3,7 @@ import { HTTPException } from "hono/http-exception";
 import type { Clock } from "../domain/clock.js";
 import { DomainError } from "../domain/errors.js";
 import { errorFields, type Logger } from "../domain/logger.js";
+import type { ProblemLog } from "../domain/problems.js";
 import { apiError } from "./api-error.js";
 
 export function logRequests(logger: Logger, clock: Clock): MiddlewareHandler {
@@ -19,8 +20,11 @@ export function logRequests(logger: Logger, clock: Clock): MiddlewareHandler {
   };
 }
 
-export function respondToErrors(logger: Logger): ErrorHandler {
-  return (error, c) => {
+export function respondToErrors(
+  logger: Logger,
+  problems: ProblemLog,
+): ErrorHandler {
+  return async (error, c) => {
     if (error instanceof HTTPException) {
       logger.info("request_refused", {
         ...requestFields(c),
@@ -36,6 +40,11 @@ export function respondToErrors(logger: Logger): ErrorHandler {
       ...requestFields(c),
       ...errorFields(error),
     });
+    try {
+      await problems.record(requestFields(c), error);
+    } catch (recordingError) {
+      logger.warn("problem_not_recorded", errorFields(recordingError));
+    }
     const message = error instanceof Error ? error.message : "Unknown error";
     return apiError(c, "internal_error", 500, message);
   };

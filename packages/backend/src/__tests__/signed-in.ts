@@ -9,11 +9,12 @@ export const TEST_DATA_KEY = new Uint8Array(32).fill(7);
 export function signedIn(
   routes: Hono<SignedIn>,
   dataKey: Uint8Array<ArrayBuffer> = TEST_DATA_KEY,
+  role: "admin" | "member" = "admin",
 ): Hono<SignedIn> {
   const app = new Hono<SignedIn>();
   app.use(async (c, next) => {
     c.set("session", {
-      account: { id: "account", name: "Ana", role: "admin" },
+      account: { id: "account", name: "Ana", role },
       dataKey,
       renewedUntil: null,
     });

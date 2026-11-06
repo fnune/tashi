@@ -27,6 +27,7 @@
     "./keyed-food-parser": "./src/domain/keyed-food-parser.ts",
     "./logger": "./src/domain/logger.ts",
     "./password-gate": "./src/http/password-gate.ts",
+    "./problems": "./src/domain/problems.ts",
     "./sqlite": "./src/data/sqlite/index.ts",
     "./routes": "./src/http/routes.ts",
     "./timeline-service": "./src/domain/timeline-service.ts"

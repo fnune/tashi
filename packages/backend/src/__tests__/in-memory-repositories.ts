@@ -2,6 +2,7 @@ import type { FoodVocabEntry, Settings, TimelineEntry } from "@tashi/shared";
 import { DEFAULT_SETTINGS } from "@tashi/shared";
 import { nameKeyOf } from "../domain/auth/authentication.js";
 import type { ModelUsage, ModelUsageTotal } from "../domain/model-usage.js";
+import type { Problem } from "../domain/problems.js";
 import {
   type Account,
   cursorAfter,
@@ -37,6 +38,7 @@ export function createInMemoryRepositories(): Repositories {
   const sessions = new Map<string, StoredSession>();
   const failures = new Map<string, SignInFailures>();
   const usage: { usage: ModelUsage; at: Date }[] = [];
+  let problems: Problem[] = [];
   const keyOf = (bytes: Uint8Array) => [...bytes].join(",");
 
   return {
@@ -198,6 +200,12 @@ export function createInMemoryRepositories(): Repositories {
           a.model.localeCompare(b.model),
         );
       },
+    },
+    problems: {
+      record: async (problem, keep) => {
+        problems = [structuredClone(problem), ...problems].slice(0, keep);
+      },
+      recent: async () => structuredClone(problems),
     },
   };
 }

@@ -18,6 +18,7 @@ import {
 } from "./domain/keyed-food-parser.js";
 import type { Logger } from "./domain/logger.js";
 import { MeteredFoodParser } from "./domain/model-usage.js";
+import { ProblemLog } from "./domain/problems.js";
 import type { Repositories } from "./domain/repositories.js";
 import { TimelineService } from "./domain/timeline-service.js";
 import { authenticate, type SignedIn } from "./http/authentication.js";
@@ -76,8 +77,9 @@ export function createApp({
     passwordIterations: PASSWORD_ITERATIONS,
   });
 
+  const problems = new ProblemLog(repositories.problems, clock);
   const app = new Hono<SignedIn>();
-  app.onError(respondToErrors(logger));
+  app.onError(respondToErrors(logger, problems));
   app.use(`${config.basePath}/api/*`, logRequests(logger, clock));
   authenticate(app, authentication, config.basePath, logger);
   app.get(`${config.basePath}/api/health`, (c) => c.json({ ok: true }));
@@ -91,6 +93,7 @@ export function createApp({
       aiConnections,
       defaultTimeZone: "UTC",
       logger,
+      problems,
     }),
   );
   return { app, authentication };

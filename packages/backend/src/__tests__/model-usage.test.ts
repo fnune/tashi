@@ -14,6 +14,7 @@ import {
   type ModelUsage,
 } from "../domain/model-usage.js";
 import { PRICES_CHECKED_ON } from "../domain/models.js";
+import { ProblemLog } from "../domain/problems.js";
 import { TimelineService } from "../domain/timeline-service.js";
 import { createRoutes } from "../http/routes.js";
 import { FakeFoodParser } from "./fake-food-parser.js";
@@ -111,6 +112,7 @@ describe("GET /api/usage", () => {
         aiConnections: testAiConnections(repositories),
         defaultTimeZone: "Europe/Berlin",
         logger: silentLogger,
+        problems: new ProblemLog(repositories.problems, () => new Date(0)),
       }),
     );
     return {

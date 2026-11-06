@@ -13,6 +13,7 @@ import type { FoodParser, ParseOutcome } from "@tashi/backend/food-parser";
 import { randomId } from "@tashi/backend/ids";
 import { KeyedFoodParser } from "@tashi/backend/keyed-food-parser";
 import { silentLogger } from "@tashi/backend/logger";
+import { ProblemLog } from "@tashi/backend/problems";
 import type { Repositories } from "@tashi/backend/repositories";
 import { createRoutes } from "@tashi/backend/routes";
 import { TimelineService } from "@tashi/backend/timeline-service";
@@ -42,6 +43,7 @@ export const USER_TABLES = [
   "anthropic_connections",
   "ai_connections",
   "model_usage",
+  "problems",
 ];
 
 export interface TestAppOptions {
@@ -105,6 +107,7 @@ export function buildTestApp(options: TestAppOptions): Hono<SignedIn> {
     aiConnections,
     defaultTimeZone: options.timeZone,
     logger: silentLogger,
+    problems: new ProblemLog(repositories.problems, () => new Date()),
   });
 
   const app = new Hono<SignedIn>();

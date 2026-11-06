@@ -43,8 +43,16 @@ export const silentLogger: Logger = structuredLogger(() => {});
 
 const MAX_CAUSES = 5;
 
-export function errorFields(error: unknown): LogFields {
-  if (!(error instanceof Error)) return { error: String(error) };
+export interface ErrorDescription {
+  error: string;
+  message: string;
+  cause: string | null;
+}
+
+export function describeError(error: unknown): ErrorDescription {
+  if (!(error instanceof Error)) {
+    return { error: "thrown value", message: String(error), cause: null };
+  }
   const causes: string[] = [];
   let cause: unknown = error.cause;
   while (cause !== undefined && causes.length < MAX_CAUSES) {
@@ -57,8 +65,17 @@ export function errorFields(error: unknown): LogFields {
   }
   return {
     error: error.name,
-    error_message: error.message,
-    error_cause: causes.length > 0 ? causes.join(" <- ") : undefined,
-    error_stack: error.stack,
+    message: error.message,
+    cause: causes.length > 0 ? causes.join(" <- ") : null,
+  };
+}
+
+export function errorFields(error: unknown): LogFields {
+  const { error: name, message, cause } = describeError(error);
+  return {
+    error: name,
+    error_message: message,
+    error_cause: cause ?? undefined,
+    error_stack: error instanceof Error ? error.stack : undefined,
   };
 }

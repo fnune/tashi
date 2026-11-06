@@ -508,6 +508,37 @@ export function repositoryContract(
       });
     });
 
+    describe("problems", () => {
+      const problem = (n: number) => ({
+        occurredAt: new Date(Date.UTC(2026, 10, 6, 20, n)),
+        method: "POST",
+        path: "/api/auth/sign-in",
+        error: "D1QueryTimeoutError",
+        message: `D1 did not answer, time ${n}`,
+        cause: n % 2 === 0 ? null : "Error: network lost",
+      });
+
+      it("lists the newest first", async () => {
+        await repositories.problems.record(problem(1), 50);
+        await repositories.problems.record(problem(2), 50);
+        expect(await repositories.problems.recent()).toEqual([
+          problem(2),
+          problem(1),
+        ]);
+      });
+
+      it("keeps only as many as asked, dropping the oldest", async () => {
+        for (const n of [1, 2, 3, 4]) {
+          await repositories.problems.record(problem(n), 3);
+        }
+        expect(await repositories.problems.recent()).toEqual([
+          problem(4),
+          problem(3),
+          problem(2),
+        ]);
+      });
+    });
+
     describe("ai connections", () => {
       const at = new Date("2026-06-13T12:00:00.000Z");
       const connection = (id: string, fill: number) => ({

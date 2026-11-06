@@ -1,5 +1,6 @@
 import type { FoodVocabEntry, Settings, TimelineEntry } from "@tashi/shared";
 import type { ModelUsage, ModelUsageTotal } from "./model-usage.js";
+import type { Problem } from "./problems.js";
 
 export interface SettingsRepository {
   get(): Promise<Settings>;
@@ -117,6 +118,11 @@ export interface ModelUsageRepository {
   totalsSince(since: Date): Promise<ModelUsageTotal[]>;
 }
 
+export interface ProblemRepository {
+  record(problem: Problem, keep: number): Promise<void>;
+  recent(): Promise<Problem[]>;
+}
+
 export interface Repositories {
   settings: SettingsRepository;
   timeline: TimelineRepository;
@@ -126,6 +132,7 @@ export interface Repositories {
   sessions: SessionRepository;
   signInFailures: SignInFailureRepository;
   modelUsage: ModelUsageRepository;
+  problems: ProblemRepository;
 }
 
 export function cursorAfter(entry: TimelineEntry): TimelineCursor {

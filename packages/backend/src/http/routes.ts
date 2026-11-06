@@ -1,10 +1,11 @@
-import type { TimelinePageResponse } from "@tashi/shared";
+import type { ProblemsResponse, TimelinePageResponse } from "@tashi/shared";
 import { type Context, Hono } from "hono";
 import type { AiConnections } from "../domain/ai-connections.js";
 import type { DiaryImport } from "../domain/diary-import.js";
 import type { Doses } from "../domain/doses.js";
 import type { Logger } from "../domain/logger.js";
 import { usageSince } from "../domain/model-usage.js";
+import type { ProblemLog } from "../domain/problems.js";
 import type { Repositories } from "../domain/repositories.js";
 import {
   isoTimestampSchema,
@@ -37,6 +38,7 @@ export interface RouteDependencies {
   aiConnections: AiConnections;
   defaultTimeZone: string;
   logger: Logger;
+  problems: ProblemLog;
 }
 
 export function createRoutes({
@@ -47,6 +49,7 @@ export function createRoutes({
   aiConnections,
   defaultTimeZone,
   logger,
+  problems,
 }: RouteDependencies): Hono<SignedIn> {
   const api = new Hono<SignedIn>();
   const dataKeyOf = (c: Context<SignedIn>) => c.get("session").dataKey;
@@ -56,7 +59,24 @@ export function createRoutes({
     return parsed.success ? parsed.data : defaultTimeZone;
   }
 
-  api.onError(respondToErrors(logger));
+  api.onError(respondToErrors(logger, problems));
+
+  api.get("/api/problems", async (c) => {
+    if (c.get("session").account.role !== "admin") {
+      return apiError(c, "not_found", 404);
+    }
+    const body: ProblemsResponse = {
+      problems: (await problems.recent()).map((problem) => ({
+        occurred_at: problem.occurredAt.toISOString(),
+        method: problem.method,
+        path: problem.path,
+        error: problem.error,
+        message: problem.message,
+        cause: problem.cause,
+      })),
+    };
+    return c.json(body);
+  });
 
   api.post("/api/calculate", async (c) => {
     const parsed = calculateSchema.safeParse(await c.req.json());

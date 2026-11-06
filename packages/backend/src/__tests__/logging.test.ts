@@ -13,6 +13,7 @@ import { sha256, toHex } from "../domain/auth/tokens.js";
 import type { StartTimer } from "../domain/clock.js";
 import { DomainError } from "../domain/errors.js";
 import { errorFields } from "../domain/logger.js";
+import { ProblemLog } from "../domain/problems.js";
 import { logRequests, respondToErrors } from "../http/logging.js";
 import { InMemoryFoodCatalog } from "./in-memory-food-catalog.js";
 import { createInMemoryRepositories } from "./in-memory-repositories.js";
@@ -100,7 +101,15 @@ describe("request logging", () => {
   function appWith(handler: () => Promise<Response>, stepMs = 25) {
     const { logger, records } = recordingLogger();
     const app = new Hono();
-    app.onError(respondToErrors(logger));
+    app.onError(
+      respondToErrors(
+        logger,
+        new ProblemLog(
+          createInMemoryRepositories().problems,
+          () => new Date(0),
+        ),
+      ),
+    );
     app.use("/api/*", logRequests(logger, steppingClock(stepMs)));
     app.get("/api/thing", handler);
     return { app, records };
@@ -166,7 +175,15 @@ describe("refusals Hono raises", () => {
   it("keep their own status", async () => {
     const { logger, records } = recordingLogger();
     const app = new Hono();
-    app.onError(respondToErrors(logger));
+    app.onError(
+      respondToErrors(
+        logger,
+        new ProblemLog(
+          createInMemoryRepositories().problems,
+          () => new Date(0),
+        ),
+      ),
+    );
     app.get("/api/thing", () => {
       throw new HTTPException(403, { message: "Forbidden" });
     });
@@ -233,6 +250,9 @@ describe("authentication logging", () => {
 
 describe("errorFields", () => {
   it("describes a value thrown that is not an Error", () => {
-    expect(errorFields("D1 went away")).toEqual({ error: "D1 went away" });
+    expect(errorFields("D1 went away")).toMatchObject({
+      error: "thrown value",
+      error_message: "D1 went away",
+    });
   });
 });

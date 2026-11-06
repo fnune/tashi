@@ -37,6 +37,7 @@ const USER_TABLES = [
   "anthropic_connections",
   "ai_connections",
   "model_usage",
+  "problems",
 ];
 
 let database: D1Database;
@@ -92,6 +93,7 @@ describe("d1", () => {
       { name: "0002-accounts" },
       { name: "0003-model-usage" },
       { name: "0004-ai-connections" },
+      { name: "0005-problems" },
     ]);
   });
 

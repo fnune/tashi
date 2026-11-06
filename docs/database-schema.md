@@ -436,6 +436,26 @@ CREATE TABLE anthropic_connections (
 - The key is sealed with the instance's data key (AES-256-GCM, a fresh 12-byte nonce in front of the ciphertext and its tag), so only a signed-in session can open it.
 - One connection per kind for now; choosing between several comes with a second kind.
 
+## Problems
+
+The server's own record of what went wrong, for the instance's admin to send in a problem report. Migration `0005-problems` creates it.
+
+```sql
+CREATE TABLE problems (
+  id INTEGER PRIMARY KEY,
+  occurred_at TEXT NOT NULL CHECK (occurred_at IS strftime('%Y-%m-%dT%H:%M:%fZ', occurred_at)),
+  method TEXT NOT NULL CHECK (method <> '' AND length(method) <= 500),
+  path TEXT NOT NULL CHECK (length(path) <= 500),
+  error TEXT NOT NULL CHECK (length(error) <= 500),
+  message TEXT NOT NULL CHECK (length(message) <= 500),
+  cause TEXT CHECK (length(cause) <= 500)
+) STRICT;
+```
+
+- One row per request that failed with an unexpected error, written by the error handler: the request's method and path, the error's name, message and causes, each clipped to 500 characters. No request body, no stack.
+- Only the newest 50 rows are kept: each write deletes older ones in the same batch.
+- A failure that keeps D1 itself from answering cannot be written here; the browser keeps its own list of those.
+
 ## Accounts and people (later)
 
 No table has an owner today. When sign-in arrives, the model separates who signs in from whose data it is, because they are not always the same human: a parent keeps a diary for a child, a partner looks after another's.

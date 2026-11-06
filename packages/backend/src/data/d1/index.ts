@@ -8,6 +8,7 @@ import type { Database } from "../database.js";
 import { SqliteAccountRepository } from "../sqlite/account-repository.js";
 import { SqliteAiConnectionRepository } from "../sqlite/ai-connection-repository.js";
 import { SqliteModelUsageRepository } from "../sqlite/model-usage-repository.js";
+import { SqliteProblemRepository } from "../sqlite/problem-repository.js";
 import { SqliteSessionRepository } from "../sqlite/session-repository.js";
 import { SqliteSettingsRepository } from "../sqlite/settings-repository.js";
 import { SqliteSignInFailureRepository } from "../sqlite/sign-in-failure-repository.js";
@@ -49,5 +50,6 @@ export function d1Repositories(
     sessions: new SqliteSessionRepository(db),
     signInFailures: new SqliteSignInFailureRepository(db),
     modelUsage: new SqliteModelUsageRepository(db),
+    problems: new SqliteProblemRepository(db, batch),
   };
 }
