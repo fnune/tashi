@@ -5,17 +5,13 @@ import { DomainError } from "../domain/errors.js";
 import { errorFields, type Logger } from "../domain/logger.js";
 import { apiError } from "./api-error.js";
 
-export const SLOW_REQUEST_MS = 3000;
-
 export function logRequests(logger: Logger, clock: Clock): MiddlewareHandler {
   return async (c, next) => {
     const startedAt = clock().getTime();
     await next();
     const durationMs = clock().getTime() - startedAt;
     const { status } = c.res;
-    const level =
-      status >= 500 ? "error" : durationMs >= SLOW_REQUEST_MS ? "warn" : "info";
-    logger[level]("request", {
+    logger[status >= 500 ? "error" : "info"]("request", {
       ...requestFields(c),
       status,
       duration_ms: durationMs,

@@ -52,7 +52,7 @@ With Nix, `nix build` gives `result/bin/tashi`, which takes the same options. `t
 
 The server writes one JSON object per event. On Cloudflare they go to Workers Logs, which `wrangler.jsonc` turns on with query strings redacted, so the setup token stays out; the Worker's **Observability** tab shows them for 3 days on the Free plan. Traces are on too: each request shows its D1 queries and fetches with their timings. Each invocation's own log records its CPU time (`$workers.cpuTimeMs`) and outcome (`$workers.outcome`, `exceededCpu` past the 10 ms limit). The Node server writes them to standard output, warnings and errors to standard error, one line each.
 
-- `request`: each API request, with method, path, status and duration. A 5xx is logged as an error, a request over 3 s as a warning.
+- `request`: each API request, with method, path, status and duration. A 5xx is logged as an error. Calculations wait on Anthropic for several seconds, so a long duration alone is not a warning.
 - `request_failed`: an unexpected error, with its message, causes and stack. `request_refused`: a refusal the user sees, such as a missing meal window, by its code.
 - `signed_in`, `sign_in_failed`, `sign_in_throttled`, `set_up`.
 - `started` (Worker): the migrations it applied and the catalog release. `catalog_loaded` and `listening` (Node).

@@ -97,11 +97,11 @@ describe("D1 query timing", () => {
 });
 
 describe("request logging", () => {
-  function appWith(handler: () => Promise<Response>) {
+  function appWith(handler: () => Promise<Response>, stepMs = 25) {
     const { logger, records } = recordingLogger();
     const app = new Hono();
     app.onError(respondToErrors(logger));
-    app.use("/api/*", logRequests(logger, steppingClock(25)));
+    app.use("/api/*", logRequests(logger, steppingClock(stepMs)));
     app.get("/api/thing", handler);
     return { app, records };
   }
@@ -119,6 +119,15 @@ describe("request logging", () => {
         duration_ms: 25,
       },
     ]);
+  });
+
+  it("does not warn about a request that waits on Anthropic for a while", async () => {
+    const { app, records } = appWith(
+      async () => Response.json({ ok: true }),
+      30_000,
+    );
+    await app.request("/api/thing");
+    expect(records[0]).toMatchObject({ level: "info", duration_ms: 30_000 });
   });
 
   it("logs an unexpected error with its cause before answering 500", async () => {
