@@ -8,6 +8,11 @@ import { d1WriteBatch } from "../data/d1/d1-write-batch.js";
 import { d1Repositories } from "../data/d1/index.js";
 import { migrateD1 } from "../data/d1/migrate.js";
 import type { Database } from "../data/database.js";
+import {
+  neverElapses,
+  quietObserver,
+  recordingLogger,
+} from "./recording-logger.js";
 import { repositoryContract } from "./repository-contract.js";
 import { sequentialIds } from "./sequential-ids.js";
 import { writeBatchContract } from "./write-batch-contract.js";
@@ -62,6 +67,7 @@ repositoryContract("d1", async () => ({
   repositories: d1Repositories(await emptied(), {
     newId: sequentialIds(1000),
     catalogRelease: "test-release",
+    ...quietObserver(),
   }),
   dispose: async () => {},
 }));
@@ -69,8 +75,8 @@ repositoryContract("d1", async () => ({
 writeBatchContract("d1", async () => {
   const d1 = await emptied();
   return {
-    db: new Kysely<Database>({ dialect: new D1Dialect(d1) }),
-    batch: d1WriteBatch(d1),
+    db: new Kysely<Database>({ dialect: new D1Dialect(d1, quietObserver()) }),
+    batch: d1WriteBatch(d1, quietObserver()),
     dispose: async () => {},
   };
 });
@@ -91,7 +97,7 @@ describe("d1", () => {
 
   it("refuses a statement with more parameters than D1 takes, as Cloudflare does", async () => {
     const db = new Kysely<Database>({
-      dialect: new D1Dialect(await emptied()),
+      dialect: new D1Dialect(await emptied(), quietObserver()),
     });
     const ids = Array.from({ length: 101 }, (_, i) => `id-${i}`);
     await expect(
@@ -101,5 +107,27 @@ describe("d1", () => {
         .where("id", "in", ids)
         .execute(),
     ).rejects.toThrow(/at most 100 parameters/);
+  });
+
+  it("logs a slow query without the values bound to it", async () => {
+    const { logger, records } = recordingLogger();
+    let now = 0;
+    const db = new Kysely<Database>({
+      dialect: new D1Dialect(await emptied(), {
+        logger,
+        clock: () => {
+          now += 1000;
+          return new Date(now);
+        },
+        startTimer: neverElapses,
+      }),
+    });
+    await db
+      .selectFrom("accounts")
+      .selectAll()
+      .where("id", "=", "a-name-that-must-not-leak")
+      .execute();
+    expect(records.map((record) => record.event)).toEqual(["d1_query_slow"]);
+    expect(JSON.stringify(records)).not.toContain("a-name-that-must-not-leak");
   });
 });

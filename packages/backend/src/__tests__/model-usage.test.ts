@@ -7,6 +7,7 @@ import { describe, expect, it } from "vitest";
 import { Calculator } from "../domain/calculator.js";
 import { DiaryImport } from "../domain/diary-import.js";
 import { Doses } from "../domain/doses.js";
+import { silentLogger } from "../domain/logger.js";
 import {
   estimatedCostUsd,
   MeteredFoodParser,
@@ -109,6 +110,7 @@ describe("GET /api/usage", () => {
         repositories,
         aiConnections: testAiConnections(repositories),
         defaultTimeZone: "Europe/Berlin",
+        logger: silentLogger,
       }),
     );
     return {

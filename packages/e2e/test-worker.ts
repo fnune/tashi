@@ -1,6 +1,7 @@
 import type { D1Database } from "@cloudflare/workers-types";
 import type { SignedIn } from "@tashi/backend/authenticate";
 import { CATALOG_ASSETS_PATH } from "@tashi/backend/catalog-layout";
+import { systemClock, systemTimer } from "@tashi/backend/clock";
 import { d1Repositories } from "@tashi/backend/d1";
 import { migrateD1 } from "@tashi/backend/d1-migrate";
 import {
@@ -8,6 +9,7 @@ import {
   fetchedAssets,
 } from "@tashi/backend/fetched-assets";
 import { randomId } from "@tashi/backend/ids";
+import { silentLogger } from "@tashi/backend/logger";
 import { SearchIndex } from "@tashi/backend/search-index";
 import { StaticFoodCatalog } from "@tashi/backend/static-food-catalog";
 import type { Hono } from "hono";
@@ -29,6 +31,9 @@ function appFor(env: Env): Hono<SignedIn> {
     repositories: d1Repositories(env.DB, {
       newId: randomId,
       catalogRelease: searchIndex.label,
+      logger: silentLogger,
+      clock: systemClock,
+      startTimer: systemTimer,
     }),
     foodCatalog: new StaticFoodCatalog(
       searchIndex,

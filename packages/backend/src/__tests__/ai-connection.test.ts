@@ -9,6 +9,7 @@ import { Doses } from "../domain/doses.js";
 import { InvalidApiKeyError } from "../domain/errors.js";
 import type { FoodParser } from "../domain/food-parser.js";
 import { KeyedFoodParser } from "../domain/keyed-food-parser.js";
+import { silentLogger } from "../domain/logger.js";
 import type { Repositories } from "../domain/repositories.js";
 import { TimelineService } from "../domain/timeline-service.js";
 import { createRoutes } from "../http/routes.js";
@@ -63,6 +64,7 @@ describe("api key routes", () => {
         repositories,
         aiConnections: connections(),
         defaultTimeZone: "Europe/Berlin",
+        logger: silentLogger,
       }),
       dataKey,
     );

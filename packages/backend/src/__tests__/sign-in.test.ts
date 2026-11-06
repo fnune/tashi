@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { createApp } from "../app.js";
 import { setupTokenWithHash } from "../domain/auth/setup-token.js";
 import { sha256, toHex } from "../domain/auth/tokens.js";
+import { silentLogger } from "../domain/logger.js";
 import { InMemoryFoodCatalog } from "./in-memory-food-catalog.js";
 import { createInMemoryRepositories } from "./in-memory-repositories.js";
 import { sequentialIds } from "./sequential-ids.js";
@@ -20,6 +21,7 @@ async function freshApp() {
     fetch: async () => new Response(null, { status: 500 }),
     clock: () => new Date("2026-06-13T12:00:00.000Z"),
     newId: sequentialIds(),
+    logger: silentLogger,
   });
   app.all("*", (c) => c.text("the app"));
   return app;

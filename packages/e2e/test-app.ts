@@ -12,6 +12,7 @@ import type { FoodCatalog } from "@tashi/backend/food-catalog";
 import type { FoodParser, ParseOutcome } from "@tashi/backend/food-parser";
 import { randomId } from "@tashi/backend/ids";
 import { KeyedFoodParser } from "@tashi/backend/keyed-food-parser";
+import { silentLogger } from "@tashi/backend/logger";
 import type { Repositories } from "@tashi/backend/repositories";
 import { createRoutes } from "@tashi/backend/routes";
 import { TimelineService } from "@tashi/backend/timeline-service";
@@ -103,6 +104,7 @@ export function buildTestApp(options: TestAppOptions): Hono<SignedIn> {
     repositories,
     aiConnections,
     defaultTimeZone: options.timeZone,
+    logger: silentLogger,
   });
 
   const app = new Hono<SignedIn>();
@@ -154,7 +156,7 @@ export function buildTestApp(options: TestAppOptions): Hono<SignedIn> {
       session: (token) => authentication.session(token),
       signOut: (token) => authentication.signOut(token),
     };
-    authenticate(app, current, "");
+    authenticate(app, current, "", silentLogger);
   } else {
     app.use("/api/*", async (c, next) => {
       c.set("session", {

@@ -23,6 +23,7 @@ import {
 } from "./domain/auth/setup-token.js";
 import { systemClock } from "./domain/clock.js";
 import { randomId } from "./domain/ids.js";
+import { structuredLogger } from "./domain/logger.js";
 import { setupLinkLines, setupLinkMessage } from "./setup-link.js";
 
 function optionsOrExit() {
@@ -41,6 +42,15 @@ function optionsOrExit() {
 const config = optionsOrExit();
 const { basePath } = config;
 
+const logger = structuredLogger((record) => {
+  const line = JSON.stringify({ time: systemClock().toISOString(), ...record });
+  if (record.level === "error" || record.level === "warn") {
+    console.error(line);
+  } else {
+    console.log(line);
+  }
+});
+
 const catalogDir = join(import.meta.dirname, "../catalog");
 const catalogAssets = diskAssets(catalogDir);
 const searchIndex = await readSearchIndex(catalogAssets);
@@ -53,7 +63,10 @@ const { repositories } = await openSqliteRepositories(config.databasePath, {
   newId: randomId,
   catalogRelease: searchIndex.label,
 });
-console.log(`Food catalog ${searchIndex.label}: ${searchIndex.size} foods`);
+logger.info("catalog_loaded", {
+  catalog: searchIndex.label,
+  foods: searchIndex.size,
+});
 
 const setup = await newSetupToken();
 const { app, authentication } = createApp({
@@ -64,6 +77,7 @@ const { app, authentication } = createApp({
   fetch,
   clock: systemClock,
   newId: randomId,
+  logger,
 });
 if (!(await authentication.isClaimed())) {
   console.log(
@@ -96,5 +110,5 @@ if (existsSync("./public")) {
   app.get(`${basePath}/*`, servePage);
 }
 
-console.log(`Listening on http://localhost:${config.port}`);
+logger.info("listening", { url: `http://localhost:${config.port}${basePath}` });
 serve({ fetch: app.fetch, port: config.port });

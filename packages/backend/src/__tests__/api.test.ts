@@ -14,6 +14,7 @@ import { Calculator } from "../domain/calculator.js";
 import type { Clock } from "../domain/clock.js";
 import { DiaryImport } from "../domain/diary-import.js";
 import { Doses } from "../domain/doses.js";
+import { silentLogger } from "../domain/logger.js";
 import type { Repositories } from "../domain/repositories.js";
 import { TimelineService } from "../domain/timeline-service.js";
 import { createRoutes } from "../http/routes.js";
@@ -109,6 +110,7 @@ describe("API routes", () => {
         repositories,
         aiConnections: testAiConnections(repositories),
         defaultTimeZone: "Europe/Berlin",
+        logger: silentLogger,
       }),
     );
   });

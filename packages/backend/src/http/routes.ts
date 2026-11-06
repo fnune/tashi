@@ -3,7 +3,7 @@ import { type Context, Hono } from "hono";
 import type { AiConnections } from "../domain/ai-connections.js";
 import type { DiaryImport } from "../domain/diary-import.js";
 import type { Doses } from "../domain/doses.js";
-import { DomainError } from "../domain/errors.js";
+import type { Logger } from "../domain/logger.js";
 import { usageSince } from "../domain/model-usage.js";
 import type { Repositories } from "../domain/repositories.js";
 import {
@@ -15,6 +15,7 @@ import type { TimelineService } from "../domain/timeline-service.js";
 import { apiError } from "./api-error.js";
 import type { SignedIn } from "./authentication.js";
 import { decodeCursor, encodeCursor } from "./cursor.js";
+import { respondToErrors } from "./logging.js";
 import {
   calculateSchema,
   chooseAiModelSchema,
@@ -35,6 +36,7 @@ export interface RouteDependencies {
   repositories: Repositories;
   aiConnections: AiConnections;
   defaultTimeZone: string;
+  logger: Logger;
 }
 
 export function createRoutes({
@@ -44,6 +46,7 @@ export function createRoutes({
   repositories,
   aiConnections,
   defaultTimeZone,
+  logger,
 }: RouteDependencies): Hono<SignedIn> {
   const api = new Hono<SignedIn>();
   const dataKeyOf = (c: Context<SignedIn>) => c.get("session").dataKey;
@@ -53,14 +56,7 @@ export function createRoutes({
     return parsed.success ? parsed.data : defaultTimeZone;
   }
 
-  api.onError((error, c) => {
-    if (error instanceof DomainError) {
-      const status = error.code === "not_found" ? 404 : 400;
-      return apiError(c, error.code, status);
-    }
-    const message = error instanceof Error ? error.message : "Unknown error";
-    return apiError(c, "internal_error", 500, message);
-  });
+  api.onError(respondToErrors(logger));
 
   api.post("/api/calculate", async (c) => {
     const parsed = calculateSchema.safeParse(await c.req.json());

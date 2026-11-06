@@ -14,16 +14,20 @@ import {
   SqliteQueryCompiler,
 } from "kysely";
 import { MAX_PARAMETERS_PER_STATEMENT } from "../database.js";
+import { type QueryObserver, timedQuery } from "./timed-query.js";
 
 export class D1Dialect implements Dialect {
-  constructor(private database: D1Database) {}
+  constructor(
+    private database: D1Database,
+    private observer: QueryObserver,
+  ) {}
 
   createAdapter() {
     return new SqliteAdapter();
   }
 
   createDriver(): Driver {
-    return new D1Driver(this.database);
+    return new D1Driver(this.database, this.observer);
   }
 
   createIntrospector(db: Kysely<unknown>) {
@@ -57,12 +61,15 @@ export function rowWithBytes(row: Record<string, unknown>) {
 }
 
 class D1Driver implements Driver {
-  constructor(private database: D1Database) {}
+  constructor(
+    private database: D1Database,
+    private observer: QueryObserver,
+  ) {}
 
   async init() {}
 
   async acquireConnection(): Promise<DatabaseConnection> {
-    return new D1Connection(this.database);
+    return new D1Connection(this.database, this.observer);
   }
 
   async beginTransaction(): Promise<void> {
@@ -79,10 +86,16 @@ class D1Driver implements Driver {
 }
 
 class D1Connection implements DatabaseConnection {
-  constructor(private database: D1Database) {}
+  constructor(
+    private database: D1Database,
+    private observer: QueryObserver,
+  ) {}
 
   async executeQuery<R>(query: CompiledQuery): Promise<QueryResult<R>> {
-    const result = await prepared(this.database, query).all();
+    const statement = prepared(this.database, query);
+    const result = await timedQuery(this.observer, query.sql, () =>
+      statement.all(),
+    );
     return {
       rows: result.results.map(rowWithBytes) as R[],
       numAffectedRows: BigInt(result.meta.changes ?? 0),

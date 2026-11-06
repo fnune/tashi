@@ -1,6 +1,8 @@
 import type { D1Database } from "@cloudflare/workers-types";
 import { Kysely } from "kysely";
+import type { Clock, StartTimer } from "../../domain/clock.js";
 import type { IdGenerator } from "../../domain/ids.js";
+import type { Logger } from "../../domain/logger.js";
 import type { Repositories } from "../../domain/repositories.js";
 import type { Database } from "../database.js";
 import { SqliteAccountRepository } from "../sqlite/account-repository.js";
@@ -16,10 +18,23 @@ import { d1WriteBatch } from "./d1-write-batch.js";
 
 export function d1Repositories(
   database: D1Database,
-  options: { newId: IdGenerator; catalogRelease: string },
+  options: {
+    newId: IdGenerator;
+    catalogRelease: string;
+    logger: Logger;
+    clock: Clock;
+    startTimer: StartTimer;
+  },
 ): Repositories {
-  const db = new Kysely<Database>({ dialect: new D1Dialect(database) });
-  const batch = d1WriteBatch(database);
+  const observer = {
+    logger: options.logger,
+    clock: options.clock,
+    startTimer: options.startTimer,
+  };
+  const db = new Kysely<Database>({
+    dialect: new D1Dialect(database, observer),
+  });
+  const batch = d1WriteBatch(database, observer);
   return {
     settings: new SqliteSettingsRepository(db, batch, options.newId),
     timeline: new SqliteTimelineRepository(

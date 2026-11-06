@@ -14,6 +14,7 @@ import { openSqliteRepositories } from "../data/sqlite/index.js";
 import { Calculator } from "../domain/calculator.js";
 import { DiaryImport } from "../domain/diary-import.js";
 import { Doses } from "../domain/doses.js";
+import { silentLogger } from "../domain/logger.js";
 import { TimelineService } from "../domain/timeline-service.js";
 import { createRoutes } from "../http/routes.js";
 import {
@@ -65,6 +66,7 @@ async function sqliteApp() {
       repositories,
       aiConnections: testAiConnections(repositories),
       defaultTimeZone: "Europe/Berlin",
+      logger: silentLogger,
     }),
   );
   return { app, repositories };

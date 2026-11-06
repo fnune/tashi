@@ -48,6 +48,18 @@ With Nix, `nix build` gives `result/bin/tashi`, which takes the same options. `t
 - Back up the database with `sqlite3 tashi.sqlite ".backup copy.sqlite"`, which is safe while Tashi runs.
 - bilbo runs Tashi this way, from this flake's package, as described in the [README](../README.md#deployment).
 
+## Logs
+
+The server writes one JSON object per event. On Cloudflare they go to Workers Logs, which `wrangler.jsonc` turns on with query strings redacted, so the setup token stays out; the Worker's **Observability** tab shows them for 3 days on the Free plan. Traces are on too: each request shows its D1 queries and fetches with their timings. Each invocation's own log records its CPU time (`$workers.cpuTimeMs`) and outcome (`$workers.outcome`, `exceededCpu` past the 10 ms limit). The Node server writes them to standard output, warnings and errors to standard error, one line each.
+
+- `request`: each API request, with method, path, status and duration. A 5xx is logged as an error, a request over 3 s as a warning.
+- `request_failed`: an unexpected error, with its message, causes and stack. `request_refused`: a refusal the user sees, such as a missing meal window, by its code.
+- `signed_in`, `sign_in_failed`, `sign_in_throttled`, `set_up`.
+- `started` (Worker): the migrations it applied and the catalog release. `catalog_loaded` and `listening` (Node).
+- `d1_query_slow`: a D1 query or batch over 500 ms. `d1_query_timed_out`: one D1 did not answer within 10 s, which fails its request with a 500 instead of leaving it waiting.
+
+Log lines never carry names, passwords or diary data. D1 statements are logged without their parameters.
+
 ## How Tashi fits Cloudflare's free plan
 
 Tashi is hosted on Cloudflare Workers with D1, and SQLite is its only database dialect, on Workers and on Node. Cloudflare needs no card, its free database does not pause or expire after inactivity and keeps 7 days of point-in-time recovery, a Worker has no cold start, and a D1 database created in the `eu` jurisdiction stores its data in the EU.

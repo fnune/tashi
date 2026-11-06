@@ -11,6 +11,7 @@ import { Calculator } from "../domain/calculator.js";
 import type { Clock } from "../domain/clock.js";
 import { DiaryImport } from "../domain/diary-import.js";
 import { Doses } from "../domain/doses.js";
+import { silentLogger } from "../domain/logger.js";
 import { TimelineService } from "../domain/timeline-service.js";
 import { createRoutes } from "../http/routes.js";
 import { fullMeal, glucose, simpleMeal } from "./entries.js";
@@ -140,6 +141,7 @@ async function coldApp() {
       repositories,
       aiConnections,
       defaultTimeZone: "Europe/Berlin",
+      logger: silentLogger,
     }),
   );
   return { app, repositories };

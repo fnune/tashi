@@ -10,6 +10,7 @@ import {
   SignInThrottledError,
 } from "../domain/auth/authentication.js";
 import { DomainError } from "../domain/errors.js";
+import type { Logger } from "../domain/logger.js";
 import { apiError } from "./api-error.js";
 
 export const SESSION_COOKIE = "tashi_session";
@@ -34,6 +35,7 @@ export function authenticate(
   app: Hono<SignedIn>,
   authentication: Authenticator,
   basePath: string,
+  logger: Logger,
 ): void {
   const at = (path: string) => `${basePath}${path}`;
   const cookiePath = basePath || "/";
@@ -95,6 +97,7 @@ export function authenticate(
       throw error;
     }
     deleteCookie(c, SETUP_COOKIE, { path: cookiePath, secure: true });
+    logger.info("set_up");
     return c.json({ ok: true });
   });
 
@@ -110,14 +113,19 @@ export function authenticate(
       );
     } catch (error) {
       if (error instanceof SignInThrottledError) {
+        logger.warn("sign_in_throttled", {
+          retry_after_s: error.retryAfterSeconds,
+        });
         c.header("Retry-After", String(error.retryAfterSeconds));
         return apiError(c, "sign_in_throttled", 429);
       }
       if (error instanceof DomainError && error.code === "sign_in_failed") {
+        logger.info("sign_in_failed");
         return apiError(c, "sign_in_failed", 401);
       }
       throw error;
     }
+    logger.info("signed_in");
     return c.json({ ok: true });
   });
 

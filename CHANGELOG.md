@@ -8,4 +8,5 @@ What changes between versions of Tashi, for people who run their own copy. Each 
 - Setting up: the first visit goes through a one-time link printed at the end of the build log (Cloudflare) or the server's log (Node), where you choose a name and a strong password.
 - The Anthropic API key and the model are set in Tashi's settings and stored encrypted. Neither Cloudflare nor the server needs any variable or secret.
 - Settings shows this month's calculations and their estimated cost, and Tashi says plainly when the Anthropic credit has run out.
+- Tashi logs each API request, every unexpected error and sign-in outcomes as structured events, without names or diary data. On Cloudflare they appear under the Worker's **Observability** tab; a D1 query that does not answer within 10 s now fails its request instead of leaving it waiting.
 - The Node server takes command-line options: `--database`, `--port` and `--base-path` (`tashi --help`).

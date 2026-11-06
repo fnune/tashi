@@ -16,10 +16,12 @@ import {
   anthropicAcceptsKey,
   KeyedFoodParser,
 } from "./domain/keyed-food-parser.js";
+import type { Logger } from "./domain/logger.js";
 import { MeteredFoodParser } from "./domain/model-usage.js";
 import type { Repositories } from "./domain/repositories.js";
 import { TimelineService } from "./domain/timeline-service.js";
 import { authenticate, type SignedIn } from "./http/authentication.js";
+import { logRequests, respondToErrors } from "./http/logging.js";
 import { createRoutes } from "./http/routes.js";
 
 export interface AppDependencies {
@@ -30,6 +32,7 @@ export interface AppDependencies {
   fetch: typeof globalThis.fetch;
   clock: Clock;
   newId: IdGenerator;
+  logger: Logger;
 }
 
 export const PASSWORD_ITERATIONS = 30_000;
@@ -42,6 +45,7 @@ export function createApp({
   fetch,
   clock,
   newId,
+  logger,
 }: AppDependencies): {
   app: Hono<SignedIn>;
   authentication: Authentication;
@@ -73,7 +77,9 @@ export function createApp({
   });
 
   const app = new Hono<SignedIn>();
-  authenticate(app, authentication, config.basePath);
+  app.onError(respondToErrors(logger));
+  app.use(`${config.basePath}/api/*`, logRequests(logger, clock));
+  authenticate(app, authentication, config.basePath, logger);
   app.get(`${config.basePath}/api/health`, (c) => c.json({ ok: true }));
   app.route(
     config.basePath || "/",
@@ -84,6 +90,7 @@ export function createApp({
       repositories,
       aiConnections,
       defaultTimeZone: "UTC",
+      logger,
     }),
   );
   return { app, authentication };
