@@ -16,5 +16,10 @@
     "not_found_handling": "single-page-application",
     "run_worker_first": true
   },
-  "d1_databases": [{ "binding": "DB", "database_name": "tashi" }]
+  "d1_databases": [{ "binding": "DB", "database_name": "tashi" }],
+  "observability": {
+    "enabled": true,
+    "redact_query_string": true,
+    "traces": { "enabled": true }
+  }
 }
