@@ -138,31 +138,29 @@ export function correctionComponents(
   if (correctionFactor === null) return null;
   const bgCorrection =
     (currentBloodSugar - settings.target_blood_sugar) / correctionFactor;
-  // IOB only cancels a positive (high-BG) correction; it never reduces the
-  // meal dose. A low-BG (negative) correction is left untouched.
   const iobReduction = bgCorrection > 0 ? Math.min(iob, bgCorrection) : 0;
   return { correctionFactor, iobReduction, units: bgCorrection - iobReduction };
 }
 
-export function calculateDose(
+export function calculateUnits(
   items: CalculatedItem[],
   ratio: number,
   settings: Settings,
   currentBloodSugar?: number,
   iob = 0,
-  doseScale = 1,
+  unitsScale = 1,
 ): {
   totalNetCarbs: number;
-  foodDose: number;
-  totalDose: number;
+  foodUnits: number;
+  totalUnits: number;
   correction?: CorrectionResult;
   fat_protein_adjustment?: FatProteinAdjustmentResult;
 } {
   const totalNetCarbs = items.reduce((sum, item) => sum + item.net_carbs_g, 0);
-  const rawFoodDose = totalNetCarbs / ratio;
-  const foodDose = roundToIncrement(rawFoodDose, settings.pen_increment);
+  const rawFoodUnits = totalNetCarbs / ratio;
+  const foodUnits = roundToIncrement(rawFoodUnits, settings.pen_increment);
 
-  let rawCorrectionDose = 0;
+  let rawCorrectionUnits = 0;
   let correction: CorrectionResult | undefined;
   const components =
     currentBloodSugar === undefined
@@ -170,18 +168,18 @@ export function calculateDose(
       : correctionComponents(currentBloodSugar, settings, iob);
   if (currentBloodSugar !== undefined && components !== null) {
     const { iobReduction } = components;
-    rawCorrectionDose = components.units;
+    rawCorrectionUnits = components.units;
     correction = {
       current_blood_sugar: currentBloodSugar,
       target_blood_sugar: settings.target_blood_sugar,
       correction_factor: components.correctionFactor,
-      correction_units: roundDisplay(rawCorrectionDose),
+      correction_units: roundDisplay(rawCorrectionUnits),
       iob: roundDisplay(iob),
       iob_reduction: roundDisplay(iobReduction),
       total_units: Math.max(
         0,
         roundToIncrement(
-          rawFoodDose + rawCorrectionDose,
+          rawFoodUnits + rawCorrectionUnits,
           settings.pen_increment,
         ),
       ),
@@ -189,21 +187,21 @@ export function calculateDose(
   }
 
   let fat_protein_adjustment: FatProteinAdjustmentResult | undefined;
-  let rawAdjustmentDose = 0;
+  let rawAdjustmentUnits = 0;
   if (settings.fat_protein_multiplier > 0) {
     const threshold = evaluateFatProteinThreshold(items);
     if (threshold.met) {
-      rawAdjustmentDose = rawFoodDose * settings.fat_protein_multiplier;
+      rawAdjustmentUnits = rawFoodUnits * settings.fat_protein_multiplier;
       fat_protein_adjustment = {
         total_fat_g: threshold.total_fat_g,
         total_protein_g: threshold.total_protein_g,
         threshold_met: threshold.reason,
         multiplier: settings.fat_protein_multiplier,
-        adjustment_units: roundDisplay(rawAdjustmentDose),
+        adjustment_units: roundDisplay(rawAdjustmentUnits),
         total_units: Math.max(
           0,
           roundToIncrement(
-            rawFoodDose + rawCorrectionDose + rawAdjustmentDose,
+            rawFoodUnits + rawCorrectionUnits + rawAdjustmentUnits,
             settings.pen_increment,
           ),
         ),
@@ -212,17 +210,17 @@ export function calculateDose(
   }
 
   const rawTotal =
-    rawFoodDose +
-    rawCorrectionDose +
+    rawFoodUnits +
+    rawCorrectionUnits +
     (fat_protein_adjustment
-      ? rawFoodDose * settings.fat_protein_multiplier
+      ? rawFoodUnits * settings.fat_protein_multiplier
       : 0);
-  const result: ReturnType<typeof calculateDose> = {
+  const result: ReturnType<typeof calculateUnits> = {
     totalNetCarbs,
-    foodDose,
-    totalDose: Math.max(
+    foodUnits,
+    totalUnits: Math.max(
       0,
-      roundToIncrement(rawTotal * doseScale, settings.pen_increment),
+      roundToIncrement(rawTotal * unitsScale, settings.pen_increment),
     ),
   };
   if (correction) result.correction = correction;
@@ -251,7 +249,7 @@ export function recalculateResult(
   items: CalculatedItem[],
   settings: Settings,
 ): CalculationResult {
-  const dose = calculateDose(
+  const units = calculateUnits(
     items,
     result.meal_window.ratio,
     settings,
@@ -263,13 +261,13 @@ export function recalculateResult(
   const next: CalculationResult = {
     ...rest,
     items,
-    total_net_carbs_g: Math.round(dose.totalNetCarbs * 10) / 10,
-    carb_units: dose.foodDose,
-    total_units: dose.totalDose,
+    total_net_carbs_g: Math.round(units.totalNetCarbs * 10) / 10,
+    carb_units: units.foodUnits,
+    total_units: units.totalUnits,
   };
-  if (dose.correction) next.correction = dose.correction;
-  if (dose.fat_protein_adjustment) {
-    next.fat_protein_adjustment = dose.fat_protein_adjustment;
+  if (units.correction) next.correction = units.correction;
+  if (units.fat_protein_adjustment) {
+    next.fat_protein_adjustment = units.fat_protein_adjustment;
   }
   return next;
 }

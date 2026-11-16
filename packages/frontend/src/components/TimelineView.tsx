@@ -11,7 +11,7 @@ import { useEffect, useState } from "react";
 import * as api from "../api.js";
 import { parseGlucoseInput } from "../glucoseLabels.js";
 import { apiErrorText, type Language, t } from "../i18n.js";
-import { DoseSummary, FoodList } from "./DoseResult.js";
+import { FoodList, UnitsSummary } from "./UnitsResult.js";
 import { Button } from "./ui/Button.js";
 import { ConfirmDelete } from "./ui/ConfirmDelete.js";
 import { DateTimeField, NumberField } from "./ui/Field.js";
@@ -44,8 +44,8 @@ interface TimelineViewProps {
   onReuse?: (text: string) => void;
 }
 
-type DoseOrReading = FastInsulinEntry | SlowInsulinEntry | GlucoseEntry;
-type NewEntryType = DoseOrReading["type"];
+type InsulinOrReading = FastInsulinEntry | SlowInsulinEntry | GlucoseEntry;
+type NewEntryType = InsulinOrReading["type"];
 
 const DEFAULT_NEW_UNITS: Record<"fast_insulin" | "slow_insulin", number> = {
   fast_insulin: 1,
@@ -180,7 +180,7 @@ function EntryEditor({
   lang,
   onDone,
 }: {
-  entry: DoseOrReading | null;
+  entry: InsulinOrReading | null;
   type: NewEntryType;
   settings: Settings;
   lang: Language;
@@ -344,7 +344,7 @@ function MealDetails({
   return (
     <>
       <p className="meal-details-text">{entry.input_text}</p>
-      <DoseSummary
+      <UnitsSummary
         result={entry}
         lang={lang}
         ratioFormat={settings.ratio_format}

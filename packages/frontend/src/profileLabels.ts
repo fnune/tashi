@@ -41,7 +41,7 @@ export function profileIcon(
   return LEGACY_EMOJI[stored] ?? null;
 }
 
-export function profileRaisesDose(profile: Profile): boolean {
+export function profileRaisesUnits(profile: Profile): boolean {
   return (
     profile.adjustment.mode === "percent" && profile.adjustment.percent > 0
   );

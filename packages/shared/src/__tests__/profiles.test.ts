@@ -2,9 +2,9 @@ import { describe, expect, it } from "vitest";
 import {
   activeProfile,
   appliedProfile,
-  doseScale,
   effectiveRatio,
   renameWindowInProfiles,
+  unitsScale,
   windowRatio,
 } from "../profiles.js";
 import { DEFAULT_SETTINGS, type Profile, type Settings } from "../types.js";
@@ -28,16 +28,18 @@ describe("profiles", () => {
   });
 
   it("seeds Normal plus sport, sick-day and menstruation examples", () => {
-    expect(DEFAULT_SETTINGS.profiles.map((p) => [p.id, doseScale(p)])).toEqual([
-      ["normal", 1],
-      ["sport", 0.8],
-      ["sick", 1.2],
-      ["menstruation", 1.15],
-    ]);
+    expect(DEFAULT_SETTINGS.profiles.map((p) => [p.id, unitsScale(p)])).toEqual(
+      [
+        ["normal", 1],
+        ["sport", 0.8],
+        ["sick", 1.2],
+        ["menstruation", 1.15],
+      ],
+    );
   });
 
   it("scales by the percentage and leaves ratios alone", () => {
-    expect(doseScale(percent(15))).toBeCloseTo(1.15);
+    expect(unitsScale(percent(15))).toBeCloseTo(1.15);
     expect(effectiveRatio(percent(15), LUNCH)).toBe(10);
   });
 
@@ -47,7 +49,7 @@ describe("profiles", () => {
       adjustment: { mode: "per_window", ratios: { lunch: 8 } },
     };
     expect(effectiveRatio(perWindow, LUNCH)).toBe(8);
-    expect(doseScale(perWindow)).toBe(1);
+    expect(unitsScale(perWindow)).toBe(1);
     expect(appliedProfile(perWindow).percent).toBe(0);
   });
 
@@ -63,7 +65,7 @@ describe("profiles", () => {
     });
   });
 
-  it("shows a percentage profile as the ratio giving the same meal dose", () => {
+  it("shows a percentage profile as the ratio giving the same meal units", () => {
     const view = windowRatio(percent(-20), LUNCH);
     expect(view.modifier).toEqual({ kind: "percent", percent: -20 });
     expect(view.result).toBeCloseTo(12.5);

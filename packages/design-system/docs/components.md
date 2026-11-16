@@ -156,7 +156,7 @@ Shown in place of the food form after "Calcular unidades". The foods come first,
 - **Alimentos:** section heading, then one row per recognised food: name, GI badge and source; the grams as a small `fill` input followed by "g" and the carbs per 100 g; carbs on the right. Changing grams recalculates the units immediately, with the same ratio, profile and glucose reading. "HC netos" total below.
 - **Result card:** the one card in the app (D-15): `fill` background, `radius-xl`, 20 px top and bottom, 16 px sides.
     - Top row: "Según tus ajustes · Comida" in `type-secondary` `fg-muted` on the left, a "¿Por qué?" link to the explanation on the right.
-    - The units, centred, in `type-dose` with "U" in `type-stat` `fg-muted`, between 56 px round − and + buttons on `bg`. They change the units by the pen increment. Once it differs from what the settings gave, a text button "Volver a 5,5 U" below it resets it.
+    - The units, centred, in `type-units` with "U" in `type-stat` `fg-muted`, between 56 px round − and + buttons on `bg`. They change the units by the pen increment. Once it differs from what the settings gave, a text button "Volver a 5,5 U" below it resets it.
     - A 12 px pill bar, one segment per part that adds units, sized by its share and 2 px apart. Units taken away (active insulin, a lower profile) are a striped overlay carved off the end, so the solid part is the total.
     - Below the bar, one row of up to five terms, spread across the width: a 6 px dot in the part's colour and the signed value in `type-body-strong`, over a `type-caption` `fg-muted` label. A term that takes units away has a striped dot. In order, only when they apply:
         - HC (`meal`), unsigned.

@@ -2,7 +2,7 @@ import type { ProblemsResponse, TimelinePageResponse } from "@tashi/shared";
 import { type Context, Hono } from "hono";
 import type { AiConnections } from "../domain/ai-connections.js";
 import type { DiaryImport } from "../domain/diary-import.js";
-import type { Doses } from "../domain/doses.js";
+import type { InsulinUnits } from "../domain/insulin-units.js";
 import type { Logger } from "../domain/logger.js";
 import { usageSince } from "../domain/model-usage.js";
 import type { ProblemLog } from "../domain/problems.js";
@@ -31,7 +31,7 @@ import {
 const TIME_ZONE_HEADER = "X-Timezone";
 
 export interface RouteDependencies {
-  doses: Doses;
+  insulinUnits: InsulinUnits;
   timeline: TimelineService;
   diaryImport: DiaryImport;
   repositories: Repositories;
@@ -42,7 +42,7 @@ export interface RouteDependencies {
 }
 
 export function createRoutes({
-  doses,
+  insulinUnits,
   timeline,
   diaryImport,
   repositories,
@@ -84,7 +84,7 @@ export function createRoutes({
       return apiError(c, "validation_failed", 400, parsed.error.message);
     }
     return c.json(
-      await doses.calculate(
+      await insulinUnits.calculate(
         await aiConnections.get(dataKeyOf(c)),
         parsed.data,
         c.req.header(TIME_ZONE_HEADER),
@@ -199,7 +199,7 @@ export function createRoutes({
     return c.json({ ok: true });
   });
 
-  api.get("/api/iob", async (c) => c.json(await doses.insulinOnBoard()));
+  api.get("/api/iob", async (c) => c.json(await insulinUnits.insulinOnBoard()));
 
   api.post("/api/timeline", async (c) => {
     const parsed = createTimelineSchema.safeParse(await c.req.json());

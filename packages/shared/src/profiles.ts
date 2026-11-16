@@ -21,7 +21,7 @@ export function effectiveRatio(profile: Profile, window: MealWindow): number {
   return profile.adjustment.ratios[window.name] ?? window.ratio;
 }
 
-export function doseScale(profile: Profile): number {
+export function unitsScale(profile: Profile): number {
   return profile.adjustment.mode === "percent"
     ? 1 + profile.adjustment.percent / 100
     : 1;
@@ -64,8 +64,8 @@ export interface WindowRatio {
   result: number;
 }
 
-function ratioGivingSameMealDose(base: number, profile: Profile): number {
-  return base / doseScale(profile);
+function ratioGivingSameMealUnits(base: number, profile: Profile): number {
+  return base / unitsScale(profile);
 }
 
 export function windowRatio(profile: Profile, window: MealWindow): WindowRatio {
@@ -78,7 +78,7 @@ export function windowRatio(profile: Profile, window: MealWindow): WindowRatio {
     return {
       base,
       modifier: { kind: "percent", percent: adjustment.percent },
-      result: ratioGivingSameMealDose(base, profile),
+      result: ratioGivingSameMealUnits(base, profile),
     };
   }
   const own = adjustment.ratios[window.name];

@@ -11,7 +11,7 @@ import { signedPercent } from "../profileLabels.js";
 import { formatRatio } from "../ratioLabels.js";
 import { parseDecimal } from "./ui/Field.js";
 import { Stepper } from "./ui/Stepper.js";
-import "./DoseResult.css";
+import "./UnitsResult.css";
 import { numberFormat } from "../numberFormat.js";
 
 export type MealResult = Omit<CalculationResult, "carb_units"> & {
@@ -47,7 +47,7 @@ function sourceOf(item: CalculatedItem): { label: string; url: string | null } {
   };
 }
 
-export function totalDose(result: MealResult): number | undefined {
+export function totalUnits(result: MealResult): number | undefined {
   return (
     result.total_units ??
     result.fat_protein_adjustment?.total_units ??
@@ -56,25 +56,25 @@ export function totalDose(result: MealResult): number | undefined {
   );
 }
 
-interface DoseLine {
+interface UnitsLine {
   key: string;
   label: string;
   detail?: string;
   units: number;
 }
 
-function doseLines(
+function unitsLines(
   result: MealResult,
   lang: Language,
   ratioFormat: RatioFormat,
-): DoseLine[] {
+): UnitsLine[] {
   const decimal = numberFormat(lang);
   const ratio = result.meal_window.ratio;
   const carbs = result.total_net_carbs_g / ratio;
-  const lines: DoseLine[] = [
+  const lines: UnitsLine[] = [
     {
       key: "carbs",
-      label: t(lang, "doseCarbs"),
+      label: t(lang, "unitsCarbs"),
       detail: `${decimal.format(result.total_net_carbs_g)} g ÷ ${formatRatio(ratio, ratioFormat, lang)}`,
       units: carbs,
     },
@@ -93,8 +93,8 @@ function doseLines(
     if (correction.iob_reduction > 0) {
       lines.push({
         key: "iob",
-        label: t(lang, "doseIob"),
-        detail: t(lang, "doseIobDetail"),
+        label: t(lang, "unitsIob"),
+        detail: t(lang, "unitsIobDetail"),
         units: -correction.iob_reduction,
       });
     }
@@ -106,7 +106,7 @@ function doseLines(
     const reason = FAT_PROTEIN_REASON[fatProtein.threshold_met];
     lines.push({
       key: "fatProtein",
-      label: t(lang, "doseFatProtein"),
+      label: t(lang, "unitsFatProtein"),
       ...(reason ? { detail: t(lang, reason) } : {}),
       units: fatProtein.adjustment_units,
     });
@@ -118,7 +118,7 @@ function doseLines(
     const scaled = sum * (1 + profile.percent / 100);
     lines.push({
       key: "profile",
-      label: t(lang, "doseProfile"),
+      label: t(lang, "unitsProfile"),
       detail: signedPercent(profile.percent),
       units: scaled - sum,
     });
@@ -128,7 +128,7 @@ function doseLines(
   return lines;
 }
 
-export function DoseSummary({
+export function UnitsSummary({
   result,
   lang,
   ratioFormat,
@@ -144,8 +144,8 @@ export function DoseSummary({
   onUnitsChange?: (units: number) => void;
 }) {
   const decimal = numberFormat(lang);
-  const total = totalDose(result);
-  const lines = doseLines(result, lang, ratioFormat);
+  const total = totalUnits(result);
+  const lines = unitsLines(result, lang, ratioFormat);
   const measured = lines.filter((line) => Number.isFinite(line.units));
   const added = measured.reduce(
     (sum, line) => sum + Math.max(line.units, 0),
@@ -163,19 +163,19 @@ export function DoseSummary({
   };
 
   return (
-    <section className="dose">
-      <header className="dose-head">
-        <p className="dose-caption">
-          {t(lang, "suggestedDoseFor").replace(
+    <section className="units">
+      <header className="units-head">
+        <p className="units-caption">
+          {t(lang, "suggestedUnitsFor").replace(
             "{window}",
             result.meal_window.name,
           )}
         </p>
-        <Link to="/dose-explained" className="dose-why">
+        <Link to="/units-explained" className="units-why">
           {t(lang, "fatProteinLearnMore")}
         </Link>
       </header>
-      <div className="dose-total">
+      <div className="units-total">
         {units !== undefined && onUnitsChange ? (
           <Stepper
             value={units}
@@ -206,7 +206,7 @@ export function DoseSummary({
           units !== total && (
             <button
               type="button"
-              className="dose-reset"
+              className="units-reset"
               onClick={() => onUnitsChange(total)}
             >
               {t(lang, "backToSuggested").replace(
@@ -217,7 +217,7 @@ export function DoseSummary({
           )}
       </div>
       {added > 0 && (
-        <div className="dose-bar" aria-hidden="true">
+        <div className="units-bar" aria-hidden="true">
           {measured
             .filter((line) => line.units > 0)
             .map((line) => (
@@ -229,13 +229,13 @@ export function DoseSummary({
             ))}
           {removed > 0 && (
             <span
-              className="dose-bar-removed"
+              className="units-bar-removed"
               style={{ width: share(removed) }}
             />
           )}
         </div>
       )}
-      <dl className="dose-parts">
+      <dl className="units-parts">
         {lines.map((line, i) => (
           <div
             key={line.key}

@@ -19,7 +19,7 @@ Tashi stores one person's diary in SQLite: Cloudflare D1 on Workers, and a file 
   - An id is `TEXT` holding a uuid.
   - An instant is `TEXT` in one format, `YYYY-MM-DDTHH:MM:SS.sssZ` (UTC, milliseconds), which a check enforces by comparing each value with `strftime('%Y-%m-%dT%H:%M:%fZ', …)` of itself; `IS` makes a value that is not a date fail instead of passing as null. (D1 refuses `GLOB` patterns over 50 characters, which a pattern for this format needs.) In that format text order is time order, so indexes and cursors compare text. The repositories write every instant through `toISOString()`, whatever offset the domain gave it.
   - A fraction is `REAL`; JSON is `TEXT` with `CHECK (json_valid(…))`; bytes are `BLOB`.
-- The food catalog is not in the database. It ships with the build as static files (see [Catalog and snapshots](#catalog-and-snapshots)); a meal keeps a copy of the figures it was dosed with.
+- The food catalog is not in the database. It ships with the build as static files (see [Catalog and snapshots](#catalog-and-snapshots)); a meal keeps a copy of the figures it was calculated with.
 
 ## Registries
 
@@ -485,7 +485,7 @@ Deliberate denormalisation, kept because a meal is a record of what was shown, n
 
 - **Glucose has one unit in storage: mg/dL.** Settings, corrections and readings all store mg/dL, so switching the display unit writes nothing and old records stay readable. Values entered in mmol/L are converted on input and kept as doubles, so they convert back to the same figure once rounded for display.
 - Weight is grams, insulin amounts are units, durations are minutes (`insulin_action_minutes`) or milliseconds (`duration_ms`), the cycle is in days. Hours are local hours of the day, and each entry stores the zone it happened in (`occurred_tz`). Instants are UTC.
-- Carbohydrate is the one figure allowed to be negative. USDA derives it by difference, and for ten foods in the catalog (raw chicken, raw pork) it comes out slightly below zero. A meal records what was calculated, so those values are stored as they were. The net carbohydrate of a food item is never below 0, so these foods add 0 g to a dose and never subtract from it.
+- Carbohydrate is the one figure allowed to be negative. USDA derives it by difference, and for ten foods in the catalog (raw chicken, raw pork) it comes out slightly below zero. A meal records what was calculated, so those values are stored as they were. The net carbohydrate of a food item is never below 0, so these foods add 0 g to the units and never subtract from it.
 - `weight_g = 0` means "weight not given" for three legacy items whose carbs were already 0. For new items a weight of 0 is not meaningful; make weight nullable if it ever matters.
 - `correction_dose_units` has no lower bound: it is negative when glucose is below target.
 

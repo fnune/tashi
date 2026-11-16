@@ -62,7 +62,7 @@ describe("Calculator", () => {
     );
   });
 
-  it("calculates carbs and dose from DB match", async () => {
+  it("calculates carbs and units from DB match", async () => {
     parser.setResponse("150g white rice, grilled chicken breast", [
       {
         description: "White rice (cooked)",
@@ -220,7 +220,7 @@ describe("Calculator", () => {
     expect(result.correction!.total_units).toBeGreaterThan(result.carb_units);
   });
 
-  it("reduces dose when blood sugar is below target (hypo)", async () => {
+  it("reduces units when blood sugar is below target (hypo)", async () => {
     parser.setResponse("a banana", [
       {
         description: "Banana",
@@ -332,7 +332,7 @@ describe("Calculator", () => {
     );
   });
 
-  it("rounds dose to pen increment", async () => {
+  it("rounds units to pen increment", async () => {
     parser.setResponse("200g cooked rice", [
       {
         description: "White rice (cooked)",

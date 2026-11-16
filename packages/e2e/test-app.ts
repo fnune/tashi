@@ -7,10 +7,10 @@ import {
 } from "@tashi/backend/authentication";
 import { Calculator } from "@tashi/backend/calculator";
 import { DiaryImport } from "@tashi/backend/diary-import";
-import { Doses } from "@tashi/backend/doses";
 import type { FoodCatalog } from "@tashi/backend/food-catalog";
 import type { FoodParser, ParseOutcome } from "@tashi/backend/food-parser";
 import { randomId } from "@tashi/backend/ids";
+import { InsulinUnits } from "@tashi/backend/insulin-units";
 import { KeyedFoodParser } from "@tashi/backend/keyed-food-parser";
 import { silentLogger } from "@tashi/backend/logger";
 import { ProblemLog } from "@tashi/backend/problems";
@@ -100,7 +100,7 @@ export function buildTestApp(options: TestAppOptions): Hono<SignedIn> {
     randomId,
   );
   const routes = createRoutes({
-    doses: new Doses(repositories, calculator, lunchtimeClock),
+    insulinUnits: new InsulinUnits(repositories, calculator, lunchtimeClock),
     timeline: new TimelineService(repositories, lunchtimeClock, randomId),
     diaryImport: new DiaryImport(repositories),
     repositories,

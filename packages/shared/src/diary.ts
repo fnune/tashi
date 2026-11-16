@@ -86,7 +86,7 @@ export function readDiary(text: string): DiaryReading {
   const upgraded = {
     ...value,
     timeline: Array.isArray(value.timeline)
-      ? value.timeline.map(renameLegacyDoseFields)
+      ? value.timeline.map(renameLegacyFields)
       : value.timeline,
   };
   return looksLikeDiary(upgraded)
@@ -113,7 +113,7 @@ function renameFields(value: unknown): unknown {
   );
 }
 
-function renameLegacyDoseFields(entry: unknown): unknown {
+function renameLegacyFields(entry: unknown): unknown {
   const renamed = renameFields(entry);
   if (!isRecord(renamed)) return renamed;
   for (const part of ["correction", "fat_protein_adjustment"]) {

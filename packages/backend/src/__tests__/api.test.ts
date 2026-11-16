@@ -13,7 +13,7 @@ import { beforeEach, describe, expect, it } from "vitest";
 import { Calculator } from "../domain/calculator.js";
 import type { Clock } from "../domain/clock.js";
 import { DiaryImport } from "../domain/diary-import.js";
-import { Doses } from "../domain/doses.js";
+import { InsulinUnits } from "../domain/insulin-units.js";
 import { silentLogger } from "../domain/logger.js";
 import { ProblemLog } from "../domain/problems.js";
 import type { Repositories } from "../domain/repositories.js";
@@ -105,7 +105,7 @@ describe("API routes", () => {
     const calculator = new Calculator(parser, foodCatalog, clock, newId);
     app = signedIn(
       createRoutes({
-        doses: new Doses(repositories, calculator, clock),
+        insulinUnits: new InsulinUnits(repositories, calculator, clock),
         timeline: new TimelineService(repositories, clock, newId),
         diaryImport: new DiaryImport(repositories),
         repositories,
@@ -117,7 +117,7 @@ describe("API routes", () => {
     );
   });
 
-  it("POST /api/calculate previews a dose without touching the timeline", async () => {
+  it("POST /api/calculate previews the units without touching the timeline", async () => {
     parser.setResponse("100g white rice", [
       {
         description: "White rice (cooked)",
@@ -188,7 +188,7 @@ describe("API routes", () => {
     );
   });
 
-  it("POST /api/meals logged late puts the dose and the meal at the injection time", async () => {
+  it("POST /api/meals logged late puts the insulin and the meal at the injection time", async () => {
     parser.setResponse("rice", [carbItem(30)]);
     await repositories.settings.save(configured());
     const { result } = expectOkResponse(

@@ -2,7 +2,7 @@ import type { ProblemsResponse } from "@tashi/shared";
 import { beforeEach, describe, expect, it } from "vitest";
 import { Calculator } from "../domain/calculator.js";
 import { DiaryImport } from "../domain/diary-import.js";
-import { Doses } from "../domain/doses.js";
+import { InsulinUnits } from "../domain/insulin-units.js";
 import { silentLogger } from "../domain/logger.js";
 import {
   MAX_PROBLEM_TEXT,
@@ -34,7 +34,7 @@ describe("problems", () => {
     const newId = sequentialIds();
     return signedIn(
       createRoutes({
-        doses: new Doses(
+        insulinUnits: new InsulinUnits(
           repositories,
           new Calculator(
             new FakeFoodParser(),

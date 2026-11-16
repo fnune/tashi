@@ -13,7 +13,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import { openSqliteRepositories } from "../data/sqlite/index.js";
 import { Calculator } from "../domain/calculator.js";
 import { DiaryImport } from "../domain/diary-import.js";
-import { Doses } from "../domain/doses.js";
+import { InsulinUnits } from "../domain/insulin-units.js";
 import { silentLogger } from "../domain/logger.js";
 import { ProblemLog } from "../domain/problems.js";
 import { TimelineService } from "../domain/timeline-service.js";
@@ -52,7 +52,7 @@ async function sqliteApp() {
   const newId = sequentialIds(9000);
   const app = signedIn(
     createRoutes({
-      doses: new Doses(
+      insulinUnits: new InsulinUnits(
         repositories,
         new Calculator(
           new FakeFoodParser(),

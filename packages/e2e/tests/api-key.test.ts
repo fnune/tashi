@@ -30,7 +30,7 @@ test.describe("AI food reading", () => {
     await goTo(page, "Calculate");
     await page.locator("textarea").fill("150g rice");
     await page.getByRole("button", { name: "Calculate units" }).click();
-    await expect(page.locator(".dose")).toBeVisible();
+    await expect(page.locator(".units")).toBeVisible();
   });
 
   test("without a key, calculating asks for one and leads to the setting", async ({
@@ -64,7 +64,7 @@ test.describe("AI food reading", () => {
     await goTo(page, "Calculate");
     await page.locator("textarea").fill("150g rice");
     await page.getByRole("button", { name: "Calculate units" }).click();
-    await expect(page.locator(".dose")).toBeVisible();
+    await expect(page.locator(".units")).toBeVisible();
 
     await goTo(page, "Settings");
     await page.getByRole("button", { name: /Anthropic API key/ }).click();

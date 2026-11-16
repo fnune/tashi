@@ -22,10 +22,10 @@
 
 .stepper output {
   text-align: center;
-  font-size: var(--type-dose-size);
-  line-height: var(--type-dose-line);
-  font-weight: var(--type-dose-weight);
-  letter-spacing: var(--type-dose-tracking);
+  font-size: var(--type-units-size);
+  line-height: var(--type-units-line);
+  font-weight: var(--type-units-weight);
+  letter-spacing: var(--type-units-tracking);
   font-variant-numeric: tabular-nums lining-nums;
 }
 

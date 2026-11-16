@@ -118,7 +118,7 @@ describe("sqlite storage", () => {
     await close();
   });
 
-  it("keeps the food a meal was dosed with as it was then", async () => {
+  it("keeps the food a meal was calculated with as it was then", async () => {
     const { repositories, query, close } = await emptyDatabase();
     const meal = fullMeal(1, 10);
     await repositories.timeline.add([meal]);

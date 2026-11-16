@@ -4,11 +4,11 @@ import {
   appliedProfile,
   type CalculatedItem,
   type CalculationResult,
-  calculateDose,
-  doseScale,
+  calculateUnits,
   effectiveRatio,
   findMealWindow,
   type Settings,
+  unitsScale,
 } from "@tashi/shared";
 import type { AiConnection } from "./ai-connections.js";
 import type { Clock } from "./clock.js";
@@ -71,13 +71,13 @@ export class Calculator {
 
     const profile = activeProfile(settings);
     const ratio = effectiveRatio(profile, mealWindow);
-    const dose = calculateDose(
+    const units = calculateUnits(
       items,
       ratio,
       settings,
       currentBloodSugar,
       iob,
-      doseScale(profile),
+      unitsScale(profile),
     );
 
     const inputLang = this.detectLanguage(foodDescription);
@@ -91,12 +91,12 @@ export class Calculator {
         language: inputLang,
         meal_window: { ...mealWindow, ratio },
         items,
-        total_net_carbs_g: Math.round(dose.totalNetCarbs * 10) / 10,
-        carb_units: dose.foodDose,
-        total_units: dose.totalDose,
+        total_net_carbs_g: Math.round(units.totalNetCarbs * 10) / 10,
+        carb_units: units.foodUnits,
+        total_units: units.totalUnits,
         profile: appliedProfile(profile),
-        correction: dose.correction,
-        fat_protein_adjustment: dose.fat_protein_adjustment,
+        correction: units.correction,
+        fat_protein_adjustment: units.fat_protein_adjustment,
         trace,
       },
     };

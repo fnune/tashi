@@ -132,7 +132,7 @@ describe("logging a meal", () => {
     expect(insulin?.time_zone).toBe("Asia/Tokyo");
   });
 
-  it("logs no insulin entry for a zero dose", () => {
+  it("logs no insulin entry for zero units", () => {
     expect(
       logMeal(result, 0, 0, "novorapid", now, sequentialIds(), "Europe/Berlin")
         .insulin,

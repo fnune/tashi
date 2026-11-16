@@ -15,10 +15,10 @@ import {
 import { type Dispatch, type SetStateAction, useState } from "react";
 import * as api from "../api.js";
 import { apiErrorText, type Language, t } from "../i18n.js";
-import { DoseSummary, FoodList, totalDose } from "./DoseResult.js";
 import { ProfileChips } from "./ProfileChips.js";
 import { ProfileSwitcher } from "./ProfileSwitcher.js";
 import { SensorCard } from "./SensorCard.js";
+import { FoodList, totalUnits, UnitsSummary } from "./UnitsResult.js";
 import { Button } from "./ui/Button.js";
 import { DateTimeField } from "./ui/Field.js";
 import { Notice } from "./ui/Notice.js";
@@ -135,7 +135,7 @@ export function CalculatorView({
       if (res.status === "ok") {
         update({
           result: res.result,
-          units: totalDose(res.result) ?? 0,
+          units: totalUnits(res.result) ?? 0,
           calculatedAt: new Date().toISOString(),
           injectedAt: null,
         });
@@ -230,10 +230,10 @@ export function CalculatorView({
                 i === index ? withWeight(item, weight) : item,
               );
               const next = recalculateResult(result, items, settings);
-              update({ result: next, units: totalDose(next) ?? 0 });
+              update({ result: next, units: totalUnits(next) ?? 0 });
             }}
           />
-          <DoseSummary
+          <UnitsSummary
             result={result}
             lang={lang}
             ratioFormat={settings.ratio_format}
@@ -321,7 +321,7 @@ export function CalculatorView({
               disabled={!foodText.trim()}
               aria-busy={loading || undefined}
             >
-              {loading ? t(lang, "calculating") : t(lang, "calculateDose")}
+              {loading ? t(lang, "calculating") : t(lang, "calculateUnits")}
             </Button>
             <p
               className="meal-form-why"

@@ -218,7 +218,7 @@ export function SettingsView({
 
       {error && !editing && <Notice tone="danger">{error}</Notice>}
 
-      <ListGroup title={t(lang, "dosing")}>
+      <ListGroup title={t(lang, "calculation")}>
         <ListButton
           label={t(lang, "correctionFactor")}
           detail={t(lang, "correctionFactorDetail")}

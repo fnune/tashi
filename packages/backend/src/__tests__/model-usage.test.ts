@@ -6,7 +6,7 @@ import {
 import { describe, expect, it } from "vitest";
 import { Calculator } from "../domain/calculator.js";
 import { DiaryImport } from "../domain/diary-import.js";
-import { Doses } from "../domain/doses.js";
+import { InsulinUnits } from "../domain/insulin-units.js";
 import { silentLogger } from "../domain/logger.js";
 import {
   estimatedCostUsd,
@@ -105,7 +105,7 @@ describe("GET /api/usage", () => {
     );
     const routes = signedIn(
       createRoutes({
-        doses: new Doses(repositories, calculator, clock),
+        insulinUnits: new InsulinUnits(repositories, calculator, clock),
         timeline: new TimelineService(repositories, clock, newId),
         diaryImport: new DiaryImport(repositories),
         repositories,

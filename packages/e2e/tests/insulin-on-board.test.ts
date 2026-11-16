@@ -11,7 +11,7 @@ test.describe("insulin on board", () => {
     });
   });
 
-  test("a recent dose is counted and takes the edge off a correction", async ({
+  test("a recent injection is counted and takes the edge off a correction", async ({
     request,
     page,
   }) => {

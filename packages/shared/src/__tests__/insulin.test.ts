@@ -73,7 +73,7 @@ describe("insulinRemainingFraction (NovoRapid: peak 75, duration 300)", () => {
     }
   });
 
-  it("delivers the whole dose over the action window (area under activity ~= 1)", () => {
+  it("delivers the whole injection over the action window (area under activity ~= 1)", () => {
     const peak = 75;
     const duration = 300;
     const steps = 10_000;
@@ -118,7 +118,7 @@ describe("insulinActivityFraction (NovoRapid: peak 75, duration 300)", () => {
     expect(argmax).toBeCloseTo(75, -1);
   });
 
-  it("integrates to the whole dose over the action window", () => {
+  it("integrates to the whole injection over the action window", () => {
     const steps = 10_000;
     const dt = 300 / steps;
     let area = 0;
@@ -147,7 +147,7 @@ describe("insulinActivityFraction (NovoRapid: peak 75, duration 300)", () => {
 });
 
 describe("insulinOnBoard", () => {
-  it("counts a fresh dose at full units", () => {
+  it("counts a fresh injection at full units", () => {
     const iob = insulinOnBoard(
       [fastEntry({ timestamp: NOW.toISOString() })],
       SETTINGS,
@@ -157,7 +157,7 @@ describe("insulinOnBoard", () => {
     expect(iob.contributions).toHaveLength(1);
   });
 
-  it("excludes doses older than the duration of action", () => {
+  it("excludes injections older than the duration of action", () => {
     const iob = insulinOnBoard(
       [fastEntry({ timestamp: minutesAgo(301) })],
       SETTINGS,
@@ -167,7 +167,7 @@ describe("insulinOnBoard", () => {
     expect(iob.contributions).toHaveLength(0);
   });
 
-  it("sums remaining insulin across multiple doses", () => {
+  it("sums remaining insulin across multiple injections", () => {
     const iob = insulinOnBoard(
       [
         fastEntry({ id: "a", units: 4, timestamp: minutesAgo(75) }),

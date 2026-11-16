@@ -1,7 +1,7 @@
 import { expect, test } from "./fixtures.js";
 import { atLunchtime, goTo, resetServer } from "./helpers.js";
 
-test.describe("a dose that was not logged yet", () => {
+test.describe("units that were not logged yet", () => {
   test.beforeEach(async ({ request, page }) => {
     await resetServer(request);
     await atLunchtime(page);

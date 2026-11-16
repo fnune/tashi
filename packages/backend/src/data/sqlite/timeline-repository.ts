@@ -537,7 +537,7 @@ export class SqliteTimelineRepository implements TimelineRepository {
       const correction = corrections.find((c) => c.meal_entry_id === row.id);
       const adjustment = adjustments.find((a) => a.meal_entry_id === row.id);
       const trace = traces.find((t) => t.meal_entry_id === row.id);
-      const rawFoodDose = row.total_carbs_g / row.carbs_g_per_unit;
+      const rawFoodUnits = row.total_carbs_g / row.carbs_g_per_unit;
       const meal: MealEntry = {
         id: row.id,
         timestamp: row.occurred_at,
@@ -600,7 +600,7 @@ export class SqliteTimelineRepository implements TimelineRepository {
             ? Math.max(
                 0,
                 roundToIncrement(
-                  rawFoodDose + correction.correction_dose_units,
+                  rawFoodUnits + correction.correction_dose_units,
                   display.penIncrement,
                 ),
               )

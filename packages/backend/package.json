@@ -11,7 +11,7 @@
     "./calculator": "./src/domain/calculator.ts",
     "./clock": "./src/domain/clock.ts",
     "./diary-import": "./src/domain/diary-import.ts",
-    "./doses": "./src/domain/doses.ts",
+    "./insulin-units": "./src/domain/insulin-units.ts",
     "./catalog-file": "./src/data/catalog-file.ts",
     "./catalog-layout": "./src/data/static-catalog/layout.ts",
     "./d1": "./src/data/d1/index.ts",

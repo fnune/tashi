@@ -10,7 +10,7 @@ import { StaticFoodCatalog } from "../data/static-catalog/static-food-catalog.js
 import { Calculator } from "../domain/calculator.js";
 import type { Clock } from "../domain/clock.js";
 import { DiaryImport } from "../domain/diary-import.js";
-import { Doses } from "../domain/doses.js";
+import { InsulinUnits } from "../domain/insulin-units.js";
 import { silentLogger } from "../domain/logger.js";
 import { ProblemLog } from "../domain/problems.js";
 import { TimelineService } from "../domain/timeline-service.js";
@@ -132,7 +132,7 @@ async function coldApp() {
   await aiConnections.connect(TEST_DATA_KEY, "sk-ant-budget");
   const app = signedIn(
     createRoutes({
-      doses: new Doses(
+      insulinUnits: new InsulinUnits(
         repositories,
         new Calculator(parser, catalog, clock, newId),
         clock,

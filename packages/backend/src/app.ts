@@ -9,9 +9,9 @@ import {
 import { Calculator } from "./domain/calculator.js";
 import type { Clock } from "./domain/clock.js";
 import { DiaryImport } from "./domain/diary-import.js";
-import { Doses } from "./domain/doses.js";
 import type { FoodCatalog } from "./domain/food-catalog.js";
 import type { IdGenerator } from "./domain/ids.js";
+import { InsulinUnits } from "./domain/insulin-units.js";
 import {
   anthropicAcceptsKey,
   KeyedFoodParser,
@@ -86,7 +86,7 @@ export function createApp({
   app.route(
     config.basePath || "/",
     createRoutes({
-      doses: new Doses(repositories, calculator, clock),
+      insulinUnits: new InsulinUnits(repositories, calculator, clock),
       timeline: new TimelineService(repositories, clock, newId),
       diaryImport: new DiaryImport(repositories),
       repositories,

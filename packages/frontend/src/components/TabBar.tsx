@@ -16,11 +16,11 @@ const TABS: {
 
 export function TabBar({
   lang,
-  pendingDose,
+  pendingUnits,
   onNavigate,
 }: {
   lang: Language;
-  pendingDose: boolean;
+  pendingUnits: boolean;
   onNavigate: (to: string) => void;
 }) {
   return (
@@ -36,10 +36,10 @@ export function TabBar({
           >
             <span className="tab-bar-icon">
               <Icon name={tab.icon} size="lg" />
-              {tab.to === "/" && pendingDose && (
+              {tab.to === "/" && pendingUnits && (
                 <span className="tab-bar-dot" role="status">
                   <span className="visually-hidden">
-                    {t(lang, "pendingDose")}
+                    {t(lang, "pendingUnits")}
                   </span>
                 </span>
               )}

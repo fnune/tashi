@@ -88,7 +88,7 @@ describe("exporting the diary", () => {
 });
 
 describe("importing the diary", () => {
-  it("sends meals before the doses that may point at them", async () => {
+  it("sends meals before the injections that may point at them", async () => {
     const { api, chunks } = recordingApi([]);
     await importDiary(api, diaryOf([glucose(1), meal(2), glucose(3), meal(4)]));
     expect(chunks.flatMap((chunk) => chunk.entries.map((e) => e.id))).toEqual([

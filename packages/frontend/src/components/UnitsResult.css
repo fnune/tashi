@@ -67,67 +67,67 @@
   font-weight: var(--font-weight-bold);
 }
 
-.dose {
-  --dose-carbs: var(--color-meal);
-  --dose-correction: var(--color-glucose);
-  --dose-fat-protein: var(--color-insulin-rapid);
-  --dose-profile: var(--color-insulin-basal);
+.units {
+  --units-carbs: var(--color-meal);
+  --units-correction: var(--color-glucose);
+  --units-fat-protein: var(--color-insulin-rapid);
+  --units-profile: var(--color-insulin-basal);
 
   display: flex;
   flex-direction: column;
   gap: var(--space-4);
   padding: var(--space-5) var(--space-4);
   border-radius: var(--radius-xl);
-  container: dose / inline-size;
+  container: units / inline-size;
   background: var(--color-fill);
 }
 
-.dose-head {
+.units-head {
   display: flex;
   justify-content: space-between;
   align-items: baseline;
   gap: var(--space-3);
 }
 
-.dose-caption {
+.units-caption {
   font-size: var(--type-secondary-size);
   color: var(--color-fg-muted);
 }
 
-.dose-total {
+.units-total {
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: var(--space-2);
 }
 
-.dose-total .stepper {
+.units-total .stepper {
   align-self: stretch;
 }
 
-.dose-total .stepper output {
+.units-total .stepper output {
   white-space: nowrap;
 }
 
-.dose-total .stepper button {
+.units-total .stepper button {
   background: var(--color-bg);
 }
 
-.dose-total > p {
-  font-size: var(--type-dose-size);
-  line-height: var(--type-dose-line);
-  font-weight: var(--type-dose-weight);
-  letter-spacing: var(--type-dose-tracking);
+.units-total > p {
+  font-size: var(--type-units-size);
+  line-height: var(--type-units-line);
+  font-weight: var(--type-units-weight);
+  letter-spacing: var(--type-units-tracking);
 }
 
-.dose-total small {
+.units-total small {
   font-size: var(--type-stat-size);
   font-weight: var(--font-weight-bold);
   letter-spacing: normal;
   color: var(--color-fg-muted);
 }
 
-.dose-reset {
+.units-reset {
   min-height: var(--size-text-button);
   border: none;
   background: none;
@@ -137,7 +137,7 @@
   cursor: pointer;
 }
 
-.dose-bar {
+.units-bar {
   position: relative;
   display: flex;
   gap: var(--space-0-5);
@@ -146,11 +146,11 @@
   overflow: hidden;
 }
 
-.dose-bar span {
+.units-bar span {
   min-width: var(--space-1);
 }
 
-.dose-bar-removed {
+.units-bar-removed {
   position: absolute;
   inset: 0 0 0 auto;
   background: repeating-linear-gradient(
@@ -162,46 +162,46 @@
 }
 
 [data-part="carbs"] {
-  --part: var(--dose-carbs);
+  --part: var(--units-carbs);
 }
 [data-part="correction"] {
-  --part: var(--dose-correction);
+  --part: var(--units-correction);
 }
 [data-part="iob"] {
-  --part: var(--dose-correction);
+  --part: var(--units-correction);
 }
 [data-part="fatProtein"] {
-  --part: var(--dose-fat-protein);
+  --part: var(--units-fat-protein);
 }
 [data-part="profile"] {
-  --part: var(--dose-profile);
+  --part: var(--units-profile);
 }
 
-.dose-bar [data-part] {
+.units-bar [data-part] {
   background: var(--part);
 }
 
-.dose-parts {
+.units-parts {
   display: grid;
   grid-template-columns: repeat(5, auto);
   justify-content: space-between;
   column-gap: var(--space-2);
 }
 
-@container dose (width < 18rem) {
-  .dose-parts {
+@container units (width < 18rem) {
+  .units-parts {
     grid-template-columns: repeat(3, max-content);
     row-gap: var(--space-3);
   }
 }
 
-.dose-parts div {
+.units-parts div {
   display: flex;
   flex-direction: column-reverse;
   justify-content: flex-end;
 }
 
-.dose-parts dd {
+.units-parts dd {
   display: flex;
   align-items: center;
   gap: var(--space-1);
@@ -211,7 +211,7 @@
   white-space: nowrap;
 }
 
-.dose-parts dd::before {
+.units-parts dd::before {
   content: "";
   flex: none;
   width: var(--space-1-5);
@@ -220,7 +220,7 @@
   background: var(--part);
 }
 
-.dose-parts [data-removed] dd::before {
+.units-parts [data-removed] dd::before {
   background: repeating-linear-gradient(
     -45deg,
     var(--part) 0 var(--space-0-5),
@@ -229,13 +229,13 @@
   box-shadow: inset 0 0 0 var(--space-px) var(--part);
 }
 
-.dose-parts dt {
+.units-parts dt {
   font-size: var(--type-caption-size);
   line-height: var(--type-caption-line);
   color: var(--color-fg-muted);
 }
 
-.dose-why {
+.units-why {
   flex: none;
   font-size: var(--type-secondary-size);
   font-weight: var(--font-weight-bold);

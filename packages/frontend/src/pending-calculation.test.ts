@@ -57,7 +57,7 @@ describe("a calculation that was not logged", () => {
     expect(store.items.has(PENDING_CALCULATION_KEY)).toBe(false);
   });
 
-  it("is dropped when too old to dose from", () => {
+  it("is dropped when too old to use", () => {
     const store = memoryStore();
     savePendingCalculation(store, pending);
     expect(

@@ -6,7 +6,7 @@ import { t } from "../i18n.js";
 import {
   profileIcon,
   profileName,
-  profileRaisesDose,
+  profileRaisesUnits,
 } from "../profileLabels.js";
 import { formatRatio, formatRatioNumber } from "../ratioLabels.js";
 import { Logo } from "./Logo.js";
@@ -51,7 +51,7 @@ export function AppHeader({
           {icon && (
             <span
               className="ratio-pill-icon"
-              data-raises={profileRaisesDose(profile) || undefined}
+              data-raises={profileRaisesUnits(profile) || undefined}
             >
               <Icon name={icon} size="sm" />
             </span>

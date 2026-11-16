@@ -5,9 +5,9 @@ import { sealText, unsealText } from "../domain/auth/data-key.js";
 import { Calculator } from "../domain/calculator.js";
 import { systemClock } from "../domain/clock.js";
 import { DiaryImport } from "../domain/diary-import.js";
-import { Doses } from "../domain/doses.js";
 import { InvalidApiKeyError } from "../domain/errors.js";
 import type { FoodParser } from "../domain/food-parser.js";
+import { InsulinUnits } from "../domain/insulin-units.js";
 import { KeyedFoodParser } from "../domain/keyed-food-parser.js";
 import { silentLogger } from "../domain/logger.js";
 import { ProblemLog } from "../domain/problems.js";
@@ -55,7 +55,7 @@ describe("api key routes", () => {
     const newId = sequentialIds();
     return signedIn(
       createRoutes({
-        doses: new Doses(
+        insulinUnits: new InsulinUnits(
           repositories,
           new Calculator(parser, foodCatalog, systemClock, newId),
           systemClock,

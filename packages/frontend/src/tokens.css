@@ -56,7 +56,7 @@
   --text-2xl: 1.5rem;
   --text-3xl: 1.875rem;
   --text-display: 2.75rem;
-  --text-hero: var(--type-dose-size);
+  --text-hero: var(--type-units-size);
   --weight-medium: var(--font-weight-medium);
   --weight-semibold: var(--font-weight-semibold);
   --weight-bold: var(--font-weight-bold);

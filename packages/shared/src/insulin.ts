@@ -226,10 +226,6 @@ export function insulinRemainingFraction(
   return 1 - s * (1 - a) * inner;
 }
 
-// Insulin activity: the fraction of the dose acting per minute, i.e. the rate
-// at which insulin on board is consumed (-d/dt of insulinRemainingFraction).
-// Starts at zero, peaks at peakMinutes, and returns to zero by the duration;
-// its integral over the action window is 1.
 export function insulinActivityFraction(
   elapsedMinutes: number,
   peakMinutes: number,

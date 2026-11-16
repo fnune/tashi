@@ -6,6 +6,7 @@ import {
   Navigate,
   Route,
   Routes,
+  useLocation,
   useNavigate,
   useParams,
 } from "react-router";
@@ -17,11 +18,11 @@ import {
   CalculatorView,
 } from "./components/CalculatorView.js";
 import { CrashBoundary } from "./components/CrashBoundary.js";
-import { DoseExplainerView } from "./components/DoseExplainerView.js";
 import { SettingsView } from "./components/SettingsView.js";
 import { TabBar } from "./components/TabBar.js";
 import { TimelineView } from "./components/TimelineView.js";
 import { TroubleScreen, WaitingForServer } from "./components/TroubleScreen.js";
+import { UnitsExplainerView } from "./components/UnitsExplainerView.js";
 import { Notice } from "./components/ui/Notice.js";
 import { type Language, savedLanguage, t } from "./i18n.js";
 import { type PagedListHandle, usePagedList } from "./paging/use-paged-list.js";
@@ -190,17 +191,18 @@ function AppShell() {
           }
         />
         <Route
-          path="/dose-explained"
+          path="/units-explained"
           element={
-            <DoseExplainerView
+            <UnitsExplainerView
               lang={lang}
               ratioFormat={settings.ratio_format}
             />
           }
         />
+        <Route path="/dose-explained" element={<ToUnitsExplained />} />
         <Route
           path="/fat-protein-info"
-          element={<Navigate to="/dose-explained#fat-protein" replace />}
+          element={<Navigate to="/units-explained#fat-protein" replace />}
         />
         <Route
           path="/history/*"
@@ -210,7 +212,7 @@ function AppShell() {
       </Routes>
       <TabBar
         lang={lang}
-        pendingDose={calcForm.result !== null}
+        pendingUnits={calcForm.result !== null}
         onNavigate={(to) => {
           if (to === "/timeline") refreshTimeline();
         }}
@@ -266,6 +268,11 @@ function TimelineRoute({
       onReuse={onReuse}
     />
   );
+}
+
+function ToUnitsExplained() {
+  const { hash } = useLocation();
+  return <Navigate to={`/units-explained${hash}`} replace />;
 }
 
 export function App() {

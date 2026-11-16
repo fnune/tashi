@@ -7,13 +7,13 @@ import { DomainError } from "./errors.js";
 import type { Repositories } from "./repositories.js";
 import { fastInsulinEntries } from "./timeline.js";
 
-export interface DoseQuery {
+export interface InsulinUnitsQuery {
   food_description: string;
   current_blood_sugar?: number;
   meal_window_override?: string;
 }
 
-export class Doses {
+export class InsulinUnits {
   constructor(
     private repositories: Repositories,
     private calculator: Calculator,
@@ -22,7 +22,7 @@ export class Doses {
 
   async calculate(
     connection: AiConnection | null,
-    query: DoseQuery,
+    query: InsulinUnitsQuery,
     timeZone?: string,
   ): Promise<CalculateOutcome> {
     const settings = await this.repositories.settings.get();

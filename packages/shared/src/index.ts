@@ -1,6 +1,6 @@
 export type { HourRange } from "./calculation.js";
 export {
-  calculateDose,
+  calculateUnits,
   correctionComponents,
   evaluateFatProteinThreshold,
   findMealWindow,
@@ -96,9 +96,9 @@ export type { RatioModifier, WindowRatio } from "./profiles.js";
 export {
   activeProfile,
   appliedProfile,
-  doseScale,
   effectiveRatio,
   renameWindowInProfiles,
+  unitsScale,
   windowRatio,
 } from "./profiles.js";
 export { fromDisplayRatio, toDisplayRatio } from "./ratio-format.js";
