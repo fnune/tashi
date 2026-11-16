@@ -46,7 +46,7 @@ With Nix, `nix build` gives `result/bin/tashi`, which takes the same options. `t
 - On its first start without an account, the server prints a setup link to its log. Behind a proxy, keep the part from `/setup` onwards and put it after your own address.
 - The same build serves any base path: the server writes it into the page's `<base href>`, and the frontend resolves every URL against it.
 - Back up the database with `sqlite3 tashi.sqlite ".backup copy.sqlite"`, which is safe while Tashi runs.
-- bilbo runs Tashi this way, from this flake's package, as described in the [README](../README.md#deployment).
+- On a NixOS server, run Tashi this way from this flake's package (`packages.default`), as a service that passes these options.
 
 ## Logs
 

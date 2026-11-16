@@ -53,7 +53,7 @@ pnpm nix:hash    # after changing dependencies: the new hash for nix/package.nix
 
 CI runs the same checks, both browser test runs and the Nix build on every pull request. See [AGENTS.md](AGENTS.md) for the map of the repository and what to run before calling a change done.
 
-The author's copy runs on bilbo as the `tashi` app (`nixos/tashi.nix` in fnune/bilbo), from this flake's package: push to `main`, then run `nix flake update tashi` in bilbo and deploy.
+Tashi also runs on a NixOS server from this flake's package, as the author's copy does: to update it, run `nix flake update tashi` in the server's configuration and deploy. See [self-hosting](docs/self-hosting.md).
 
 ## License
 

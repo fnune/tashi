@@ -267,7 +267,7 @@ Since the task is pure parsing (not creative or reasoning-heavy), most capable m
 
 ### Deployment
 
-The app deploys as a NixOS service on Bilbo (https://github.com/fnune/bilbo), from the flake's `packages.default`, started with `--base-path` set to the subpath Bilbo serves it under. The same build serves any path: the server writes the path into the page's `<base href>`.
+The app deploys as a NixOS service on your own server, from the flake's `packages.default`, started with `--base-path` set to the subpath the server serves it under. The same build serves any path: the server writes the path into the page's `<base href>`.
 
 - The AI provider's key and model are set in Tashi's settings and stored encrypted with the instance's data key
 - The backend never exposes the key to the frontend
