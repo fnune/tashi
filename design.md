@@ -22,7 +22,7 @@ User types what they're eating (in any supported language)
 App resolves food items against its nutritional database
         |
         v
-App shows breakdown table + recommended dose
+App shows breakdown table + calculated dose
 ```
 
 ## Setup (one-time)
@@ -212,7 +212,7 @@ This app influences medical decisions:
 - Show every item, every carb estimate, every assumption, every source
 - Make it trivial to edit any value (tap a row to override)
 - Always show which ratio and profile were used
-- Never connect to pumps or auto-inject (recommendation only)
+- Never connect to pumps or auto-inject: the person reads the numbers and decides
 
 ## Engineering requirements
 
@@ -237,7 +237,7 @@ A Nix flake provides all system dependencies (Node.js, pnpm). `nix develop` gets
 
 Integration tests over unit tests. The goal is bang-for-buck: test real request/response cycles, not internal implementation details.
 
-The LLM call is behind a `FoodParser` interface. Tests use a deterministic fake implementation that returns the same structured output format without hitting any API. This lets us integration-test the full calculation pipeline (parsing output -> DB lookup -> carb math -> dose recommendation) without network calls or API costs.
+The LLM call is behind a `FoodParser` interface. Tests use a deterministic fake implementation that returns the same structured output format without hitting any API. This lets us integration-test the full calculation pipeline (parsing output -> DB lookup -> carb math -> dose calculation) without network calls or API costs.
 
 ### Code quality
 

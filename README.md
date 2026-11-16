@@ -1,10 +1,11 @@
 # Tashi
 
-Tashi is a mealtime insulin calculator for people with type 1 diabetes.
+Tashi is a carb counter and meal diary for people with type 1 diabetes, with the mealtime insulin arithmetic done from your own settings.
 
-Describe what you're eating in plain words, in Spanish or English, and Tashi breaks it down into a table of foods, weights and net carbs, with a dose for your fast-acting insulin. An AI model reads the description; the carbs come from nutrition databases (USDA, BEDCA), and every value shows its source and can be edited. Tashi also keeps a diary of meals, doses and glucose readings, and counts the insulin still active from earlier doses.
+Describe what you're eating in plain words, in Spanish or English, and Tashi breaks it down into a table of foods, weights and net carbs, with the dose of fast-acting insulin that your own ratios and correction factor work out to. An AI model reads the description; the carbs come from nutrition databases (USDA, BEDCA), and every value shows its source and can be edited. Tashi also keeps a diary of meals, doses and glucose readings, and counts the insulin still active from earlier doses.
 
-Tashi is an aid, not a medical device. Check every suggested dose against your own judgement and your care team's advice.
+> [!CAUTION]
+> A personal project, not a medical device. Tashi is not clinically validated and has no regulatory clearance. Its numbers come from the settings you enter, from nutrition databases and from an AI model's reading of your words, and any of them can be wrong. It does not replace your own judgement or your care team's advice: check every number before you act on it. The software comes without warranty of any kind (see [LICENSE](LICENSE)).
 
 ## Install your own
 
