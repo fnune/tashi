@@ -44,6 +44,7 @@ test.describe("full user flow", () => {
     await expect(page.locator(".units")).toBeVisible({ timeout: 5000 });
 
     await expect(page.locator(".food")).toHaveCount(2);
+    await expect(page.locator(".gi-badge")).toHaveText("GI 73");
     const calculated = await page.locator(".units-total b").textContent();
     await page.getByRole("button", { name: "0.5 U more" }).click();
     const injected = String(Number(calculated) + 0.5);
@@ -86,6 +87,11 @@ test.describe("full user flow", () => {
     await expect(
       page.getByRole("navigation").getByText("Ajustes"),
     ).toBeVisible();
+
+    await page.getByRole("navigation").getByText("Calcular").click();
+    await page.locator("textarea").fill("150g de arroz");
+    await page.getByRole("button", { name: "Calcular unidades" }).click();
+    await expect(page.locator(".gi-badge")).toHaveText("IG 73");
   });
 
   test("changing a food's grams recalculates the units", async ({ page }) => {

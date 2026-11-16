@@ -278,7 +278,7 @@ function FoodRow({
                 : (item.food_item?.gi_source ?? undefined)
             }
           >
-            IG {item.gi_estimated ? "~" : ""}
+            {t(lang, "giAbbreviation")} {item.gi_estimated ? "~" : ""}
             {gi}
           </span>
         )}
