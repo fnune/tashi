@@ -1,6 +1,6 @@
 # Tashi
 
-Tashi is a calculator for people with type 1 diabetes. It counts the carbs in a meal you describe, then helps you calculate insulin units from your own ratios, correction factor and pen increment, nothing else.
+Tashi is a calculator for people with type 1 diabetes. It counts the carbs in a meal you describe, then helps you calculate insulin units from your own ratios, correction factor and pen increment.
 
 Describe what you're eating in plain words, in Spanish or English, and Tashi breaks it down into a table of foods, weights and net carbs, with the units of fast-acting insulin that your own ratios and correction factor work out to. An AI model reads the description; the carbs come from nutrition databases (USDA, BEDCA), and every value shows its source and can be edited. Tashi also keeps a diary of meals, insulin and glucose readings, and counts the insulin still active from earlier injections.
 
@@ -9,7 +9,7 @@ Describe what you're eating in plain words, in Spanish or English, and Tashi bre
 
 ## Install your own
 
-**[Install Tashi](INSTALL.md)**: about 20 minutes in a web browser, with free GitHub and Cloudflare accounts and a few dollars of Anthropic credit. Your Tashi runs in your own accounts, and your diary stays there.
+[INSTALL.md](INSTALL.md) sets up your own copy in a web browser. It needs GitHub, Cloudflare and Anthropic accounts; Anthropic charges a small amount per calculation. The copy runs in your Cloudflare account and the diary is stored there, and the author has no access to it.
 
 To run it on a server of your own instead, see [Running on your own server](docs/self-hosting.md#running-on-your-own-server).
 

@@ -1,18 +1,18 @@
 # Install Tashi
 
-This page puts your own Tashi on the internet, at an address only you know, in about 20 minutes. You do everything in a web browser; nothing gets installed on your computer.
+This page sets up your own copy of Tashi at an address only you know. Every step happens in a web browser; nothing is installed on your computer.
 
-Your Tashi runs in your own accounts, and your diary stays in them. Nobody else, including the people who make Tashi, can see it.
+Your copy runs in your own GitHub and Cloudflare accounts, and the diary is stored in your Cloudflare account. The author has no access to it.
 
 ## What you need
 
-- **An email address** for three free accounts: GitHub (keeps your copy of Tashi), Cloudflare (runs it) and Anthropic (reads your meal descriptions).
-- **A payment card for Anthropic only.** Anthropic charges for reading meals: a calculation costs a fraction of a cent, so $5 of credit lasts months. GitHub and Cloudflare are free and ask for no card.
-- **A password manager, or somewhere safe to write a password.** Tashi has no "forgot my password" yet.
+- An email address for three accounts: GitHub (keeps your copy of Tashi), Cloudflare (runs it) and Anthropic (reads your meal descriptions).
+- A payment card for Anthropic only. Anthropic charges for reading meals, a fraction of a cent per calculation. GitHub and Cloudflare ask for no card on their free plans.
+- A password manager, or somewhere safe to write a password. Tashi has no "forgot my password" yet.
 
 ## 1. Make your copy of Tashi on GitHub
 
-1. Go to [github.com/signup](https://github.com/signup) and create a free account. Confirm your email when GitHub asks.
+1. Go to [github.com/signup](https://github.com/signup) and create an account. Confirm your email when GitHub asks.
 2. Open [github.com/fnune/tashi](https://github.com/fnune/tashi).
 3. Press **Fork** near the top right, then **Create fork**.
 4. In your copy, open the **Actions** tab, choose **Stay up to date** on the left, and enable it if GitHub asks. This lets your copy update itself every day ([Keeping Tashi up to date](#keeping-tashi-up-to-date)).
@@ -21,7 +21,7 @@ You now have your own copy at `github.com/your-name/tashi`. Leave that tab open.
 
 ## 2. Create your Cloudflare account
 
-1. Go to [dash.cloudflare.com/sign-up](https://dash.cloudflare.com/sign-up) and create a free account. Confirm your email.
+1. Go to [dash.cloudflare.com/sign-up](https://dash.cloudflare.com/sign-up) and create an account. Confirm your email.
 2. If Cloudflare asks you to choose a subdomain for Workers, pick a name you like. Your Tashi's address will be `tashi.that-name.workers.dev`.
 
 ## 3. Let Cloudflare build your Tashi
