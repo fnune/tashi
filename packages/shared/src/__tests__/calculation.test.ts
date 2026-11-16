@@ -131,8 +131,8 @@ describe("calculateDose rounding", () => {
     };
     const items = [makeItem({ net_carbs_g: 14 })];
     const result = calculateDose(items, 10, settings, 170);
-    expect(result.correction!.correction_dose).toBe(1.4);
-    expect(result.correction!.total_dose).toBe(3);
+    expect(result.correction!.correction_units).toBe(1.4);
+    expect(result.correction!.total_units).toBe(3);
   });
 
   it("avoids compounding rounding errors from individual components", () => {
@@ -142,7 +142,7 @@ describe("calculateDose rounding", () => {
     // Correctly from raw sum: round(0.3 + 0.3, 0.5) = round(0.6) = 0.5
     const items = [makeItem({ net_carbs_g: 3 })];
     const result = calculateDose(items, 10, BASE_SETTINGS, 112);
-    expect(result.correction!.total_dose).toBe(0.5);
+    expect(result.correction!.total_units).toBe(0.5);
   });
 });
 
@@ -154,8 +154,8 @@ describe("calculateDose insulin on board", () => {
     const result = calculateDose(items, 10, BASE_SETTINGS, 200, 1.0);
     expect(result.correction!.iob).toBe(1);
     expect(result.correction!.iob_reduction).toBe(1);
-    expect(result.correction!.correction_dose).toBe(1.5);
-    expect(result.correction!.total_dose).toBe(6.5);
+    expect(result.correction!.correction_units).toBe(1.5);
+    expect(result.correction!.total_units).toBe(6.5);
   });
 
   it("does not reduce the meal dose when blood sugar is at target", () => {
@@ -163,8 +163,8 @@ describe("calculateDose insulin on board", () => {
     const items = [makeItem({ net_carbs_g: 50 })];
     const result = calculateDose(items, 10, BASE_SETTINGS, 100, 40);
     expect(result.correction!.iob_reduction).toBe(0);
-    expect(result.correction!.correction_dose).toBe(0);
-    expect(result.correction!.total_dose).toBe(5);
+    expect(result.correction!.correction_units).toBe(0);
+    expect(result.correction!.total_units).toBe(5);
   });
 
   it("caps the IOB reduction at the size of the correction", () => {
@@ -172,8 +172,8 @@ describe("calculateDose insulin on board", () => {
     const items = [makeItem({ net_carbs_g: 50 })];
     const result = calculateDose(items, 10, BASE_SETTINGS, 140, 5);
     expect(result.correction!.iob_reduction).toBe(1);
-    expect(result.correction!.correction_dose).toBe(0);
-    expect(result.correction!.total_dose).toBe(5);
+    expect(result.correction!.correction_units).toBe(0);
+    expect(result.correction!.total_units).toBe(5);
   });
 
   it("ignores IOB with no correction (no blood sugar entered)", () => {
@@ -204,41 +204,43 @@ describe("calculateDose fat/protein adjustment", () => {
     const items = [makeItem({ fat_g: 35, protein_g: 10, net_carbs_g: 50 })];
     const result = calculateDose(items, 10, BASE_SETTINGS);
     expect(result.fat_protein_adjustment).toBeDefined();
-    expect(result.fat_protein_adjustment!.adjustment_dose).toBe(1);
+    expect(result.fat_protein_adjustment!.adjustment_units).toBe(1);
     expect(result.fat_protein_adjustment!.multiplier).toBe(0.2);
     expect(result.fat_protein_adjustment!.threshold_met).toBe("high_fat");
   });
 
-  it("total_dose = round(rawFood + rawAdjustment) without correction", () => {
+  it("total_units = round(rawFood + rawAdjustment) without correction", () => {
     // 50g carbs / ratio 10 = 5U raw food, 5 * 0.2 = 1U fp
     // total = round(5 + 1, 0.5) = 6
     const items = [makeItem({ fat_g: 35, net_carbs_g: 50 })];
     const result = calculateDose(items, 10, BASE_SETTINGS);
-    expect(result.fat_protein_adjustment!.total_dose).toBe(6);
+    expect(result.fat_protein_adjustment!.total_units).toBe(6);
   });
 
-  it("total_dose includes correction when both apply", () => {
+  it("total_units includes correction when both apply", () => {
     const items = [makeItem({ fat_g: 35, net_carbs_g: 50 })];
     // 50g / 10 = 5U food, blood sugar 180 target 100 factor 40 => 2U correction
     // 5 * 0.2 = 1U fp, total = round(5 + 2 + 1, 0.5) = 8
     const result = calculateDose(items, 10, BASE_SETTINGS, 180);
     expect(result.correction).toBeDefined();
     expect(result.fat_protein_adjustment).toBeDefined();
-    expect(result.fat_protein_adjustment!.total_dose).toBe(8);
+    expect(result.fat_protein_adjustment!.total_units).toBe(8);
   });
 
-  it("rounds adjustment_dose for display only", () => {
+  it("rounds adjustment_units for display only", () => {
     // 30g carbs / ratio 10 = 3U raw food dose
     // 3U * 0.20 = 0.6 => display-rounded to 0.6, NOT pen-rounded to 0.5
     const items = [makeItem({ fat_g: 35, net_carbs_g: 30 })];
     const result = calculateDose(items, 10, BASE_SETTINGS);
-    expect(result.fat_protein_adjustment!.adjustment_dose).toBe(0.6);
+    expect(result.fat_protein_adjustment!.adjustment_units).toBe(0.6);
   });
 
-  it("total_dose is never negative", () => {
+  it("total_units is never negative", () => {
     const items = [makeItem({ fat_g: 35, net_carbs_g: 5 })];
     const result = calculateDose(items, 10, BASE_SETTINGS, 40);
-    expect(result.fat_protein_adjustment!.total_dose).toBeGreaterThanOrEqual(0);
+    expect(result.fat_protein_adjustment!.total_units).toBeGreaterThanOrEqual(
+      0,
+    );
   });
 
   it("uses custom multiplier from settings", () => {
@@ -247,7 +249,7 @@ describe("calculateDose fat/protein adjustment", () => {
     // 5U * 0.50 = 2.5U adjustment
     const items = [makeItem({ fat_g: 35, net_carbs_g: 50 })];
     const result = calculateDose(items, 10, settings);
-    expect(result.fat_protein_adjustment!.adjustment_dose).toBe(2.5);
+    expect(result.fat_protein_adjustment!.adjustment_units).toBe(2.5);
   });
 });
 
@@ -357,8 +359,8 @@ describe("recalculateResult", () => {
     meal_window: { name: "lunch", start_hour: 11, end_hour: 16, ratio: 10 },
     items: [makeItem()],
     total_net_carbs_g: 30,
-    carb_dose: 3,
-    total_dose: 3.5,
+    carb_units: 3,
+    total_units: 3.5,
     profile: { id: "sick", name: "", percent: 20 },
   };
 
@@ -375,8 +377,8 @@ describe("recalculateResult", () => {
       BASE_SETTINGS,
     );
     expect(result.total_net_carbs_g).toBe(60);
-    expect(result.carb_dose).toBe(6);
-    expect(result.total_dose).toBe(7);
+    expect(result.carb_units).toBe(6);
+    expect(result.total_units).toBe(7);
   });
 
   it("keeps the glucose reading the result was made with", () => {
@@ -387,17 +389,17 @@ describe("recalculateResult", () => {
           current_blood_sugar: 180,
           target_blood_sugar: 100,
           correction_factor: 40,
-          correction_dose: 2,
+          correction_units: 2,
           iob: 0,
           iob_reduction: 0,
-          total_dose: 5,
+          total_units: 5,
         },
       },
       original.items,
       BASE_SETTINGS,
     );
-    expect(corrected.correction?.correction_dose).toBe(2);
-    expect(corrected.total_dose).toBe(6);
+    expect(corrected.correction?.correction_units).toBe(2);
+    expect(corrected.total_units).toBe(6);
   });
 });
 

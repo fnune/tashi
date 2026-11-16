@@ -87,8 +87,8 @@ export function simpleMeal(n: number, minutes: number): MealEntry {
       },
     ],
     total_net_carbs_g: 20,
-    carb_dose: 2,
-    total_dose: 2,
+    carb_units: 2,
+    total_units: 2,
   };
 }
 
@@ -121,24 +121,24 @@ export function fullMeal(n: number, minutes: number): MealEntry {
       base.items[0] as MealEntry["items"][number],
     ],
     total_net_carbs_g: 30,
-    carb_dose: 3,
-    total_dose: 5.5,
+    carb_units: 3,
+    total_units: 5.5,
     correction: {
       current_blood_sugar: 180,
       target_blood_sugar: 100,
       correction_factor: 40,
-      correction_dose: 2,
+      correction_units: 2,
       iob: 0,
       iob_reduction: 0,
-      total_dose: 5,
+      total_units: 5,
     },
     fat_protein_adjustment: {
       total_fat_g: 30,
       total_protein_g: 70,
       threshold_met: "energy_ratio",
       multiplier: 0.2,
-      adjustment_dose: 0.6,
-      total_dose: 5.5,
+      adjustment_units: 0.6,
+      total_units: 5.5,
     },
     trace: {
       searches: [

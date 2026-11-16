@@ -115,7 +115,7 @@ describe("Calculator", () => {
     expect(chicken.net_carbs_g).toBe(0);
 
     expect(result.total_net_carbs_g).toBeCloseTo(41.7, 0);
-    expect(result.carb_dose).toBe(4);
+    expect(result.carb_units).toBe(4);
 
     expect(result.trace).toBeDefined();
     expect(result.trace!.model).toBe("fake");
@@ -216,8 +216,8 @@ describe("Calculator", () => {
 
     expect(result.correction).toBeDefined();
     expect(result.correction!.current_blood_sugar).toBe(180);
-    expect(result.correction!.correction_dose).toBeGreaterThan(0);
-    expect(result.correction!.total_dose).toBeGreaterThan(result.carb_dose);
+    expect(result.correction!.correction_units).toBeGreaterThan(0);
+    expect(result.correction!.total_units).toBeGreaterThan(result.carb_units);
   });
 
   it("reduces dose when blood sugar is below target (hypo)", async () => {
@@ -247,9 +247,9 @@ describe("Calculator", () => {
     );
 
     expect(result.correction).toBeDefined();
-    expect(result.correction!.correction_dose).toBeLessThan(0);
-    expect(result.correction!.total_dose).toBeLessThan(result.carb_dose);
-    expect(result.correction!.total_dose).toBeGreaterThanOrEqual(0);
+    expect(result.correction!.correction_units).toBeLessThan(0);
+    expect(result.correction!.total_units).toBeLessThan(result.carb_units);
+    expect(result.correction!.total_units).toBeGreaterThanOrEqual(0);
   });
 
   it("uses DB glycemic index over LLM estimate", async () => {
@@ -368,8 +368,8 @@ describe("Calculator", () => {
       "lunch",
     );
 
-    expect(result05.carb_dose % 0.5).toBe(0);
-    expect(result1.carb_dose % 1).toBe(0);
+    expect(result05.carb_units % 0.5).toBe(0);
+    expect(result1.carb_units % 1).toBe(0);
   });
 
   it("prefers user-provided carbs (per_100g) over USDA", async () => {
@@ -706,9 +706,9 @@ describe("Calculator profiles", () => {
       180,
       "lunch",
     );
-    expect(result.carb_dose).toBe(5);
-    expect(result.correction?.correction_dose).toBe(2);
-    expect(result.total_dose).toBe(8.5);
+    expect(result.carb_units).toBe(5);
+    expect(result.correction?.correction_units).toBe(2);
+    expect(result.total_units).toBe(8.5);
     expect(result.profile).toEqual({ id: "p", name: "Test", percent: 20 });
   });
 
@@ -722,8 +722,8 @@ describe("Calculator profiles", () => {
       "lunch",
     );
     expect(result.meal_window.ratio).toBe(5);
-    expect(result.carb_dose).toBe(10);
-    expect(result.total_dose).toBe(10);
+    expect(result.carb_units).toBe(10);
+    expect(result.total_units).toBe(10);
   });
 
   it("falls back to the window's ratio when the profile has none for it", async () => {

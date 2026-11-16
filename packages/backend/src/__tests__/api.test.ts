@@ -181,7 +181,7 @@ describe("API routes", () => {
     const timeline = await readTimeline(app);
     const meal = timeline.find((e) => e.id === ids.meal_entry_id);
     const insulin = timeline.find((e) => e.id === ids.insulin_entry_id);
-    expect(meal?.type === "meal" && meal.carb_dose).toBe(result.carb_dose);
+    expect(meal?.type === "meal" && meal.carb_units).toBe(result.carb_units);
     expect(insulin?.type === "fast_insulin" && insulin.units).toBe(2.5);
     expect(insulin?.type === "fast_insulin" && insulin.related_meal_id).toBe(
       ids.meal_entry_id,
@@ -375,8 +375,8 @@ describe("API routes", () => {
     expect(correction).toBeDefined();
     expect(correction!.iob).toBeGreaterThan(1);
     expect(correction!.iob_reduction).toBe(1);
-    expect(correction!.correction_dose).toBe(0);
-    expect(correction!.total_dose).toBe(5);
+    expect(correction!.correction_units).toBe(0);
+    expect(correction!.total_units).toBe(5);
   });
 
   it("GET /api/iob errors with a code when no insulin is configured", async () => {

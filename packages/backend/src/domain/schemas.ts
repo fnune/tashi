@@ -184,10 +184,10 @@ export const correctionSchema = z.object({
   current_blood_sugar: z.number(),
   target_blood_sugar: z.number(),
   correction_factor: z.number(),
-  correction_dose: z.number(),
+  correction_units: z.number(),
   iob: z.number(),
   iob_reduction: z.number(),
-  total_dose: z.number(),
+  total_units: z.number(),
 }) satisfies z.ZodType<NonNullable<CalculationResult["correction"]>>;
 
 export const fatProteinAdjustmentSchema = z.object({
@@ -195,8 +195,8 @@ export const fatProteinAdjustmentSchema = z.object({
   total_protein_g: z.number(),
   threshold_met: z.string(),
   multiplier: z.number(),
-  adjustment_dose: z.number(),
-  total_dose: z.number(),
+  adjustment_units: z.number(),
+  total_units: z.number(),
 }) satisfies z.ZodType<
   NonNullable<CalculationResult["fat_protein_adjustment"]>
 >;
@@ -226,8 +226,8 @@ export const storedTimelineSchema = z.array(
       meal_window: mealWindowSchema,
       items: z.array(calculatedItemSchema),
       total_net_carbs_g: z.number(),
-      carb_dose: z.number(),
-      total_dose: z.number(),
+      carb_units: z.number(),
+      total_units: z.number(),
       correction: correctionSchema.optional(),
       fat_protein_adjustment: fatProteinAdjustmentSchema.optional(),
       trace: parseTraceSchema.optional(),

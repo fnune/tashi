@@ -114,10 +114,10 @@ interface CorrectionResult {
   current_blood_sugar: number;
   target_blood_sugar: number;
   correction_factor: number;
-  correction_dose: number;
+  correction_units: number;
   iob: number;
   iob_reduction: number;
-  total_dose: number;
+  total_units: number;
 }
 
 interface FatProteinAdjustmentResult {
@@ -125,8 +125,8 @@ interface FatProteinAdjustmentResult {
   total_protein_g: number;
   threshold_met: string;
   multiplier: number;
-  adjustment_dose: number;
-  total_dose: number;
+  adjustment_units: number;
+  total_units: number;
 }
 
 export function correctionComponents(
@@ -175,10 +175,10 @@ export function calculateDose(
       current_blood_sugar: currentBloodSugar,
       target_blood_sugar: settings.target_blood_sugar,
       correction_factor: components.correctionFactor,
-      correction_dose: roundDisplay(rawCorrectionDose),
+      correction_units: roundDisplay(rawCorrectionDose),
       iob: roundDisplay(iob),
       iob_reduction: roundDisplay(iobReduction),
-      total_dose: Math.max(
+      total_units: Math.max(
         0,
         roundToIncrement(
           rawFoodDose + rawCorrectionDose,
@@ -199,8 +199,8 @@ export function calculateDose(
         total_protein_g: threshold.total_protein_g,
         threshold_met: threshold.reason,
         multiplier: settings.fat_protein_multiplier,
-        adjustment_dose: roundDisplay(rawAdjustmentDose),
-        total_dose: Math.max(
+        adjustment_units: roundDisplay(rawAdjustmentDose),
+        total_units: Math.max(
           0,
           roundToIncrement(
             rawFoodDose + rawCorrectionDose + rawAdjustmentDose,
@@ -264,8 +264,8 @@ export function recalculateResult(
     ...rest,
     items,
     total_net_carbs_g: Math.round(dose.totalNetCarbs * 10) / 10,
-    carb_dose: dose.foodDose,
-    total_dose: dose.totalDose,
+    carb_units: dose.foodDose,
+    total_units: dose.totalDose,
   };
   if (dose.correction) next.correction = dose.correction;
   if (dose.fat_protein_adjustment) {

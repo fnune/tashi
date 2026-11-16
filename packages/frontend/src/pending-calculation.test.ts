@@ -34,8 +34,8 @@ const pending: CalculatorFormState = {
     meal_window: { name: "lunch", start_hour: 11, end_hour: 16, ratio: 10 },
     items: [],
     total_net_carbs_g: 45,
-    carb_dose: 4.5,
-    total_dose: 4.5,
+    carb_units: 4.5,
+    total_units: 4.5,
   },
 };
 
@@ -63,6 +63,16 @@ describe("a calculation that was not logged", () => {
     expect(
       restorePendingCalculation(store, later(KEEP_PENDING_FOR_MS + 1)),
     ).toBeNull();
+    expect(store.items.has(PENDING_CALCULATION_KEY)).toBe(false);
+  });
+
+  it("is dropped when it was saved with the old field names", () => {
+    const store = memoryStore();
+    store.setItem(
+      PENDING_CALCULATION_KEY,
+      JSON.stringify(pending).replace("carb_units", "carb_dose"),
+    );
+    expect(restorePendingCalculation(store, later(0))).toBeNull();
     expect(store.items.has(PENDING_CALCULATION_KEY)).toBe(false);
   });
 

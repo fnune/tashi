@@ -134,25 +134,25 @@ export interface CalculationResult {
   meal_window: MealWindow;
   items: CalculatedItem[];
   total_net_carbs_g: number;
-  carb_dose: number;
-  total_dose?: number;
+  carb_units: number;
+  total_units?: number;
   profile?: AppliedProfile;
   correction?: {
     current_blood_sugar: number;
     target_blood_sugar: number;
     correction_factor: number;
-    correction_dose: number;
+    correction_units: number;
     iob: number;
     iob_reduction: number;
-    total_dose: number;
+    total_units: number;
   };
   fat_protein_adjustment?: {
     total_fat_g: number;
     total_protein_g: number;
     threshold_met: string;
     multiplier: number;
-    adjustment_dose: number;
-    total_dose: number;
+    adjustment_units: number;
+    total_units: number;
   };
   trace?: ParseTrace;
 }
@@ -172,8 +172,8 @@ export interface MealEntry extends BaseEntry {
   meal_window: MealWindow;
   items: CalculatedItem[];
   total_net_carbs_g: number;
-  carb_dose: number;
-  total_dose: number;
+  carb_units: number;
+  total_units: number;
   correction?: CalculationResult["correction"];
   fat_protein_adjustment?: CalculationResult["fat_protein_adjustment"];
   trace?: ParseTrace;

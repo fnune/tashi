@@ -14,8 +14,8 @@ import { Stepper } from "./ui/Stepper.js";
 import "./DoseResult.css";
 import { numberFormat } from "../numberFormat.js";
 
-export type MealResult = Omit<CalculationResult, "carb_dose"> & {
-  carb_dose?: number;
+export type MealResult = Omit<CalculationResult, "carb_units"> & {
+  carb_units?: number;
 };
 
 const FAT_PROTEIN_REASON: Record<string, TranslationKey> = {
@@ -49,10 +49,10 @@ function sourceOf(item: CalculatedItem): { label: string; url: string | null } {
 
 export function totalDose(result: MealResult): number | undefined {
   return (
-    result.total_dose ??
-    result.fat_protein_adjustment?.total_dose ??
-    result.correction?.total_dose ??
-    result.carb_dose
+    result.total_units ??
+    result.fat_protein_adjustment?.total_units ??
+    result.correction?.total_units ??
+    result.carb_units
   );
 }
 
@@ -83,7 +83,7 @@ function doseLines(
 
   const correction = result.correction;
   if (correction) {
-    const beforeIob = correction.correction_dose + correction.iob_reduction;
+    const beforeIob = correction.correction_units + correction.iob_reduction;
     lines.push({
       key: "correction",
       label: t(lang, "correction"),
@@ -98,7 +98,7 @@ function doseLines(
         units: -correction.iob_reduction,
       });
     }
-    sum += correction.correction_dose;
+    sum += correction.correction_units;
   }
 
   const fatProtein = result.fat_protein_adjustment;
@@ -108,9 +108,9 @@ function doseLines(
       key: "fatProtein",
       label: t(lang, "doseFatProtein"),
       ...(reason ? { detail: t(lang, reason) } : {}),
-      units: fatProtein.adjustment_dose,
+      units: fatProtein.adjustment_units,
     });
-    sum += fatProtein.adjustment_dose;
+    sum += fatProtein.adjustment_units;
   }
 
   const profile = result.profile;

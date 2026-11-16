@@ -253,6 +253,7 @@ CREATE TABLE meal_traces (
 ) STRICT;
 ```
 
+- The column names keep "dose" although the app and its API now say units (`carb_units`, `total_units`, `correction_units`, `adjustment_units`), so an existing database needs no migration; only the repository maps one to the other.
 - `carb_dose_units` is the carbohydrate units rounded to the pen increment. The other parts are `correction_dose_units`, `iob_reduction_units` and `adjustment_dose_units`; the running totals after each step are not stored. `total_dose_units` is the whole calculated total, stored as the person saw it, and a test checks it against the parts with the code's clamping and rounding.
 - A row in `meal_corrections` means a glucose reading was entered for that meal (the correction units are negative below target). A row in `meal_fat_protein_adjustments` means the fat and protein threshold was met. A row in `meal_traces` means the parser recorded how it got its answer.
 - `source` says where the figures of an item came from, and the source row says whether they are an estimate; there is no separate flag. The label the interface shows for a source is a translation keyed by its id, not a column. `notes` and `warning` are free text from the parser: absent is null, never an empty string.

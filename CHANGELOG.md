@@ -13,3 +13,4 @@ What changes between versions of Tashi, for people who run their own copy. Each 
 - Your copy on GitHub can update itself every day. Turn it on once, as step 4 of [making your copy](INSTALL.md#1-make-your-copy-of-tashi-on-github) describes.
 - When the server does not answer for 15 s, or a screen fails, Tashi says so and offers to report it, instead of staying on a blank screen.
 - The Node server takes command-line options: `--database`, `--port` and `--base-path` (`tashi --help`).
+- Tashi now says insulin units, in English and Spanish ("unidades"), where it used to say dose ("dosis"). The API's fields were renamed to match (`carb_units`, `total_units`, `correction_units` and `adjustment_units`). Nothing to do: your database is unchanged, and a diary file exported earlier still imports.

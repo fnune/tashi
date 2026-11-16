@@ -83,9 +83,43 @@ export function readDiary(text: string): DiaryReading {
   if (typeof value.version !== "number" || value.version > DIARY_VERSION) {
     return { ok: false, problem: "newer_version" };
   }
-  return looksLikeDiary(value)
-    ? { ok: true, diary: value }
+  const upgraded = {
+    ...value,
+    timeline: Array.isArray(value.timeline)
+      ? value.timeline.map(renameLegacyDoseFields)
+      : value.timeline,
+  };
+  return looksLikeDiary(upgraded)
+    ? { ok: true, diary: upgraded }
     : { ok: false, problem: "not_a_diary" };
+}
+
+const LEGACY_FIELDS = {
+  carb_dose: "carb_units",
+  total_dose: "total_units",
+  correction_dose: "correction_units",
+  adjustment_dose: "adjustment_units",
+} as const;
+
+function renameFields(value: unknown): unknown {
+  if (!isRecord(value)) return value;
+  return Object.fromEntries(
+    Object.entries(value).map(([key, field]) => [
+      key in LEGACY_FIELDS
+        ? LEGACY_FIELDS[key as keyof typeof LEGACY_FIELDS]
+        : key,
+      field,
+    ]),
+  );
+}
+
+function renameLegacyDoseFields(entry: unknown): unknown {
+  const renamed = renameFields(entry);
+  if (!isRecord(renamed)) return renamed;
+  for (const part of ["correction", "fat_protein_adjustment"]) {
+    if (part in renamed) renamed[part] = renameFields(renamed[part]);
+  }
+  return renamed;
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {

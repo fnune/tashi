@@ -262,8 +262,8 @@ export class SqliteTimelineRepository implements TimelineRepository {
         input_language: meal.language,
         ratio_version_id: ratioVersionId,
         total_carbs_g: meal.total_net_carbs_g,
-        carb_dose_units: meal.carb_dose,
-        total_dose_units: meal.total_dose,
+        carb_dose_units: meal.carb_units,
+        total_dose_units: meal.total_units,
         catalog_release: this.catalogRelease,
       }),
     );
@@ -310,7 +310,7 @@ export class SqliteTimelineRepository implements TimelineRepository {
           current_glucose_mg_dl: toMgDl(c.current_blood_sugar, unit),
           target_glucose_mg_dl: toMgDl(c.target_blood_sugar, unit),
           glucose_drop_mg_dl_per_unit: toMgDl(c.correction_factor, unit),
-          correction_dose_units: c.correction_dose,
+          correction_dose_units: c.correction_units,
           iob_units: c.iob,
           iob_reduction_units: c.iob_reduction,
         }),
@@ -328,7 +328,7 @@ export class SqliteTimelineRepository implements TimelineRepository {
             | "fat_and_protein"
             | "energy_ratio",
           multiplier: a.multiplier,
-          adjustment_dose_units: a.adjustment_dose,
+          adjustment_dose_units: a.adjustment_units,
         }),
       );
     }
@@ -576,8 +576,8 @@ export class SqliteTimelineRepository implements TimelineRepository {
             };
           }),
         total_net_carbs_g: row.total_carbs_g,
-        carb_dose: row.carb_dose_units,
-        total_dose: row.total_dose_units,
+        carb_units: row.carb_dose_units,
+        total_units: row.total_dose_units,
       };
       if (correction) {
         meal.correction = {
@@ -593,10 +593,10 @@ export class SqliteTimelineRepository implements TimelineRepository {
             correction.glucose_drop_mg_dl_per_unit,
             display.unit,
           ),
-          correction_dose: correction.correction_dose_units,
+          correction_units: correction.correction_dose_units,
           iob: correction.iob_units,
           iob_reduction: correction.iob_reduction_units,
-          total_dose: adjustment
+          total_units: adjustment
             ? Math.max(
                 0,
                 roundToIncrement(
@@ -613,8 +613,8 @@ export class SqliteTimelineRepository implements TimelineRepository {
           total_protein_g: adjustment.total_protein_g,
           threshold_met: adjustment.trigger,
           multiplier: adjustment.multiplier,
-          adjustment_dose: adjustment.adjustment_dose_units,
-          total_dose: row.total_dose_units,
+          adjustment_units: adjustment.adjustment_dose_units,
+          total_units: row.total_dose_units,
         };
       }
       if (trace) {

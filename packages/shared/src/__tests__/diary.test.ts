@@ -35,8 +35,8 @@ const meal = (n: number): TimelineEntry => ({
   meal_window: { name: "lunch", start_hour: 11, end_hour: 16, ratio: 10 },
   items: [],
   total_net_carbs_g: 0,
-  carb_dose: 0,
-  total_dose: 0,
+  carb_units: 0,
+  total_units: 0,
 });
 
 function recordingApi(timeline: TimelineEntry[], pageSize = 2) {
@@ -121,6 +121,33 @@ describe("reading a diary file", () => {
   it("reads a file it wrote", () => {
     const diary = diaryOf([glucose(1)]);
     expect(readDiary(JSON.stringify(diary))).toEqual({ ok: true, diary });
+  });
+
+  it("reads a diary exported before the fields were called units", () => {
+    const legacyMeal = {
+      ...meal(1),
+      carb_units: undefined,
+      total_units: undefined,
+      carb_dose: 2,
+      total_dose: 5.5,
+      correction: {
+        current_blood_sugar: 180,
+        target_blood_sugar: 100,
+        correction_factor: 40,
+        correction_dose: 2,
+        iob: 0,
+        iob_reduction: 0,
+        total_dose: 5,
+      },
+    };
+    const reading = readDiary(
+      JSON.stringify({ ...diaryOf([]), timeline: [legacyMeal] }),
+    );
+    expect(reading.ok && reading.diary.timeline[0]).toMatchObject({
+      carb_units: 2,
+      total_units: 5.5,
+      correction: { correction_units: 2, total_units: 5 },
+    });
   });
 
   it("says why it cannot read a file", () => {
