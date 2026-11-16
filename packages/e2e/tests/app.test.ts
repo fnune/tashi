@@ -384,6 +384,18 @@ test.describe("full user flow", () => {
       "Day 1 of 28 · Period",
     );
     await expect(page.locator(".cycle-banner .cycle-strips")).toBeVisible();
+    await page.setViewportSize({ width: 360, height: 800 });
+    const labels = page.locator(".cycle-banner .cycle-strips-labels span");
+    await expect(labels).toHaveCount(4);
+    const boxes = await labels.evaluateAll((spans) =>
+      spans.map((span) => {
+        const { left, right } = span.getBoundingClientRect();
+        return { left, right };
+      }),
+    );
+    for (const [i, box] of boxes.slice(1).entries()) {
+      expect(box.left - (boxes[i]?.right ?? 0)).toBeGreaterThanOrEqual(4);
+    }
     await page.getByRole("button", { name: "Switch profile?" }).click();
     const sheet = page.getByRole("dialog");
     await expect(sheet).toContainText("Your period has started");
