@@ -1,5 +1,7 @@
 # Tashi
 
+![Three phone screens of Tashi: the foods and units of a meal, the glucose reading with the cycle and ratio profiles, and the history of meals, insulin and glucose.](docs/images/hero.png)
+
 Tashi is a calculator for people with type 1 diabetes. It counts the carbs in a meal you describe, then helps you calculate insulin units from your own ratios, correction factor and pen increment.
 
 Describe what you're eating in plain words, in Spanish or English, and Tashi breaks it down into a table of foods, weights and net carbs, with the units of fast-acting insulin that your own ratios and correction factor work out to. An AI model reads the description; the carbs come from nutrition databases (USDA, BEDCA), and every value shows its source and can be edited. Tashi also keeps a diary of meals, insulin and glucose readings, and counts the insulin still active from earlier injections.
