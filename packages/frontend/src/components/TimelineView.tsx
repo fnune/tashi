@@ -22,6 +22,7 @@ import { Sheet } from "./ui/Sheet.js";
 import { Stepper } from "./ui/Stepper.js";
 import "./TimelineView.css";
 import { toLocalDatetime } from "../localDateTime.js";
+import { mealTitle } from "../mealTitle.js";
 import { numberFormat } from "../numberFormat.js";
 
 export interface TimelinePaging {
@@ -124,8 +125,8 @@ function EntryRow({
   let value: string;
   switch (entry.type) {
     case "meal":
-      title = entry.meal_window.name;
-      detail = entry.input_text;
+      title = mealTitle(entry);
+      detail = entry.meal_window.name;
       value = `${decimal.format(entry.total_net_carbs_g)} g`;
       break;
     case "fast_insulin": {

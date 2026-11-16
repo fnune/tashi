@@ -58,7 +58,10 @@ test.describe("full user flow", () => {
     await expect(
       page.locator('.event[data-entry-type="fast_insulin"]'),
     ).toContainText(`${injected}`);
-    await expect(meals).toContainText("150g rice with chicken");
+    await expect(meals.locator(".event-text b")).toHaveText(
+      "150g rice with chicken",
+    );
+    await expect(meals.locator(".event-text span")).toHaveText("lunch");
 
     await meals.click();
     const dialog = page.getByRole("dialog");

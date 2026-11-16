@@ -120,6 +120,12 @@
   min-width: 0;
 }
 
+.event-text b {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 .event-text span {
   font-size: var(--type-secondary-size);
   color: var(--color-fg-muted);
