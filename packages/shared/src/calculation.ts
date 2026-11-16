@@ -264,7 +264,7 @@ export function recalculateResult(
     ...rest,
     items,
     total_net_carbs_g: Math.round(dose.totalNetCarbs * 10) / 10,
-    recommended_dose: dose.foodDose,
+    carb_dose: dose.foodDose,
     total_dose: dose.totalDose,
   };
   if (dose.correction) next.correction = dose.correction;

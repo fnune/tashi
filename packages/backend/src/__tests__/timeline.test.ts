@@ -98,7 +98,7 @@ describe("logging a meal", () => {
     meal_window: { name: "lunch", start_hour: 11, end_hour: 16, ratio: 10 },
     items: [],
     total_net_carbs_g: 30,
-    recommended_dose: 3,
+    carb_dose: 3,
     total_dose: 3,
   };
   const now = new Date("2026-06-13T12:00:00.000Z");

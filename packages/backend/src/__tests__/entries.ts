@@ -87,7 +87,7 @@ export function simpleMeal(n: number, minutes: number): MealEntry {
       },
     ],
     total_net_carbs_g: 20,
-    recommended_dose: 2,
+    carb_dose: 2,
     total_dose: 2,
   };
 }
@@ -121,7 +121,7 @@ export function fullMeal(n: number, minutes: number): MealEntry {
       base.items[0] as MealEntry["items"][number],
     ],
     total_net_carbs_g: 30,
-    recommended_dose: 3,
+    carb_dose: 3,
     total_dose: 5.5,
     correction: {
       current_blood_sugar: 180,

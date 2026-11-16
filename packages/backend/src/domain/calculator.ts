@@ -92,7 +92,7 @@ export class Calculator {
         meal_window: { ...mealWindow, ratio },
         items,
         total_net_carbs_g: Math.round(dose.totalNetCarbs * 10) / 10,
-        recommended_dose: dose.foodDose,
+        carb_dose: dose.foodDose,
         total_dose: dose.totalDose,
         profile: appliedProfile(profile),
         correction: dose.correction,

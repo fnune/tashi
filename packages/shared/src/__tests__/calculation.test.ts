@@ -357,7 +357,7 @@ describe("recalculateResult", () => {
     meal_window: { name: "lunch", start_hour: 11, end_hour: 16, ratio: 10 },
     items: [makeItem()],
     total_net_carbs_g: 30,
-    recommended_dose: 3,
+    carb_dose: 3,
     total_dose: 3.5,
     profile: { id: "sick", name: "", percent: 20 },
   };
@@ -375,7 +375,7 @@ describe("recalculateResult", () => {
       BASE_SETTINGS,
     );
     expect(result.total_net_carbs_g).toBe(60);
-    expect(result.recommended_dose).toBe(6);
+    expect(result.carb_dose).toBe(6);
     expect(result.total_dose).toBe(7);
   });
 

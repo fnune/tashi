@@ -35,7 +35,7 @@ const meal = (n: number): TimelineEntry => ({
   meal_window: { name: "lunch", start_hour: 11, end_hour: 16, ratio: 10 },
   items: [],
   total_net_carbs_g: 0,
-  recommended_dose: 0,
+  carb_dose: 0,
   total_dose: 0,
 });
 

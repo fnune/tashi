@@ -44,9 +44,9 @@ test.describe("full user flow", () => {
     await expect(page.locator(".dose")).toBeVisible({ timeout: 5000 });
 
     await expect(page.locator(".food")).toHaveCount(2);
-    const recommended = await page.locator(".dose-total b").textContent();
+    const calculated = await page.locator(".dose-total b").textContent();
     await page.getByRole("button", { name: "0.5 U more" }).click();
-    const injected = String(Number(recommended) + 0.5);
+    const injected = String(Number(calculated) + 0.5);
     await page.getByRole("button", { name: `Log ${injected} U` }).click();
     await expect(page.getByText(`meal and ${injected} U`)).toBeVisible();
 

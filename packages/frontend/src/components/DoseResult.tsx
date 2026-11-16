@@ -14,8 +14,8 @@ import { Stepper } from "./ui/Stepper.js";
 import "./DoseResult.css";
 import { numberFormat } from "../numberFormat.js";
 
-export type MealResult = Omit<CalculationResult, "recommended_dose"> & {
-  recommended_dose?: number;
+export type MealResult = Omit<CalculationResult, "carb_dose"> & {
+  carb_dose?: number;
 };
 
 const FAT_PROTEIN_REASON: Record<string, TranslationKey> = {
@@ -52,7 +52,7 @@ export function totalDose(result: MealResult): number | undefined {
     result.total_dose ??
     result.fat_protein_adjustment?.total_dose ??
     result.correction?.total_dose ??
-    result.recommended_dose
+    result.carb_dose
   );
 }
 

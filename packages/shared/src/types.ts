@@ -134,7 +134,7 @@ export interface CalculationResult {
   meal_window: MealWindow;
   items: CalculatedItem[];
   total_net_carbs_g: number;
-  recommended_dose: number;
+  carb_dose: number;
   total_dose?: number;
   profile?: AppliedProfile;
   correction?: {
@@ -172,7 +172,7 @@ export interface MealEntry extends BaseEntry {
   meal_window: MealWindow;
   items: CalculatedItem[];
   total_net_carbs_g: number;
-  recommended_dose: number;
+  carb_dose: number;
   total_dose: number;
   correction?: CalculationResult["correction"];
   fat_protein_adjustment?: CalculationResult["fat_protein_adjustment"];

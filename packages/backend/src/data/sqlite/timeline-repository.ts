@@ -262,7 +262,7 @@ export class SqliteTimelineRepository implements TimelineRepository {
         input_language: meal.language,
         ratio_version_id: ratioVersionId,
         total_carbs_g: meal.total_net_carbs_g,
-        carb_dose_units: meal.recommended_dose,
+        carb_dose_units: meal.carb_dose,
         total_dose_units: meal.total_dose,
         catalog_release: this.catalogRelease,
       }),
@@ -576,7 +576,7 @@ export class SqliteTimelineRepository implements TimelineRepository {
             };
           }),
         total_net_carbs_g: row.total_carbs_g,
-        recommended_dose: row.carb_dose_units,
+        carb_dose: row.carb_dose_units,
         total_dose: row.total_dose_units,
       };
       if (correction) {

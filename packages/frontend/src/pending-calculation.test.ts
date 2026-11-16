@@ -34,7 +34,7 @@ const pending: CalculatorFormState = {
     meal_window: { name: "lunch", start_hour: 11, end_hour: 16, ratio: 10 },
     items: [],
     total_net_carbs_g: 45,
-    recommended_dose: 4.5,
+    carb_dose: 4.5,
     total_dose: 4.5,
   },
 };

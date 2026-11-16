@@ -181,9 +181,7 @@ describe("API routes", () => {
     const timeline = await readTimeline(app);
     const meal = timeline.find((e) => e.id === ids.meal_entry_id);
     const insulin = timeline.find((e) => e.id === ids.insulin_entry_id);
-    expect(meal?.type === "meal" && meal.recommended_dose).toBe(
-      result.recommended_dose,
-    );
+    expect(meal?.type === "meal" && meal.carb_dose).toBe(result.carb_dose);
     expect(insulin?.type === "fast_insulin" && insulin.units).toBe(2.5);
     expect(insulin?.type === "fast_insulin" && insulin.related_meal_id).toBe(
       ids.meal_entry_id,

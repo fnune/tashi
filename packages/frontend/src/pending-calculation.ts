@@ -59,6 +59,8 @@ function isPendingCalculation(
     typeof result === "object" &&
     result !== null &&
     "items" in result &&
-    Array.isArray(result.items)
+    Array.isArray(result.items) &&
+    "carb_dose" in result &&
+    typeof result.carb_dose === "number"
   );
 }

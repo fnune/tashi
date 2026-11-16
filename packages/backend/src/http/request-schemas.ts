@@ -64,7 +64,7 @@ export const logMealSchema = z.object({
     meal_window: mealWindowSchema,
     items: z.array(calculatedItemSchema),
     total_net_carbs_g: z.number(),
-    recommended_dose: z.number(),
+    carb_dose: z.number(),
     total_dose: z.number().min(0),
     correction: correctionSchema.optional(),
     fat_protein_adjustment: fatProteinAdjustmentSchema.optional(),

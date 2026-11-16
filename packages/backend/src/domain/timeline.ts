@@ -65,7 +65,7 @@ export type LoggableMeal = Pick<
   | "meal_window"
   | "items"
   | "total_net_carbs_g"
-  | "recommended_dose"
+  | "carb_dose"
   | "correction"
   | "fat_protein_adjustment"
   | "trace"
@@ -92,7 +92,7 @@ export function logMeal(
     meal_window: result.meal_window,
     items: result.items,
     total_net_carbs_g: result.total_net_carbs_g,
-    recommended_dose: result.recommended_dose,
+    carb_dose: result.carb_dose,
     total_dose: result.total_dose,
     correction: result.correction,
     fat_protein_adjustment: result.fat_protein_adjustment,
