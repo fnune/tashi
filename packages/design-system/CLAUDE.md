@@ -7,13 +7,13 @@ You are continuing a design system that another session started. Read `README.md
 - **Tokens are the single source of truth.** Change values only in `tokens/tokens.json`, then run `node scripts/build-css.mjs`. Never edit `tokens/tokens.css` by hand.
 - **No raw colours in components.** Use `--color-*` roles. If a component needs a colour that has no role, add a role to both `theme.light` and `theme.dark` in `tokens.json`, add its pairs to `scripts/check-contrast.mjs`, and document it in `docs/components.md`.
 - **Contrast must pass.** Run `node scripts/check-contrast.mjs` after any colour change. It must exit 0. Text needs 4.5:1; icons, focus rings, chart lines and large text need 3:1. Regenerate the table in `docs/accessibility.md` with `--markdown`.
-- **Stay inside Air.** No cards, no section borders, no drop shadows, no gradients (the dose card is the one exception, D-15). Grouping comes from space (`--space-section`, 40 px) and headings. If a screen feels like it needs boxes, add space or split the screen first. The only lines allowed are the light 1 px `line` dividers between rows of long lists (Historial entries, Ajustes rows), as in variant B2, and the nav bar's top line (D-11). No dividers between short groups, stats or chips.
+- **Stay inside Air.** No cards, no section borders, no drop shadows, no gradients (the result card is the one exception, D-15). Grouping comes from space (`--space-section`, 40 px) and headings. If a screen feels like it needs boxes, add space or split the screen first. The only lines allowed are the light 1 px `line` dividers between rows of long lists (Historial entries, Ajustes rows), as in variant B2, and the nav bar's top line (D-11). No dividers between short groups, stats or chips.
 - **One primary action per screen**, in `accent`. Alternatives are secondary (fill) or plain text buttons. Never a big "Accept" next to a tiny "Not now".
-- **Touch targets ≥ 44 px.** Anything that changes a dose: 56–60 px.
+- **Touch targets ≥ 44 px.** Anything that changes the units: 56–60 px.
 - **Text must scale.** Use rem (web) or Dynamic Type / sp (native). Test at 200 % text size. The B3 variant in the reference shows the expected reflow.
 - **Copy is Spanish (es-ES)** and follows `docs/content.md`: decimal comma, space before units and %, true minus sign (−), 24-hour times. Calm, plain, never blaming.
 - **Status colour never stands alone.** Pair it with an icon and/or words.
-- **Medical safety:** never show more precision than the user's pen allows (0,5 or 1 U). Suggestions are suggestions: the user confirms every dose. Do not add auto-logging of doses.
+- **Medical safety:** never show more precision than the user's pen allows (0,5 or 1 U). Suggestions are suggestions: the user confirms every injection. Do not add auto-logging of insulin.
 
 ## How to extend
 

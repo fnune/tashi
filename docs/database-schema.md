@@ -14,11 +14,11 @@ Tashi stores one person's diary in SQLite: Cloudflare D1 on Workers, and a file 
 - Names say what the value is and its unit: `_g` grams, `_units` insulin units, `_mg_dl` glucose in mg/dL, `_minutes`, `_at` instants, `_hour` local hour of the day.
 - The database refuses what the app would also refuse, but ranges the app chooses (plausible glucose, insulin action time, cycle length) live only in the zod schemas, so there are not two copies to drift.
 - Every table is `STRICT`, so a column holds only its declared type. SQLite has no enums, booleans, uuids or timestamps, so each is written the same way everywhere:
-    - A closed set from the code is `TEXT` with a `CHECK (… IN (…))`.
-    - A boolean is `INTEGER` with `CHECK (… IN (0, 1))`; the repositories turn it into `true` and `false`.
-    - An id is `TEXT` holding a uuid.
-    - An instant is `TEXT` in one format, `YYYY-MM-DDTHH:MM:SS.sssZ` (UTC, milliseconds), which a check enforces by comparing each value with `strftime('%Y-%m-%dT%H:%M:%fZ', …)` of itself; `IS` makes a value that is not a date fail instead of passing as null. (D1 refuses `GLOB` patterns over 50 characters, which a pattern for this format needs.) In that format text order is time order, so indexes and cursors compare text. The repositories write every instant through `toISOString()`, whatever offset the domain gave it.
-    - A fraction is `REAL`; JSON is `TEXT` with `CHECK (json_valid(…))`; bytes are `BLOB`.
+  - A closed set from the code is `TEXT` with a `CHECK (… IN (…))`.
+  - A boolean is `INTEGER` with `CHECK (… IN (0, 1))`; the repositories turn it into `true` and `false`.
+  - An id is `TEXT` holding a uuid.
+  - An instant is `TEXT` in one format, `YYYY-MM-DDTHH:MM:SS.sssZ` (UTC, milliseconds), which a check enforces by comparing each value with `strftime('%Y-%m-%dT%H:%M:%fZ', …)` of itself; `IS` makes a value that is not a date fail instead of passing as null. (D1 refuses `GLOB` patterns over 50 characters, which a pattern for this format needs.) In that format text order is time order, so indexes and cursors compare text. The repositories write every instant through `toISOString()`, whatever offset the domain gave it.
+  - A fraction is `REAL`; JSON is `TEXT` with `CHECK (json_valid(…))`; bytes are `BLOB`.
 - The food catalog is not in the database. It ships with the build as static files (see [Catalog and snapshots](#catalog-and-snapshots)); a meal keeps a copy of the figures it was dosed with.
 
 ## Registries
@@ -184,7 +184,7 @@ CREATE INDEX slow_insulin_entries_newest_first ON slow_insulin_entries (occurred
 
 ## Meals
 
-A meal is a record of what was calculated and logged. It is never recalculated, and editing a meal can change only its time. Totals and per-item values are stored as calculated, so the stored dose is the one the user saw.
+A meal is a record of what was calculated and logged. It is never recalculated, and editing a meal can change only its time. Totals and per-item values are stored as calculated, so the stored units are the ones the user saw.
 
 ```sql
 CREATE TABLE meal_entries (
@@ -253,12 +253,12 @@ CREATE TABLE meal_traces (
 ) STRICT;
 ```
 
-- `carb_dose_units` is the carbohydrate dose rounded to the pen increment. The other parts are `correction_dose_units`, `iob_reduction_units` and `adjustment_dose_units`; the running totals after each step are not stored. `total_dose_units` is the whole calculated dose, stored as the person saw it, and a test checks it against the parts with the code's clamping and rounding.
-- A row in `meal_corrections` means a glucose reading was entered for that meal (the correction dose is negative below target). A row in `meal_fat_protein_adjustments` means the fat and protein threshold was met. A row in `meal_traces` means the parser recorded how it got its answer.
+- `carb_dose_units` is the carbohydrate units rounded to the pen increment. The other parts are `correction_dose_units`, `iob_reduction_units` and `adjustment_dose_units`; the running totals after each step are not stored. `total_dose_units` is the whole calculated total, stored as the person saw it, and a test checks it against the parts with the code's clamping and rounding.
+- A row in `meal_corrections` means a glucose reading was entered for that meal (the correction units are negative below target). A row in `meal_fat_protein_adjustments` means the fat and protein threshold was met. A row in `meal_traces` means the parser recorded how it got its answer.
 - `source` says where the figures of an item came from, and the source row says whether they are an estimate; there is no separate flag. The label the interface shows for a source is a translation keyed by its id, not a column. `notes` and `warning` are free text from the parser: absent is null, never an empty string.
 - `searches` is the parser's list of queries and what each returned: debugging material, read back whole.
 
-Fast insulin comes after meals because a dose can belong to one, and the timeline view comes last because it reads all four tables:
+Fast insulin comes after meals because an injection can belong to one, and the timeline view comes last because it reads all four tables:
 
 ```sql
 CREATE TABLE fast_insulin_entries (
@@ -281,7 +281,7 @@ CREATE VIEW timeline AS
   UNION ALL SELECT id, 'meal', occurred_at, occurred_tz FROM meal_entries;
 ```
 
-- `fast_insulin_entries.meal_entry_id` is null for a dose not tied to a meal (a correction or a manual entry). Deleting a meal leaves its insulin entry, because the injection happened.
+- `fast_insulin_entries.meal_entry_id` is null for an injection not tied to a meal (a correction or a manual entry). Deleting a meal leaves its insulin entry, because the injection happened.
 
 ## Vocabulary
 
@@ -308,8 +308,8 @@ CREATE TABLE food_vocabulary (
 
 | Column                                       | Null means                                                                                    |
 | -------------------------------------------- | --------------------------------------------------------------------------------------------- |
-| `settings.glucose_drop_mg_dl_per_unit`       | The correction factor is not set up, so no correction dose is calculated                      |
-| `settings.bolus_insulin`, `basal_insulin`    | The user has not chosen an insulin product yet; logging doses is blocked                      |
+| `settings.glucose_drop_mg_dl_per_unit`       | The correction factor is not set up, so no correction units are calculated                    |
+| `settings.bolus_insulin`, `basal_insulin`    | The user has not chosen an insulin product yet; logging insulin is blocked                    |
 | `settings.insulin_action_minutes`            | Insulin on board is switched off                                                              |
 | `settings.last_period_start`                 | No cycle start date entered                                                                   |
 | `profiles.name`                              | Use the built-in, translated name for this profile                                            |
@@ -317,7 +317,7 @@ CREATE TABLE food_vocabulary (
 | `meal_items.glycemic_index`                  | Unknown; `gi_estimated` is 1 only when it is not null                                         |
 | `meal_items.notes`, `warning`                | The parser had nothing to add                                                                 |
 | `meal_items.external_id`, `food_snapshot`    | No catalog food: an estimate, a figure the user gave, or an item logged before foods recorded |
-| `fast_insulin_entries.meal_entry_id`         | The dose was not tied to a meal, or its meal was deleted                                      |
+| `fast_insulin_entries.meal_entry_id`         | The injection was not tied to a meal, or its meal was deleted                                 |
 | `ratio_versions.profile_id, adjustment_mode` | The meal was logged before the profile was recorded                                           |
 | `ratio_versions.profile_name`                | Use the built-in, translated name, or no profile recorded                                     |
 | `ratio_versions.percent_adjustment`          | The profile sets a ratio per window, or no profile recorded                                   |
@@ -464,7 +464,7 @@ No table has an owner today. When sign-in arrives, the model separates who signs
 - **person**: the one whose diabetes data it is. Settings, entries, vocabulary and ratio versions belong to a person (`person_id`), never to an account. A person carries a display name and nothing else that identifies them; no birth date, no address.
 - **access**: which account can reach which person, with a `relationship` (self, parent, partner, family, friend, caregiver, clinician) and a `permission` (read, write, admin). One account can reach several people, and one person can be reached by several accounts.
 
-Why "person" and not "patient": the word patient frames Tashi as a medical service, and the project avoids claiming a medical purpose. It is not "profile" because Tashi already has dosing profiles, not "owner" because the owner of the data and the one who signs in can differ, and not "record" or "subject" because a record is a document rather than someone and "subject" reads as research. In Spanish it is simply _persona_.
+Why "person" and not "patient": the word patient frames Tashi as a medical service, and the project avoids claiming a medical purpose. It is not "profile" because Tashi already has ratio profiles, not "owner" because the owner of the data and the one who signs in can differ, and not "record" or "subject" because a record is a document rather than someone and "subject" reads as research. In Spanish it is simply _persona_.
 
 The migration that adds it creates one account and one person for the existing data, adds `person_id` (not null, backfilled) to the settings, entry, ratio version and vocabulary tables, and keys the two single-row tables (`settings`, `anthropic_api_key`) by person instead of by the single-row constraint. SQLite cannot add a foreign key to an existing table, so those tables are rebuilt: create the new table, copy, drop, rename, in one batch. Repositories take the person when they are built, so the domain code and the contract suite change little. Left open until then: whether the Anthropic key belongs to an account or to the instance.
 
@@ -474,8 +474,8 @@ The migration that adds it creates one account and one person for the existing d
 
 Deliberate denormalisation, kept because a meal is a record of what was shown, not something to recompute:
 
-- Meal totals, per-item `carbs_g`, `fat_g`, `protein_g` and the dose figures are derivable from other columns. Recomputing could round differently from what the user saw. The cost: nothing stops stored parts disagreeing with the stored total, so tests guard it, not the database.
-- `total_dose_units` is derivable from the dose parts, using the code's clamping at zero and rounding to the pen increment. It is stored so the record keeps the dose the user saw; a test guards it, so SQL holds no second copy of the rule.
+- Meal totals, per-item `carbs_g`, `fat_g`, `protein_g` and the insulin units are derivable from other columns. Recomputing could round differently from what the user saw. The cost: nothing stops stored parts disagreeing with the stored total, so tests guard it, not the database.
+- `total_dose_units` is derivable from its parts, using the code's clamping at zero and rounding to the pen increment. It is stored so the record keeps the units the user saw; a test guards it, so SQL holds no second copy of the rule.
 - `meal_items.food_snapshot` and `food_vocabulary.catalog_name` copy the catalog. That is the point: they say what the catalog said then.
 - `food_vocabulary.description_key` is derived from `description`.
 - `meal_traces.searches` is not an atomic value. It stays JSON on purpose: debugging material, read back whole.
@@ -483,23 +483,23 @@ Deliberate denormalisation, kept because a meal is a record of what was shown, n
 ### Units
 
 - **Glucose has one unit in storage: mg/dL.** Settings, corrections and readings all store mg/dL, so switching the display unit writes nothing and old records stay readable. Values entered in mmol/L are converted on input and kept as doubles, so they convert back to the same figure once rounded for display.
-- Weight is grams, doses are insulin units, durations are minutes (`insulin_action_minutes`) or milliseconds (`duration_ms`), the cycle is in days. Hours are local hours of the day, and each entry stores the zone it happened in (`occurred_tz`). Instants are UTC.
+- Weight is grams, insulin amounts are units, durations are minutes (`insulin_action_minutes`) or milliseconds (`duration_ms`), the cycle is in days. Hours are local hours of the day, and each entry stores the zone it happened in (`occurred_tz`). Instants are UTC.
 - Carbohydrate is the one figure allowed to be negative. USDA derives it by difference, and for ten foods in the catalog (raw chicken, raw pork) it comes out slightly below zero. A meal records what was calculated, so those values are stored as they were. The net carbohydrate of a food item is never below 0, so these foods add 0 g to a dose and never subtract from it.
 - `weight_g = 0` means "weight not given" for three legacy items whose carbs were already 0. For new items a weight of 0 is not meaningful; make weight nullable if it ever matters.
 - `correction_dose_units` has no lower bound: it is negative when glucose is below target.
 
 ### Regrets worth avoiding now
 
-| Risk                                                                | What to do                                                                                                                                                     |
-| ------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Two copies of a limit drift (code constant and check constraint)    | Range checks that mirror code are left out of the DDL; the zod schemas own them                                                                                |
+| Risk                                                                | What to do                                                                                                                                                                                            |
+| ------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Two copies of a limit drift (code constant and check constraint)    | Range checks that mirror code are left out of the DDL; the zod schemas own them                                                                                                                       |
 | Checks mirror code unions                                           | Adding a unit or a language is a migration and a code change that ship together, and SQLite changes a check only by rebuilding the table. Insulin products and food sources avoid this: they are rows |
-| Singleton table (`settings`)                                        | Adding people changes its primary key: a rebuild of one tiny table                                                                                             |
-| The whole timeline is read on every call                            | Pages are cursor-based from the start; insulin on board reads only the last hours                                                                              |
-| `meal_traces.raw_response` grows without bound and is personal data | Keep it for a limited time (say 90 days) and delete older rows, or do not store it                                                                             |
-| Deleting is not erasing                                             | A deleted entry stays in every backup and, on D1, in 7 days of point-in-time recovery; an erasure promise has to say so                                        |
-| An instant written in another format                                | The `strftime` check refuses it, because a second format would break text ordering silently                                                                        |
-| `uuid` v4 keys scatter inserts                                      | Irrelevant at the size of one person's diary                                                                                                                   |
+| Singleton table (`settings`)                                        | Adding people changes its primary key: a rebuild of one tiny table                                                                                                                                    |
+| The whole timeline is read on every call                            | Pages are cursor-based from the start; insulin on board reads only the last hours                                                                                                                     |
+| `meal_traces.raw_response` grows without bound and is personal data | Keep it for a limited time (say 90 days) and delete older rows, or do not store it                                                                                                                    |
+| Deleting is not erasing                                             | A deleted entry stays in every backup and, on D1, in 7 days of point-in-time recovery; an erasure promise has to say so                                                                               |
+| An instant written in another format                                | The `strftime` check refuses it, because a second format would break text ordering silently                                                                                                           |
+| `uuid` v4 keys scatter inserts                                      | Irrelevant at the size of one person's diary                                                                                                                                                          |
 
 ## Decisions
 
@@ -509,4 +509,3 @@ Deliberate denormalisation, kept because a meal is a record of what was shown, n
 4. **Ids.** Every id for something the user creates is a uuid: entries, profiles, meal windows, ratio versions. Built-in profiles get fixed uuids (v5 of their old id), kept as constants in code, which is also how the code finds their translated names. Registries keep natural keys, and catalog foods keep the catalog's id (USDA's `fdc_id`; the nine BEDCA foods keep `-1` to `-9`) as opaque text.
 5. **Provenance of an item.** A registry table `food_sources`, like `insulin_products`: each source says whether it is a catalog and whether its figures are an estimate, and a test checks the ids in code against the table.
 6. **The catalog outside the database, and snapshots in meals.** See [Catalog and snapshots](#catalog-and-snapshots). Importing the catalog would not fit the free D1 plan's daily writes, and a snapshot keeps the history a meal needs with less.
-

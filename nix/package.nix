@@ -83,7 +83,7 @@ stdenv.mkDerivation (finalAttrs: {
   '';
 
   meta = {
-    description = "Insulin dose calculator for type 1 diabetes";
+    description = "Insulin units calculator for type 1 diabetes";
     mainProgram = "tashi";
     platforms = lib.platforms.unix;
   };

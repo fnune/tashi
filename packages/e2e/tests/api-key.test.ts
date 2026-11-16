@@ -1,7 +1,7 @@
 import { expect, test } from "./fixtures.js";
 import { atLunchtime, goTo, resetServer } from "./helpers.js";
 
-const MISSING = "Add your Anthropic API key in settings to calculate doses.";
+const MISSING = "Add your Anthropic API key in settings to calculate units.";
 const REJECTED =
   "Anthropic rejected the API key. Check it in settings and try again.";
 
@@ -29,7 +29,7 @@ test.describe("AI food reading", () => {
 
     await goTo(page, "Calculate");
     await page.locator("textarea").fill("150g rice");
-    await page.getByRole("button", { name: "Calculate dose" }).click();
+    await page.getByRole("button", { name: "Calculate units" }).click();
     await expect(page.locator(".dose")).toBeVisible();
   });
 
@@ -40,7 +40,7 @@ test.describe("AI food reading", () => {
     await resetServer(request, { withKey: false });
     await page.goto("/");
     await page.locator("textarea").fill("150g rice");
-    await page.getByRole("button", { name: "Calculate dose" }).click();
+    await page.getByRole("button", { name: "Calculate units" }).click();
     await expect(page.getByText(MISSING)).toBeVisible();
 
     await page.getByRole("link", { name: "Set it up" }).click();
@@ -63,7 +63,7 @@ test.describe("AI food reading", () => {
 
     await goTo(page, "Calculate");
     await page.locator("textarea").fill("150g rice");
-    await page.getByRole("button", { name: "Calculate dose" }).click();
+    await page.getByRole("button", { name: "Calculate units" }).click();
     await expect(page.locator(".dose")).toBeVisible();
 
     await goTo(page, "Settings");

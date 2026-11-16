@@ -10,12 +10,12 @@ test.describe("a dose that was not logged yet", () => {
   test("is still there after the app is opened again", async ({ page }) => {
     await page.goto("/");
     await page.locator("textarea").fill("150g rice");
-    await page.getByRole("button", { name: "Calculate dose" }).click();
+    await page.getByRole("button", { name: "Calculate units" }).click();
     await expect(page.getByRole("button", { name: /^Log / })).toBeVisible();
 
     await goTo(page, "History");
     await expect(
-      page.getByRole("navigation").getByText("A dose is waiting to be logged"),
+      page.getByRole("navigation").getByText("Units are waiting to be logged"),
     ).toBeAttached();
     await page.reload();
     await page.goto("/");
@@ -34,7 +34,7 @@ test.describe("a dose that was not logged yet", () => {
   }) => {
     await page.goto("/");
     await page.locator("textarea").fill("150g rice");
-    await page.getByRole("button", { name: "Calculate dose" }).click();
+    await page.getByRole("button", { name: "Calculate units" }).click();
     await expect(page.getByRole("button", { name: /^Log / })).toBeVisible();
     const calculatedAt = await page.evaluate(() => new Date().toISOString());
 

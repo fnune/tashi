@@ -10,7 +10,7 @@ test("logging a meal teaches Tashi the foods in it, and only then", async ({
   await page.goto("/");
 
   await page.locator("textarea").fill("150g rice with chicken");
-  await page.getByRole("button", { name: "Calculate dose" }).click();
+  await page.getByRole("button", { name: "Calculate units" }).click();
   await expect(page.locator(".dose")).toBeVisible();
   expect(await (await request.get(`/api/__vocabulary`)).json()).toEqual([]);
 

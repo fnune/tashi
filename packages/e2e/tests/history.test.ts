@@ -165,7 +165,7 @@ test.describe("entries in another time zone", () => {
     await atLunchtime(page);
     await page.goto("/");
     await page.locator("textarea").fill("150g rice");
-    await page.getByRole("button", { name: "Calculate dose" }).click();
+    await page.getByRole("button", { name: "Calculate units" }).click();
     await page.getByRole("button", { name: /^Log / }).click();
     await expect(page.getByText(/Logged in history/)).toBeVisible();
 

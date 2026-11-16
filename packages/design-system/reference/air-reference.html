@@ -291,7 +291,7 @@ footer { color: var(--fg-2); font-size: .9rem; max-width: 72ch }
 
   <div id="iters"></div>
   <section class="lineup-sec" aria-labelledby="h-lineup">
-    <div class="sec-head"><h2 id="h-lineup">Font lineup</h2><p>The same content in each face. Check the dose number, the units, and the Il1 / O0 / rn–m pairs. Tap a card to use it above.</p></div>
+    <div class="sec-head"><h2 id="h-lineup">Font lineup</h2><p>The same content in each face. Check the big number, the U, and the Il1 / O0 / rn–m pairs. Tap a card to use it above.</p></div>
     <div class="lineup" id="lineup"></div>
   </section>
   <footer>Content is copied from your current screens, with an example glucose of 142 mg/dL. Font notes describe each family’s published intent; judge them on the phones. All text colour pairs meet WCAG AA (4.5:1) in both modes.</footer>
@@ -420,7 +420,7 @@ function calc(mode, uid){
     <textarea class="food" id="food-${uid}">150 g arroz blanco cocido, 120 g pechuga de pollo a la plancha, 80 g ensalada mixta con 15 ml aceite de oliva</textarea>
     <span class="glabel" id="when-${uid}">Voy a comer en</span>
     ${pressGroup(["Ahora","10 min","20 min","30 min"],"Ahora","Voy a comer en","seg")}
-    <button type="button" class="primary">Calcular dosis</button>
+    <button type="button" class="primary">Calcular unidades</button>
   </section>`;
 }
 const ENTRIES = [
@@ -454,7 +454,7 @@ function ajus(){
   return `
   <h2 class="ptitle">Ajustes</h2>
   <section class="group">
-    <h4 class="glabel">Dosis</h4>
+    <h4 class="glabel">Cálculo</h4>
     <div class="rows">
       ${row("Factor de corrección","Bajada de glucosa por 1 U","40 mg/dL")}
       ${row("Glucemia objetivo","","100 mg/dL")}

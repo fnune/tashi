@@ -1,8 +1,8 @@
 # Tashi
 
-Tashi is a carb counter and meal diary for people with type 1 diabetes, with the mealtime insulin arithmetic done from your own settings.
+Tashi is a calculator for people with type 1 diabetes. It counts the carbs in a meal you describe, then helps you calculate insulin units from your own ratios, correction factor and pen increment, nothing else.
 
-Describe what you're eating in plain words, in Spanish or English, and Tashi breaks it down into a table of foods, weights and net carbs, with the dose of fast-acting insulin that your own ratios and correction factor work out to. An AI model reads the description; the carbs come from nutrition databases (USDA, BEDCA), and every value shows its source and can be edited. Tashi also keeps a diary of meals, doses and glucose readings, and counts the insulin still active from earlier doses.
+Describe what you're eating in plain words, in Spanish or English, and Tashi breaks it down into a table of foods, weights and net carbs, with the units of fast-acting insulin that your own ratios and correction factor work out to. An AI model reads the description; the carbs come from nutrition databases (USDA, BEDCA), and every value shows its source and can be edited. Tashi also keeps a diary of meals, insulin and glucose readings, and counts the insulin still active from earlier injections.
 
 > [!CAUTION]
 > A personal project, not a medical device. Tashi is not clinically validated and has no regulatory clearance. Its numbers come from the settings you enter, from nutrition databases and from an AI model's reading of your words, and any of them can be wrong. It does not replace your own judgement or your care team's advice: check every number before you act on it. The software comes without warranty of any kind (see [LICENSE](LICENSE)).
@@ -17,7 +17,7 @@ To run it on a server of your own instead, see [Running on your own server](docs
 
 1. Set up your insulin, your meal windows with their ratios, your correction factor and your pen increment, once.
 2. Type what you're eating: `150 g arroz blanco cocido, 120 g pechuga de pollo a la plancha`.
-3. Read the breakdown: net carbs per item, the total, and a dose rounded to your pen, adjusted for insulin still on board and, if you enter it, your current glucose.
+3. Read the breakdown: net carbs per item, the total, and the insulin units rounded to your pen, adjusted for insulin still on board and, if you enter it, your current glucose.
 4. Log it when you inject, so the diary and the insulin on board stay right.
 
 ## Documentation
@@ -28,7 +28,7 @@ To run it on a server of your own instead, see [Running on your own server](docs
 - [Authentication](docs/authentication.md): setup, accounts, passwords, sessions and how the Anthropic key is kept.
 - [Database schema](docs/database-schema.md): every table, with the reasons.
 - [Engineering](docs/engineering.md): the principles and conventions of this repository.
-- [Design](design.md): the product: dose calculation, food parsing, the nutrition data.
+- [Design](design.md): the product: insulin units calculation, food parsing, the nutrition data.
 
 ## Development
 

@@ -4,7 +4,7 @@ Read [docs/engineering.md](docs/engineering.md) first: it sets the principles, t
 
 ## Map
 
-- `packages/shared`: types and the dose math, pure functions shared by the server and the app.
+- `packages/shared`: types and the insulin units math, pure functions shared by the server and the app.
 - `packages/backend`: the server. `src/http` (routes), `src/domain` (rules and the interfaces they need), `src/data` (SQLite, D1, the food catalog, Anthropic). `src/app.ts` builds the app; `src/server.ts` (Node) and `src/worker.ts` (Cloudflare) are the two entry points.
 - `packages/frontend`: the React app.
 - `packages/e2e`: Playwright tests, run on `wrangler dev` and on the Node server.

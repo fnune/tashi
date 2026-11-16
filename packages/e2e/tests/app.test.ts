@@ -38,7 +38,7 @@ test.describe("full user flow", () => {
     await page.locator("textarea").fill("150g rice with chicken");
 
     // Submit the form
-    await page.getByRole("button", { name: "Calculate dose" }).click();
+    await page.getByRole("button", { name: "Calculate units" }).click();
 
     // Wait for result
     await expect(page.locator(".dose")).toBeVisible({ timeout: 5000 });
@@ -91,7 +91,7 @@ test.describe("full user flow", () => {
   test("changing a food's grams recalculates the dose", async ({ page }) => {
     await page.goto("/");
     await page.locator("textarea").fill("150g rice");
-    await page.getByRole("button", { name: "Calculate dose" }).click();
+    await page.getByRole("button", { name: "Calculate units" }).click();
     await expect(page.locator(".dose")).toBeVisible({ timeout: 5000 });
 
     const carbs = async () =>
@@ -116,7 +116,7 @@ test.describe("full user flow", () => {
     await page.goto("/");
 
     await page.locator("textarea").fill("a banana");
-    await page.getByRole("button", { name: "Calculate dose" }).click();
+    await page.getByRole("button", { name: "Calculate units" }).click();
     await page.getByRole("button", { name: /^Log/ }).click();
 
     await page.getByRole("navigation").getByText("History").click();
@@ -135,7 +135,7 @@ test.describe("full user flow", () => {
     await page.goto("/");
 
     await page.locator("textarea").fill("100g something exotic");
-    await page.getByRole("button", { name: "Calculate dose" }).click();
+    await page.getByRole("button", { name: "Calculate units" }).click();
     await expect(page.locator(".dose")).toBeVisible({ timeout: 5000 });
 
     await expect(page.locator(".estimated-badge")).toBeVisible();
@@ -171,7 +171,7 @@ test.describe("full user flow", () => {
     await expect(page.locator(".sensor-correction")).toHaveText("+2 U");
 
     await page.locator("textarea").fill("a banana");
-    await page.getByRole("button", { name: "Calculate dose" }).click();
+    await page.getByRole("button", { name: "Calculate units" }).click();
 
     await expect(page.locator(".dose")).toBeVisible({ timeout: 5000 });
     await expect(
@@ -296,7 +296,7 @@ test.describe("full user flow", () => {
   }) => {
     await page.goto("/");
     await page.locator("textarea").fill("150g rice with chicken");
-    await page.getByRole("button", { name: "Calculate dose" }).click();
+    await page.getByRole("button", { name: "Calculate units" }).click();
     const normalDose = Number(
       await page.locator(".dose-total b").textContent(),
     );
@@ -304,7 +304,7 @@ test.describe("full user flow", () => {
     await page.getByRole("button", { name: "Change meal" }).click();
     await page.getByText("Sick day").click();
     await expect(page.getByRole("radio", { name: /Sick day/ })).toBeChecked();
-    await page.getByRole("button", { name: "Calculate dose" }).click();
+    await page.getByRole("button", { name: "Calculate units" }).click();
 
     await expect(
       page.locator('.dose-parts [data-part="profile"]'),
@@ -386,7 +386,7 @@ test.describe("full user flow", () => {
   test("cycle tracking never changes the dose", async ({ page }) => {
     await page.goto("/");
     await page.locator("textarea").fill("a banana");
-    await page.getByRole("button", { name: "Calculate dose" }).click();
+    await page.getByRole("button", { name: "Calculate units" }).click();
     const before = await page.locator(".dose-total b").textContent();
 
     await page.goto("/settings");
@@ -396,7 +396,7 @@ test.describe("full user flow", () => {
     await page.getByRole("navigation").getByText("Calculate").click();
     await page.getByRole("button", { name: "Change meal" }).click();
     await page.locator("textarea").fill("a banana");
-    await page.getByRole("button", { name: "Calculate dose" }).click();
+    await page.getByRole("button", { name: "Calculate units" }).click();
     await expect(page.locator(".dose-total b")).toHaveText(before ?? "");
   });
 
@@ -405,10 +405,12 @@ test.describe("full user flow", () => {
   }) => {
     await page.goto("/");
     await page.locator("textarea").fill("a banana");
-    await page.getByRole("button", { name: "Calculate dose" }).click();
+    await page.getByRole("button", { name: "Calculate units" }).click();
     await page.getByRole("link", { name: "Why?" }).click();
     await expect(
-      page.getByRole("heading", { name: "How your dose is worked out" }),
+      page.getByRole("heading", {
+        name: "How your insulin units are worked out",
+      }),
     ).toBeVisible();
     await expect(page.locator("#profiles")).toContainText("−20 %");
     await page.getByRole("button", { name: /Back/ }).click();

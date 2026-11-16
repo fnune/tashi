@@ -63,7 +63,7 @@ export function IobCurve({
       className="iob-curve"
       viewBox={`0 0 ${WIDTH} ${HEIGHT}`}
       role="img"
-      aria-label={`Insulin curves: activity peaks at ${peakMinutes} minutes; insulin on board falls from the full dose to zero over ${durationMinutes} minutes`}
+      aria-label={`Insulin curves: activity peaks at ${peakMinutes} minutes; insulin on board falls from the full amount to zero over ${durationMinutes} minutes`}
     >
       <path className="iob-curve-activity-area" d={activityArea} />
       <line

@@ -26,7 +26,7 @@ const CYCLE_REVIEW = "https://pmc.ncbi.nlm.nih.gov/articles/PMC9962060/";
 const CONTENT: Record<Language, Content> = {
   en: {
     back: "Back",
-    title: "How your dose is worked out",
+    title: "How your insulin units are worked out",
     lead: "Tashi adds up three parts, applies your active profile and rounds once to your pen's increment.",
     steps: [
       {
@@ -39,7 +39,7 @@ const CONTENT: Record<Language, Content> = {
         title: "Correction",
         formula: "(glucose − target) ÷ correction factor − insulin on board",
         detail:
-          "Only uses a manual reading from the last 30 minutes. Insulin on board can cancel a correction for high glucose but never cuts into the meal dose; below target the correction is negative and lowers the dose.",
+          "Only uses a manual reading from the last 30 minutes. Insulin on board can cancel a correction for high glucose but never cuts into the meal units; below target the correction is negative and lowers the total.",
       },
       {
         title: "Fat and protein",
@@ -56,7 +56,7 @@ const CONTENT: Record<Language, Content> = {
         title: "Rounding",
         formula: "nearest 0.5 U or 1 U",
         detail:
-          "The total is rounded once to your pen increment. The parts on the dose card are shown unrounded to one decimal, so they may not add up exactly.",
+          "The total is rounded once to your pen increment. The parts on the result card are shown unrounded to one decimal, so they may not add up exactly.",
       },
     ],
     sections: [
@@ -99,13 +99,13 @@ const CONTENT: Record<Language, Content> = {
         body: (
           <>
             <p>
-              A profile adapts your doses to a situation such as sport, a sick
+              A profile adapts your units to a situation such as sport, a sick
               day or a phase of your cycle. You switch profiles by hand; they
               never expire or change on their own.
             </p>
             <ul>
               <li>
-                <b>Percentage:</b> scales the final dose, so −20 % turns 5 U
+                <b>Percentage:</b> scales the final units, so −20 % turns 5 U
                 into 4 U. Ratios and the correction factor stay as they are.
               </li>
               <li>
@@ -127,7 +127,7 @@ const CONTENT: Record<Language, Content> = {
         body: (
           <>
             <p>
-              Cycle tracking only informs: it never changes a dose. From the
+              Cycle tracking only informs: it never changes your units. From the
               first day of your last period and your average cycle length it
               works out the day and phase, assuming a 5-day period and a 14-day
               luteal phase.
@@ -160,7 +160,7 @@ const CONTENT: Record<Language, Content> = {
       {
         label: "Smith TA et al. (2021)",
         url: "https://doi.org/10.1111/dme.14512",
-        note: "A single upfront 125 % dose beat standard dosing for a high-fat, high-protein breakfast on pens.",
+        note: "A single upfront bolus of 125 % of the usual amount beat the standard amount for a high-fat, high-protein breakfast on pens.",
       },
       {
         label: "ADA Standards of Care in Diabetes (2024)",
@@ -180,7 +180,7 @@ const CONTENT: Record<Language, Content> = {
   },
   es: {
     back: "Volver",
-    title: "Cómo se calcula tu dosis",
+    title: "Cómo se calculan tus unidades de insulina",
     lead: "Tashi suma tres partes, aplica tu perfil activo y redondea una sola vez al incremento de tu bolígrafo.",
     steps: [
       {
@@ -194,7 +194,7 @@ const CONTENT: Record<Language, Content> = {
         formula:
           "(glucemia − objetivo) ÷ factor de corrección − insulina activa",
         detail:
-          "Solo usa una medida manual de los últimos 30 minutos. La insulina activa puede anular una corrección por glucosa alta, pero nunca reduce la dosis de la comida; por debajo del objetivo la corrección es negativa y baja la dosis.",
+          "Solo usa una medida manual de los últimos 30 minutos. La insulina activa puede anular una corrección por glucosa alta, pero nunca reduce las unidades de la comida; por debajo del objetivo la corrección es negativa y baja el total.",
       },
       {
         title: "Grasa y proteína",
@@ -212,7 +212,7 @@ const CONTENT: Record<Language, Content> = {
         title: "Redondeo",
         formula: "0,5 U o 1 U más cercana",
         detail:
-          "El total se redondea una vez al incremento de tu bolígrafo. Las partes de la tarjeta de dosis se muestran sin redondear, con un decimal, así que pueden no sumar exactamente.",
+          "El total se redondea una vez al incremento de tu bolígrafo. Las partes de la tarjeta del resultado se muestran sin redondear, con un decimal, así que pueden no sumar exactamente.",
       },
     ],
     sections: [
@@ -259,13 +259,13 @@ const CONTENT: Record<Language, Content> = {
         body: (
           <>
             <p>
-              Un perfil adapta tus dosis a una situación como el deporte, un día
-              de enfermedad o una fase del ciclo. Los perfiles se cambian a
+              Un perfil adapta tus unidades a una situación como el deporte, un
+              día de enfermedad o una fase del ciclo. Los perfiles se cambian a
               mano; nunca caducan ni cambian solos.
             </p>
             <ul>
               <li>
-                <b>Porcentaje:</b> escala la dosis final, así que −20 %
+                <b>Porcentaje:</b> escala las unidades finales, así que −20 %
                 convierte 5 U en 4 U. Los ratios y el factor de corrección no
                 cambian.
               </li>
@@ -288,10 +288,10 @@ const CONTENT: Record<Language, Content> = {
         body: (
           <>
             <p>
-              El seguimiento del ciclo solo informa: nunca cambia una dosis. A
-              partir del primer día de tu última regla y la duración media de tu
-              ciclo calcula el día y la fase, suponiendo una regla de 5 días y
-              una fase lútea de 14.
+              El seguimiento del ciclo solo informa: nunca cambia tus unidades.
+              A partir del primer día de tu última regla y la duración media de
+              tu ciclo calcula el día y la fase, suponiendo una regla de 5 días
+              y una fase lútea de 14.
             </p>
             <p>
               En mujeres con diabetes tipo 1, la sensibilidad a la insulina
@@ -321,7 +321,7 @@ const CONTENT: Record<Language, Content> = {
       {
         label: "Smith TA et al. (2021)",
         url: "https://doi.org/10.1111/dme.14512",
-        note: "Una dosis única del 125 % superó a la dosis estándar en un desayuno graso y proteico con bolígrafo.",
+        note: "Una inyección única previa del 125 % de la cantidad habitual superó a la cantidad estándar en un desayuno graso y proteico con bolígrafo.",
       },
       {
         label: "ADA Standards of Care in Diabetes (2024)",

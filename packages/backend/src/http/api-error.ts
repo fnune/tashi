@@ -3,14 +3,14 @@ import type { Context } from "hono";
 
 const FALLBACK_MESSAGES: Record<ApiErrorCode, string> = {
   bolus_insulin_not_configured:
-    "Choose which insulin you're using in settings before dosing.",
+    "Choose which insulin you're using in settings before calculating units.",
   basal_insulin_not_configured:
     "Choose which long-acting insulin you're using in settings first.",
   insulin_action_not_configured:
     "Choose which insulin you're using in settings to see insulin on board.",
   no_meal_window: "No meal window covers the current time",
   injection_in_future: "The injection time is in the future.",
-  api_key_missing: "Add your Anthropic API key in settings to calculate doses.",
+  api_key_missing: "Add your Anthropic API key in settings to calculate units.",
   api_key_invalid:
     "Anthropic rejected the API key. Check it in settings and try again.",
   signed_out: "Sign in to continue.",

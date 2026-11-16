@@ -6,7 +6,7 @@ Target: **WCAG 2.2 AA** in both themes, plus the platform accessibility features
 
 - **Contrast:** text 4.5:1, large text (24 px+, or 19 px+ bold) and non-text UI (icons, focus rings, chart lines, the gauge dot) 3:1. Checked by `scripts/check-contrast.mjs`.
 - **Text size:** everything scales with the system text-size setting up to 200 %. No text in images. Layouts reflow (see B3 in the reference): the gauge centres, stats move below, quick-add tiles stack, segments wrap.
-- **Touch targets:** at least 44 × 44 px; dose-changing actions 56–60 px high.
+- **Touch targets:** at least 44 × 44 px; unit-changing actions 56–60 px high.
 - **Colour is never alone:** glucose state has a word and an icon; history categories have an icon and a title; selected chips are a solid fill, not only a colour change.
 - **Screen readers:** every control has a name in Spanish that reads naturally (see examples in `components.md`). The gauge, cycle bar and day timeline expose a sentence and hide their graphics. Numbers with units are read out in full ("2,5 unidades", "168 miligramos por decilitro") via accessible names where the abbreviation would be read badly.
 - **Focus:** visible 3 px `accent` ring on every focusable element, never removed. Logical order: top bar, content top to bottom, nav.

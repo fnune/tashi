@@ -4,10 +4,10 @@ The interface is in Spanish (es-ES). Write the way a calm, knowledgeable friend 
 
 ## Voice
 
-- **Say what happens.** Buttons are verbs that describe the result: "Calcular dosis", "Registrar 5,5 U", "Guardar". Not "OK", "Continuar", "Aceptar".
+- **Say what happens.** Buttons are verbs that describe the result: "Calcular unidades", "Registrar 5,5 U", "Guardar". Not "OK", "Continuar", "Aceptar".
 - **Equal choices look equal.** When both options are fine, both buttons have the same size and weight: "Registrar" / "Ajustar". Never "Aceptar" / "Quizás más tarde".
 - **No guilt, no pressure.** No streaks, no "¡No olvides…!", no exclamation marks in system copy.
-- **Suggestions are suggestions.** "Dosis sugerida", never "Dosis recomendada" or "Debes ponerte". Under every suggestion: "Basado en tus ajustes. Tú decides la dosis."
+- **Say what the number is.** "Según tus ajustes", never "Dosis recomendada", "Dosis sugerida" or "Debes ponerte". Under the number: "Basado en tus ajustes. Tú decides las unidades."
 - **Readings are information, not judgement.** "Por encima de tu rango", not "Glucosa mala" or "Cuidado".
 
 ## Errors
@@ -26,7 +26,7 @@ Pattern: **what happened** · **what is safe** · **what happens next / what you
 
 Say what will appear and how to add the first item. One action, no illustration needed.
 
-- Historial: **Aquí verás tus comidas, dosis y glucemias.** Añade la primera con los botones de arriba.
+- Historial: **Aquí verás tus comidas, insulina y glucemias.** Añade la primera con los botones de arriba.
 - Calcular, no glucose: the readout shows "—" and the edit button reads "Añadir glucemia".
 
 ## Notifications
@@ -65,4 +65,4 @@ Use `Intl.NumberFormat('es-ES', …)` and `Intl.DateTimeFormat('es-ES', …)`. N
 | Factor de corrección | Glucose drop per unit of insulin (mg/dL per U) |
 | Glucemia objetivo | Target glucose for corrections |
 | Perfil | Ratio adjustment preset (Normal, Deporte, Enfermedad, custom) |
-| Incremento del bolígrafo | Smallest step the pen can dose |
+| Incremento del bolígrafo | Smallest step the pen can deliver |

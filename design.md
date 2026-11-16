@@ -1,8 +1,8 @@
-# Tashi: T1D fast insulin dose calculator
+# Tashi: T1D fast insulin units calculator
 
 ## Problem
 
-Calculating fast-acting insulin doses is something T1D people do multiple times a day. It requires:
+Working out fast-acting insulin units is something T1D people do multiple times a day. It requires:
 
 1. Knowing your insulin-to-carb ratio (which varies by time of day)
 2. Estimating the carbs in what you're about to eat
@@ -22,7 +22,7 @@ User types what they're eating (in any supported language)
 App resolves food items against its nutritional database
         |
         v
-App shows breakdown table + calculated dose
+App shows breakdown table + calculated units
 ```
 
 ## Setup (one-time)
@@ -40,8 +40,8 @@ Meal windows always tile the whole day, so a ratio applies at every hour. The se
 Additional setup:
 - Correction factor: 1U lowers glucose by X (mg/dL or mmol/L)
 - Target glucose
-- Pen increment: 0.5U or 1U (for rounding the final dose)
-- Fat/protein extra, as a percentage of the meal dose
+- Pen increment: 0.5U or 1U (for rounding the final units)
+- Fat/protein extra, as a percentage of the meal units
 - Rapid insulin and its duration of action (drives insulin on board), basal insulin
 - Glucose unit (mg/dL or mmol/L) and language
 - Ratio format: grams of carbs per unit (g/U) or units per 10 g of carbs (U/ración in Spanish, as many Spanish endocrinologists prescribe). Ratios are always stored as g/U; the format only changes how they are shown and typed, and an untouched field keeps its exact stored value so switching formats never drifts.
@@ -50,7 +50,7 @@ Every change saves immediately.
 
 ### Profiles
 
-A profile adapts doses to a situation (sport, sick day, a phase of the menstrual cycle). Exactly one is active, switched by hand from the chips on Calcular; profiles never expire or switch on their own.
+A profile adapts units to a situation (sport, sick day, a phase of the menstrual cycle). Exactly one is active, switched by hand from the chips on Calcular; profiles never expire or switch on their own.
 
 - Percentage: multiplies the final total, after correction and fat/protein and before pen rounding. Ratios and the correction factor are untouched.
 - By time of day: replaces the ratio of each window it sets; other windows keep theirs. Renaming a window carries its per-window ratios along.
@@ -59,7 +59,7 @@ Normal is built in and cannot be removed. Sport (-20 %), Sick day (+20 %) and Me
 
 ### Menstrual cycle
 
-Optional and informational: it never changes a dose. From the first day of the last period and the average cycle length (21-45 days) it works out the cycle day and phase, assuming a 5-day period and a 14-day luteal phase. Calcular shows the day and phase; on day 1 and on the first luteal day it suggests switching profile and opens a picker with the likely profile marked. The evidence for lower insulin sensitivity in the luteal phase is mixed (systematic review, 2023), which is why the decision stays with the user.
+Optional and informational: it never changes your units. From the first day of the last period and the average cycle length (21-45 days) it works out the cycle day and phase, assuming a 5-day period and a 14-day luteal phase. Calcular shows the day and phase; on day 1 and on the first luteal day it suggests switching profile and opens a picker with the likely profile marked. The evidence for lower insulin sensitivity in the luteal phase is mixed (systematic review, 2023), which is why the decision stays with the user.
 
 ## Input
 
@@ -180,21 +180,21 @@ Calcular is built to glance, confirm and inject:
 - A sensor card: the latest manual glucose reading from the last 30 minutes in a dial coloured by range (70-180 mg/dL, 3.9-10 mmol/L), insulin on board with its run-out time, the target, and a live correction preview. Tapping the dial logs a new reading.
 - The meal description and pre-bolus time ("eating in" now, 10, 20 or 30 min).
 - After calculating: one row per food with weight, carbs per 100 g, GI band and data source, items with 0 g included so nothing looks forgotten, then the net carb total.
-- A dose card: the final dose, its parts (meal, correction, fat/protein), the meal window and profile used, and which fat/protein threshold applied. A "Why?" link opens an explainer of every step and its references.
+- A result card: the final units, its parts (meal, correction, fat/protein), the meal window and profile used, and which fat/protein threshold applied. A "Why?" link opens an explainer of every step and its references.
 - An "I'll inject" stepper in pen increments. Calculating is only a preview; logging records the meal and the units actually injected.
 
-GI is informational only and never enters the dose math, since the standard of care is carb counting.
+GI is informational only and never enters the units math, since the standard of care is carb counting.
 
 ### Correction bolus
 
-Correction = (glucose - target) / correction factor, using the recent manual reading if there is one. Insulin on board can cancel a correction for high glucose but never reduces the meal dose; below target the correction is negative and lowers the dose. The preview on the sensor card uses the same function as the calculation. Could eventually auto-fill from CGM APIs (Dexcom, Libre).
+Correction = (glucose - target) / correction factor, using the recent manual reading if there is one. Insulin on board can cancel a correction for high glucose but never reduces the meal units; below target the correction is negative and lowers the total. The preview on the sensor card uses the same function as the calculation. Could eventually auto-fill from CGM APIs (Dexcom, Libre).
 
 ## History
 
-History is a day-grouped timeline of meals, rapid and basal doses, and glucose readings:
+History is a day-grouped timeline of meals, rapid and basal insulin, and glucose readings:
 
 - Each row shows time, type, a short description and the value
-- Doses and readings open a sheet to change the amount or time, or delete them
+- Insulin entries and readings open a sheet to change the amount or time, or delete them
 - Meals open their full breakdown, can move in time, be deleted, or be reused as the starting point for a new calculation
 - Quick-add buttons log rapid insulin, basal insulin or a glucose reading
 - History lives on the user's own server and is never shared
@@ -237,7 +237,7 @@ A Nix flake provides all system dependencies (Node.js, pnpm). `nix develop` gets
 
 Integration tests over unit tests. The goal is bang-for-buck: test real request/response cycles, not internal implementation details.
 
-The LLM call is behind a `FoodParser` interface. Tests use a deterministic fake implementation that returns the same structured output format without hitting any API. This lets us integration-test the full calculation pipeline (parsing output -> DB lookup -> carb math -> dose calculation) without network calls or API costs.
+The LLM call is behind a `FoodParser` interface. Tests use a deterministic fake implementation that returns the same structured output format without hitting any API. This lets us integration-test the full calculation pipeline (parsing output -> DB lookup -> carb math -> units calculation) without network calls or API costs.
 
 ### Code quality
 
@@ -282,7 +282,7 @@ The nutritional database is bundled with the app. Only the LLM call needs networ
 
 ## Scope
 
-This is not a CGM app, meal planner, diet tracker, or insulin pump controller. It does one thing: describe food, see carbs, get a dose suggestion.
+This is not a CGM app, meal planner, diet tracker, or insulin pump controller. It does one thing: describe food, see carbs, get the insulin units your settings work out to.
 
 ## Open questions
 

@@ -21,7 +21,7 @@ Reference: [Mark Seemann](https://blog.ploeh.dk/), [_Dependency Injection Princi
 
 - Constructor Injection is the default. Property Injection and Method Injection only when justified.
 - Inject Volatile Dependencies: anything with side effects (IO, database, file system, network), nondeterministic behaviour (time, randomness), a runtime configuration requirement, or that does not exist yet.
-- Do not inject Stable Dependencies: deterministic, side-effect-free types such as stdlib primitives, value objects, and pure functions (the dose math in `@tashi/shared` is one).
+- Do not inject Stable Dependencies: deterministic, side-effect-free types such as stdlib primitives, value objects, and pure functions (the insulin units math in `@tashi/shared` is one).
 - The Composition Root is where the object graph is composed: `packages/backend/src/app.ts` builds the app from the dependencies it is given, and the two entry points, `server.ts` (Node) and `worker.ts` (Cloudflare), give it their storage, clock and catalog. Nothing else knows the concrete implementations of Volatile Dependencies.
 - Prefer Pure DI (hand-wired at the Composition Root) over a container.
 - Service Locator is an anti-pattern: receive dependencies as constructor parameters.

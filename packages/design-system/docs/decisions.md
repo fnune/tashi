@@ -77,13 +77,13 @@ Profile emoji (🤒, 🏃) rendered differently per platform and clashed with Ai
 
 ## D-14 · Food grams are edited on the result, not by re-asking
 
-**Chosen:** each recognised food's grams are an input on the result; changing them recalculates the dose on the device with the same ratio, profile and glucose reading the result was made with.
+**Chosen:** each recognised food's grams are an input on the result; changing them recalculates the units on the device with the same ratio, profile and glucose reading the result was made with.
 **Rejected:** editing the text and calculating again (slow, and the parser may recognise different foods the second time).
 
-## D-15 · The dose breakdown is one card
+## D-15 · The units breakdown is one card
 
-**Chosen:** the dose, its − and + buttons and its breakdown share a single `fill` card, with the breakdown drawn as a proportional bar and one row of short terms. Overrides "no cards" for this one component, and its striped overlays are the only gradients. A list with a formula under each row took most of a screen, and users read the dose before the foods it came from. The card holds everything that decides the dose in one place.
-**Rejected:** the divided list (too long); a separate stepper behind an "Ajustar" button (an extra tap to change a dose); terms that wrap into a grid or scroll sideways (hard to scan).
+**Chosen:** the units, its − and + buttons and its breakdown share a single `fill` card, with the breakdown drawn as a proportional bar and one row of short terms. Overrides "no cards" for this one component, and its striped overlays are the only gradients. A list with a formula under each row took most of a screen, and users read the units before the foods they came from. The card holds everything that decides the units in one place.
+**Rejected:** the divided list (too long); a separate stepper behind an "Ajustar" button (an extra tap to change the units); terms that wrap into a grid or scroll sideways (hard to scan).
 
 ## D-16 · Pen rounding is not shown as a term
 

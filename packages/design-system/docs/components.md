@@ -7,7 +7,7 @@ Screen layout for all screens:
 - Gutter `space-gutter` (20 px) left and right.
 - 24 px between the top bar and the screen's first element; `space-section` (40 px) between sections within a screen. `space-stack` (16 px) between a section heading and its content.
 - Top bar at the top, nav bar at the bottom, content scrolls between them.
-- No cards, borders or shadows around sections. The dose card is the one exception (D-15).
+- No cards, borders or shadows around sections. The result card is the one exception (D-15).
 
 ---
 
@@ -32,7 +32,7 @@ Three items: **Calcular** (pin-plus icon), **Historial** (chart icon), **Ajustes
 
 ## 3. Section heading
 
-`type-heading` (17 px bold), `fg`, sentence case. Not uppercase, no letter-spacing (that was the old style). Examples: "Perfiles de ratios", "¿Qué vas a comer?", "Voy a comer en", "Añadir", "Ayer", "Dosis".
+`type-heading` (17 px bold), `fg`, sentence case. Not uppercase, no letter-spacing (that was the old style). Examples: "Perfiles de ratios", "¿Qué vas a comer?", "Voy a comer en", "Añadir", "Ayer", "Cálculo".
 
 ## 4. Screen title
 
@@ -99,7 +99,7 @@ Free-text description of the meal.
 ## 11. Primary button
 
 - Full width, height `size-primary` (60 px), `radius-pill`, `accent` background, `on-accent` label, `type-body-strong` at 17 px.
-- One per screen. Label is a verb phrase that says exactly what happens: "Calcular dosis", "Registrar 5,5 U".
+- One per screen. Label is a verb phrase that says exactly what happens: "Calcular unidades", "Registrar 5,5 U".
 - Disabled (e.g. no food and no glucose): keep it visible, `fill` background, `fg-muted` label, and show why under it in `type-secondary` ("Escribe lo que vas a comer o añade tu glucemia"). Never hide the button.
 - Loading: label changes to "Calculando…", button keeps its size, `aria-busy="true"`.
 
@@ -149,15 +149,15 @@ Inline messages inside a screen (never modal unless an action is required).
 - Kinds: info (`accent`), success (`glucose`), warning (`warning`), error (`error`).
 - Copy: what happened, what is safe, what happens next. See `docs/content.md`.
 
-## 19. Dose result (Calcular)
+## 19. Units result (Calcular)
 
-Shown in place of the food form after "Calcular dosis". The foods come first, so the carbs are read before the dose they lead to.
+Shown in place of the food form after "Calcular unidades". The foods come first, so the carbs are read before the units they lead to.
 
-- **Alimentos:** section heading, then one row per recognised food: name, GI badge and source; the grams as a small `fill` input followed by "g" and the carbs per 100 g; carbs on the right. Changing grams recalculates the dose immediately, with the same ratio, profile and glucose reading. "HC netos" total below.
-- **Dose card:** the one card in the app (D-15): `fill` background, `radius-xl`, 20 px top and bottom, 16 px sides.
-    - Top row: "Dosis sugerida · Comida" in `type-secondary` `fg-muted` on the left, a "¿Por qué?" link to the explanation on the right.
-    - The dose, centred, in `type-dose` with "U" in `type-stat` `fg-muted`, between 56 px round − and + buttons on `bg`. They change the dose by the pen increment. Once it differs from the suggestion, a text button "Volver a 5,5 U" below it resets it.
-    - A 12 px pill bar, one segment per part that adds units, sized by its share and 2 px apart. Units taken away (active insulin, a lower profile) are a striped overlay carved off the end, so the solid part is the dose.
+- **Alimentos:** section heading, then one row per recognised food: name, GI badge and source; the grams as a small `fill` input followed by "g" and the carbs per 100 g; carbs on the right. Changing grams recalculates the units immediately, with the same ratio, profile and glucose reading. "HC netos" total below.
+- **Result card:** the one card in the app (D-15): `fill` background, `radius-xl`, 20 px top and bottom, 16 px sides.
+    - Top row: "Según tus ajustes · Comida" in `type-secondary` `fg-muted` on the left, a "¿Por qué?" link to the explanation on the right.
+    - The units, centred, in `type-dose` with "U" in `type-stat` `fg-muted`, between 56 px round − and + buttons on `bg`. They change the units by the pen increment. Once it differs from what the settings gave, a text button "Volver a 5,5 U" below it resets it.
+    - A 12 px pill bar, one segment per part that adds units, sized by its share and 2 px apart. Units taken away (active insulin, a lower profile) are a striped overlay carved off the end, so the solid part is the total.
     - Below the bar, one row of up to five terms, spread across the width: a 6 px dot in the part's colour and the signed value in `type-body-strong`, over a `type-caption` `fg-muted` label. A term that takes units away has a striped dot. In order, only when they apply:
         - HC (`meal`), unsigned.
         - Corrección (`glucose`), before active insulin.
@@ -165,7 +165,7 @@ Shown in place of the food form after "Calcular dosis". The foods come first, so
         - Grasa y proteína (`insulin-rapid`).
         - Perfil (`insulin-basal`), the units the profile adds or removes.
     - Labels may wrap at a space when the row is tight. Under 18 rem of card width the terms take two rows of three.
-    - Pen rounding is not a term (D-16), so the terms can differ from the dose by up to half a pen step.
+    - Pen rounding is not a term (D-16), so the terms can differ from the total by up to half a pen step.
 - **Action:** one full-width primary button, "Registrar 5,5 U". Its label always shows the units that will be logged.
 - **Last:** the original text in `fg-muted` and a text button "Cambiar plato" that goes back to the form with the text kept.
 - In Historial the same card is shown read-only, without − and +, the action or editable grams.

@@ -25,7 +25,7 @@ const translations = {
     timeline: "History",
     eatingIn: "Eating in",
     noTimeline:
-      "Your meals, doses and glucose readings will appear here. Add the first one with the buttons above.",
+      "Your meals, insulin and glucose readings will appear here. Add the first one with the buttons above.",
     loadingMore: "Loading…",
     loadMore: "Load more",
     loadMoreFailed: "Could not load more.",
@@ -67,10 +67,10 @@ const translations = {
     activityLegend: "Activity",
     iobCurveSources: "Sources",
     iobCurveCaption:
-      "Activity (orange) is how strongly the dose is working, peaking at the marked time. Insulin on board (blue) is how much of the dose is still left, falling from the full dose to zero. The two use different vertical scales.",
+      "Activity (orange) is how strongly the insulin is working, peaking at the marked time. Insulin on board (blue) is how much is still left, falling from the full amount to zero. The two use different vertical scales.",
     goToSettings: "Set it up",
     bolus_insulin_not_configured:
-      "Choose which insulin you're using in settings before dosing.",
+      "Choose which insulin you're using in settings before calculating units.",
     basal_insulin_not_configured:
       "Choose which long-acting insulin you're using in settings first.",
     insulin_action_not_configured:
@@ -118,7 +118,7 @@ const translations = {
     diaryNewerVersion:
       "This copy comes from a newer version of Tashi. Update this one first.",
     api_key_missing:
-      "Add your Anthropic API key in settings to calculate doses.",
+      "Add your Anthropic API key in settings to calculate units.",
     api_key_invalid:
       "Anthropic rejected the API key. Check it in settings and try again.",
     today: "Today",
@@ -153,7 +153,8 @@ const translations = {
     adjustBy: "How it adjusts",
     byPercent: "Percentage",
     byWindow: "By time of day",
-    percentHint: "Applied to the final dose, after correction and fat/protein.",
+    percentHint:
+      "Applied to the final units, after correction and fat/protein.",
     perWindowHint: "Leave a window empty to keep its usual ratio.",
     deleteProfile: "Delete profile",
     profilesNote: "Example values. Agree yours with your care team.",
@@ -177,7 +178,7 @@ const translations = {
     progesteroneMeaning:
       "Dominates the luteal phase. Linked to more insulin resistance.",
     cycleHowTo:
-      "Tashi doesn't change your doses by itself. If you need more insulin in the luteal phase, switch to the Menstruation profile on Calculate, or create your own under Ratios in Settings, and switch back when your period starts.",
+      "Tashi doesn't change your insulin units by itself. If you need more insulin in the luteal phase, switch to the Menstruation profile on Calculate, or create your own under Ratios in Settings, and switch back when your period starts.",
     phase_period: "Period",
     phase_follicular: "Follicular phase",
     phase_ovulation: "Ovulation",
@@ -219,7 +220,7 @@ const translations = {
     setCorrectionFactor: "Set a correction factor",
     whatAreYouEating: "What are you eating?",
     now: "Now",
-    calculateDose: "Calculate dose",
+    calculateDose: "Calculate units",
     changeMeal: "Change meal",
     netCarbsTotal: "Net carbs",
     carbsShort: "carbs",
@@ -243,7 +244,7 @@ const translations = {
       "Windows always cover the whole day: moving one edge moves its neighbour.",
     uncoveredHours: "No window covers {range}.",
     extendWindow: "Extend {name}",
-    dosing: "Dosing",
+    dosing: "Calculation",
     correctionFactorDetail: "Glucose drop per 1 U",
     fatProteinDetail: "For high-fat or high-protein meals",
     insulins: "Insulins",
@@ -271,11 +272,11 @@ const translations = {
       "Glycemic index values come from the University of Sydney's GI database. A ~ in front of the value means it was estimated.",
     sourceGiLink: "glycemicindex.com",
     no_meal_window:
-      "No meal window covers this time. Add one in settings to calculate a dose.",
+      "No meal window covers this time. Add one in settings to calculate units.",
     calculatedLate:
       "Calculated {time} and not logged yet. Set when you injected before logging it.",
     injectedAt: "Injected at",
-    pendingDose: "A dose is waiting to be logged",
+    pendingDose: "Units are waiting to be logged",
     injection_in_future: "The injection time is in the future.",
     signInTitle: "Sign in to Tashi",
     signInName: "Name",
@@ -343,18 +344,18 @@ const translations = {
     rapidInsulinDetail: "For meals and corrections",
     basalInsulinDetail: "Long-acting insulin",
     doseCarbs: "Carbs",
-    doseIobDetail: "Still working from earlier doses",
+    doseIobDetail: "Still working from earlier insulin",
     doseFatProtein: "Fat and protein",
     doseIob: "Active",
     doseProfile: "Profile",
-    suggestedDoseFor: "Suggested dose · {window}",
+    suggestedDoseFor: "From your settings · {window}",
     backToSuggested: "Back to {units} U",
     foodsTitle: "Foods",
     foodWeightLabel: "Grams of {food}",
     logUnits: "Log {units} U",
     confirmDeleteEntry: "Delete this entry? This can't be undone.",
     confirmClearTimelineBody:
-      "Every meal, dose and reading will be deleted. This can't be undone.",
+      "Every meal, insulin entry and reading will be deleted. This can't be undone.",
     cancel: "Cancel",
     cycleLengthDetail: "From one period to the next",
     cycleChartDetail: "Hormones, phases and insulin resistance",
@@ -391,7 +392,7 @@ const translations = {
     timeline: "Historial",
     eatingIn: "Voy a comer en",
     noTimeline:
-      "Aquí verás tus comidas, dosis y glucemias. Añade la primera con los botones de arriba.",
+      "Aquí verás tus comidas, insulina y glucemias. Añade la primera con los botones de arriba.",
     loadingMore: "Cargando…",
     loadMore: "Cargar más",
     loadMoreFailed: "No se pudo cargar más.",
@@ -435,10 +436,10 @@ const translations = {
     activityLegend: "Actividad",
     iobCurveSources: "Fuentes",
     iobCurveCaption:
-      "La actividad (naranja) es con qué fuerza actúa la dosis, con su máximo en el tiempo marcado. La insulina activa (azul) es cuánto queda de la dosis, que baja desde la dosis completa hasta cero. Las dos usan escalas verticales distintas.",
+      "La actividad (naranja) es con qué fuerza actúa la insulina, con su máximo en el tiempo marcado. La insulina activa (azul) es cuánta queda, que baja desde la cantidad completa hasta cero. Las dos usan escalas verticales distintas.",
     goToSettings: "Configúralo",
     bolus_insulin_not_configured:
-      "Elige qué insulina usas en ajustes antes de dosificar.",
+      "Elige qué insulina usas en ajustes antes de calcular unidades.",
     basal_insulin_not_configured:
       "Elige qué insulina lenta usas en ajustes primero.",
     insulin_action_not_configured:
@@ -487,7 +488,7 @@ const translations = {
     diaryNewerVersion:
       "Esta copia viene de una versión más reciente de Tashi. Actualiza esta primero.",
     api_key_missing:
-      "Añade tu clave de API de Anthropic en ajustes para calcular dosis.",
+      "Añade tu clave de API de Anthropic en ajustes para calcular unidades.",
     api_key_invalid:
       "Anthropic ha rechazado la clave de API. Revísala en ajustes e inténtalo de nuevo.",
     today: "Hoy",
@@ -523,7 +524,7 @@ const translations = {
     byPercent: "Porcentaje",
     byWindow: "Por momento del día",
     percentHint:
-      "Se aplica a la dosis final, después de la corrección y la grasa/proteína.",
+      "Se aplica a las unidades finales, después de la corrección y la grasa/proteína.",
     perWindowHint: "Deja una franja vacía para mantener su ratio habitual.",
     deleteProfile: "Eliminar perfil",
     profilesNote: "Valores de ejemplo: acuerda los tuyos con tu equipo médico.",
@@ -548,7 +549,7 @@ const translations = {
     progesteroneMeaning:
       "Domina la fase lútea. Se asocia a más resistencia a la insulina.",
     cycleHowTo:
-      "Tashi no cambia tus dosis por su cuenta. Si en la fase lútea necesitas más insulina, elige el perfil Menstruación en Calcular, o crea uno propio en Ratios, en Ajustes, y vuelve a Normal cuando te baje la regla.",
+      "Tashi no cambia tus unidades de insulina por su cuenta. Si en la fase lútea necesitas más insulina, elige el perfil Menstruación en Calcular, o crea uno propio en Ratios, en Ajustes, y vuelve a Normal cuando te baje la regla.",
     phase_period: "Regla",
     phase_follicular: "Fase folicular",
     phase_ovulation: "Ovulación",
@@ -590,7 +591,7 @@ const translations = {
     setCorrectionFactor: "Define un factor de corrección",
     whatAreYouEating: "¿Qué vas a comer?",
     now: "Ahora",
-    calculateDose: "Calcular dosis",
+    calculateDose: "Calcular unidades",
     changeMeal: "Cambiar plato",
     netCarbsTotal: "HC netos",
     carbsShort: "HC",
@@ -614,7 +615,7 @@ const translations = {
       "Las franjas cubren siempre todo el día: al mover un extremo se mueve también la franja vecina.",
     uncoveredHours: "Ninguna franja cubre {range}.",
     extendWindow: "Ampliar {name}",
-    dosing: "Dosis",
+    dosing: "Cálculo",
     correctionFactorDetail: "Bajada de glucosa por 1 U",
     fatProteinDetail: "Para comidas con mucha grasa o proteína",
     insulins: "Insulinas",
@@ -642,11 +643,11 @@ const translations = {
       "El índice glucémico sale de la base de datos de la Universidad de Sídney. Un ~ delante del valor indica que es estimado.",
     sourceGiLink: "glycemicindex.com",
     no_meal_window:
-      "Ninguna franja cubre esta hora. Añade una en ajustes para calcular la dosis.",
+      "Ninguna franja cubre esta hora. Añade una en ajustes para calcular las unidades.",
     calculatedLate:
       "Calculado {time} y aún sin registrar. Indica cuándo te inyectaste antes de registrarlo.",
     injectedAt: "Inyectado a las",
-    pendingDose: "Hay una dosis sin registrar",
+    pendingDose: "Hay unidades sin registrar",
     injection_in_future: "La hora de la inyección está en el futuro.",
     signInTitle: "Entra en Tashi",
     signInName: "Nombre",
@@ -715,18 +716,18 @@ const translations = {
     rapidInsulinDetail: "Para comidas y correcciones",
     basalInsulinDetail: "Insulina de acción prolongada",
     doseCarbs: "HC",
-    doseIobDetail: "Aún activa de dosis anteriores",
+    doseIobDetail: "Aún activa de insulina anterior",
     doseFatProtein: "Grasa y proteína",
     doseIob: "Activa",
     doseProfile: "Perfil",
-    suggestedDoseFor: "Dosis sugerida · {window}",
+    suggestedDoseFor: "Según tus ajustes · {window}",
     backToSuggested: "Volver a {units} U",
     foodsTitle: "Alimentos",
     foodWeightLabel: "Gramos de {food}",
     logUnits: "Registrar {units} U",
     confirmDeleteEntry: "¿Eliminar esta entrada? No se puede deshacer.",
     confirmClearTimelineBody:
-      "Se eliminarán todas las comidas, dosis y glucemias. No se puede deshacer.",
+      "Se eliminarán todas las comidas, insulina y glucemias. No se puede deshacer.",
     cancel: "Cancelar",
     cycleLengthDetail: "De una regla a la siguiente",
     cycleChartDetail: "Hormonas, fases y resistencia a la insulina",
