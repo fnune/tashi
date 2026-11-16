@@ -164,7 +164,7 @@ This way, if we later ship in the US (where labels include fibre in carbs), the 
 | GI source | Sydney University GI Database |
 | Typical serving size | 150g |
 | Cooking multiplier | 2.5x (dry to cooked weight) |
-| Data source | USDA FoodData Central #169756 |
+| Data source | USDA FoodData Central #169757 |
 
 ### Composite foods
 

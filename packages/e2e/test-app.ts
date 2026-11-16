@@ -195,7 +195,7 @@ class FakeFoodParser implements FoodParser {
           description: lower.includes("arroz")
             ? "Arroz blanco (cocido)"
             : "White rice (cooked)",
-          fdc_id: 169756,
+          fdc_id: 169757,
           weight_g: weight,
           assumed_cooked: true,
           confidence: "high",

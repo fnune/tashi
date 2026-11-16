@@ -65,11 +65,11 @@ export function foodCatalogContract(
 
     describe("lookup", () => {
       it("returns a food with its curated facts", async () => {
-        expect(await catalog.getByFdcId(169756)).toEqual(testFoodItem(RICE));
+        expect(await catalog.getByFdcId(169757)).toEqual(testFoodItem(RICE));
         expect(
-          (await catalog.getByFdcId(169756))?.net_carbs_per_100g,
+          (await catalog.getByFdcId(169757))?.net_carbs_per_100g,
         ).toBeCloseTo(27.77);
-        expect(await catalog.getByFdcId(169756)).toMatchObject({
+        expect(await catalog.getByFdcId(169757)).toMatchObject({
           data_type: "sr_legacy_food",
           name_es: "Arroz blanco, cocido",
           glycemic_index: 73,
@@ -120,7 +120,7 @@ export function foodCatalogContract(
     describe("search", () => {
       it("finds foods by matching words", async () => {
         const results = await catalog.search("rice white cooked", 10);
-        expect(results[0]?.fdc_id).toBe(169756);
+        expect(results[0]?.fdc_id).toBe(169757);
       });
 
       it("matches when only some of the words are present", async () => {
@@ -135,7 +135,7 @@ export function foodCatalogContract(
         );
         expect(results[0]?.fdc_id).toBe(171534);
         expect(results[0]?.match_count).toBe(4);
-        expect(results.map((r) => r.fdc_id)).toContain(169756);
+        expect(results.map((r) => r.fdc_id)).toContain(169757);
       });
 
       it("puts the shorter name first among equal matches", async () => {
@@ -150,7 +150,7 @@ export function foodCatalogContract(
 
       it("matches other forms of a word", async () => {
         const results = await catalog.search("cooking", 10);
-        expect(results.map((r) => r.fdc_id)).toContain(169756);
+        expect(results.map((r) => r.fdc_id)).toContain(169757);
       });
 
       it("stops at the limit", async () => {

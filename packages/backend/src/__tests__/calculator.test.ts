@@ -66,7 +66,7 @@ describe("Calculator", () => {
     parser.setResponse("150g white rice, grilled chicken breast", [
       {
         description: "White rice (cooked)",
-        fdc_id: 169756,
+        fdc_id: 169757,
         weight_g: 150,
         assumed_cooked: true,
         confidence: "high",
@@ -107,7 +107,7 @@ describe("Calculator", () => {
     const rice = result.items[0]!;
     expect(rice.net_carbs_g).toBeCloseTo(41.7, 0);
     expect(rice.food_item).not.toBeNull();
-    expect(rice.food_item!.fdc_id).toBe(169756);
+    expect(rice.food_item!.fdc_id).toBe(169757);
     expect(rice.food_item).not.toHaveProperty("match_count");
     expect(rice.estimated).toBe(false);
 
@@ -256,7 +256,7 @@ describe("Calculator", () => {
     parser.setResponse("150g rice and 100g acai bowl", [
       {
         description: "White rice (cooked)",
-        fdc_id: 169756,
+        fdc_id: 169757,
         weight_g: 150,
         assumed_cooked: true,
         confidence: "high",
@@ -336,7 +336,7 @@ describe("Calculator", () => {
     parser.setResponse("200g cooked rice", [
       {
         description: "White rice (cooked)",
-        fdc_id: 169756,
+        fdc_id: 169757,
         weight_g: 200,
         assumed_cooked: true,
         confidence: "high",
@@ -376,7 +376,7 @@ describe("Calculator", () => {
     parser.setResponse("150g rice, 14g carbs per 100g", [
       {
         description: "White rice (cooked)",
-        fdc_id: 169756,
+        fdc_id: 169757,
         weight_g: 150,
         assumed_cooked: true,
         confidence: "high",
@@ -402,14 +402,14 @@ describe("Calculator", () => {
     expect(rice.net_carbs_per_100g).toBe(14);
     expect(rice.net_carbs_g).toBe(21);
     expect(rice.food_item).not.toBeNull();
-    expect(rice.food_item!.fdc_id).toBe(169756);
+    expect(rice.food_item!.fdc_id).toBe(169757);
   });
 
   it("prefers user-provided carbs (total) over USDA", async () => {
     parser.setResponse("15g hummus, 2g carbs total", [
       {
         description: "Hummus",
-        fdc_id: 169756,
+        fdc_id: 169757,
         weight_g: 15,
         assumed_cooked: false,
         confidence: "high",
@@ -440,7 +440,7 @@ describe("Calculator", () => {
     parser.setResponse("150g rice, 5g carbs per 100g", [
       {
         description: "White rice (cooked)",
-        fdc_id: 169756,
+        fdc_id: 169757,
         weight_g: 150,
         assumed_cooked: true,
         confidence: "high",
@@ -598,7 +598,7 @@ describe("Calculator", () => {
     parser.setResponse("150g rice", [
       {
         description: "White rice (cooked)",
-        fdc_id: 169756,
+        fdc_id: 169757,
         weight_g: 150,
         assumed_cooked: true,
         confidence: "high",

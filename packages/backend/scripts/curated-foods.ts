@@ -186,7 +186,7 @@ export const BEDCA_FOODS: BedcaFood[] = [
 export const CURATED_USDA: CuratedFood[] = [
   {
     custom_id: "rice_white_cooked",
-    fdc_id: 169756,
+    fdc_id: 169757,
     name_es: "Arroz blanco, cocido",
     glycemic_index: 73,
     gi_source: "SUGiRS",
@@ -204,7 +204,7 @@ export const CURATED_USDA: CuratedFood[] = [
   },
   {
     custom_id: "pasta_cooked",
-    fdc_id: 168927,
+    fdc_id: 168928,
     name_es: "Pasta (espagueti), cocida",
     glycemic_index: 49,
     gi_source: "SUGiRS",
@@ -213,7 +213,7 @@ export const CURATED_USDA: CuratedFood[] = [
   },
   {
     custom_id: "pasta_wholegrain_cooked",
-    fdc_id: 168939,
+    fdc_id: 168910,
     name_es: "Pasta integral, cocida",
     glycemic_index: 42,
     gi_source: "SUGiRS",
@@ -222,7 +222,7 @@ export const CURATED_USDA: CuratedFood[] = [
   },
   {
     custom_id: "bread_white",
-    fdc_id: 172686,
+    fdc_id: 174924,
     name_es: "Pan blanco",
     glycemic_index: 75,
     gi_source: "SUGiRS",
@@ -231,7 +231,7 @@ export const CURATED_USDA: CuratedFood[] = [
   },
   {
     custom_id: "bread_wholegrain",
-    fdc_id: 172687,
+    fdc_id: 172688,
     name_es: "Pan integral",
     glycemic_index: 74,
     gi_source: "SUGiRS",
@@ -249,7 +249,7 @@ export const CURATED_USDA: CuratedFood[] = [
   },
   {
     custom_id: "potato_baked",
-    fdc_id: 170437,
+    fdc_id: 170093,
     name_es: "Patata, al horno (con piel)",
     glycemic_index: 85,
     gi_source: "SUGiRS",
@@ -258,7 +258,7 @@ export const CURATED_USDA: CuratedFood[] = [
   },
   {
     custom_id: "sweet_potato_cooked",
-    fdc_id: 170487,
+    fdc_id: 168483,
     name_es: "Boniato, cocido",
     glycemic_index: 63,
     gi_source: "SUGiRS",
@@ -267,7 +267,7 @@ export const CURATED_USDA: CuratedFood[] = [
   },
   {
     custom_id: "oats_cooked",
-    fdc_id: 173903,
+    fdc_id: 173905,
     name_es: "Avena, cocida",
     glycemic_index: 55,
     gi_source: "SUGiRS",
@@ -285,7 +285,7 @@ export const CURATED_USDA: CuratedFood[] = [
   },
   {
     custom_id: "couscous_cooked",
-    fdc_id: 169699,
+    fdc_id: 169700,
     name_es: "Cuscus, cocido",
     glycemic_index: 65,
     gi_source: "SUGiRS",
@@ -294,7 +294,7 @@ export const CURATED_USDA: CuratedFood[] = [
   },
   {
     custom_id: "tortilla_corn",
-    fdc_id: 168138,
+    fdc_id: 175036,
     name_es: "Tortilla de maiz",
     glycemic_index: 52,
     gi_source: "SUGiRS",
@@ -303,7 +303,7 @@ export const CURATED_USDA: CuratedFood[] = [
   },
   {
     custom_id: "tortilla_flour",
-    fdc_id: 168140,
+    fdc_id: 167535,
     name_es: "Tortilla de harina",
     glycemic_index: 30,
     gi_source: "SUGiRS",
@@ -339,7 +339,7 @@ export const CURATED_USDA: CuratedFood[] = [
   },
   {
     custom_id: "white_beans_cooked",
-    fdc_id: 175198,
+    fdc_id: 175203,
     name_es: "Alubias blancas, cocidas",
     glycemic_index: 31,
     gi_source: "SUGiRS",
@@ -348,7 +348,7 @@ export const CURATED_USDA: CuratedFood[] = [
   },
   {
     custom_id: "peas_cooked",
-    fdc_id: 170419,
+    fdc_id: 170420,
     name_es: "Guisantes, cocidos",
     glycemic_index: 48,
     gi_source: "SUGiRS",
@@ -474,7 +474,7 @@ export const CURATED_USDA: CuratedFood[] = [
   },
   {
     custom_id: "carrot_cooked",
-    fdc_id: 170393,
+    fdc_id: 170394,
     name_es: "Zanahoria, cocida",
     glycemic_index: 39,
     gi_source: "SUGiRS",
@@ -492,7 +492,7 @@ export const CURATED_USDA: CuratedFood[] = [
   },
   {
     custom_id: "broccoli_cooked",
-    fdc_id: 170379,
+    fdc_id: 169967,
     name_es: "Brocoli, cocido",
     glycemic_index: null,
     gi_source: null,
@@ -501,7 +501,7 @@ export const CURATED_USDA: CuratedFood[] = [
   },
   {
     custom_id: "corn_cooked",
-    fdc_id: 170406,
+    fdc_id: 169999,
     name_es: "Maiz dulce, cocido",
     glycemic_index: 52,
     gi_source: "SUGiRS",
@@ -528,7 +528,7 @@ export const CURATED_USDA: CuratedFood[] = [
   },
   {
     custom_id: "chicken_thigh",
-    fdc_id: 171540,
+    fdc_id: 172388,
     name_es: "Muslo de pollo, cocido",
     glycemic_index: null,
     gi_source: null,
@@ -537,7 +537,7 @@ export const CURATED_USDA: CuratedFood[] = [
   },
   {
     custom_id: "beef_steak",
-    fdc_id: 174032,
+    fdc_id: 168635,
     name_es: "Filete de ternera, cocinado",
     glycemic_index: null,
     gi_source: null,
@@ -600,7 +600,7 @@ export const CURATED_USDA: CuratedFood[] = [
   },
   {
     custom_id: "milk_semi",
-    fdc_id: 171268,
+    fdc_id: 171267,
     name_es: "Leche semidesnatada",
     glycemic_index: 30,
     gi_source: "SUGiRS",
@@ -618,7 +618,7 @@ export const CURATED_USDA: CuratedFood[] = [
   },
   {
     custom_id: "cheese_cheddar",
-    fdc_id: 171241,
+    fdc_id: 173414,
     name_es: "Queso cheddar",
     glycemic_index: null,
     gi_source: null,
@@ -726,7 +726,7 @@ export const CURATED_USDA: CuratedFood[] = [
   },
   {
     custom_id: "pizza_margherita",
-    fdc_id: 174849,
+    fdc_id: 170317,
     name_es: "Pizza margherita (1 porcion)",
     glycemic_index: 80,
     gi_source: "SUGiRS",
@@ -735,7 +735,7 @@ export const CURATED_USDA: CuratedFood[] = [
   },
   {
     custom_id: "french_fries",
-    fdc_id: 170315,
+    fdc_id: 170437,
     name_es: "Patatas fritas",
     glycemic_index: 75,
     gi_source: "SUGiRS",
@@ -744,7 +744,7 @@ export const CURATED_USDA: CuratedFood[] = [
   },
   {
     custom_id: "hamburger_bun",
-    fdc_id: 172693,
+    fdc_id: 172796,
     name_es: "Pan de hamburguesa",
     glycemic_index: 61,
     gi_source: "SUGiRS",
@@ -753,7 +753,7 @@ export const CURATED_USDA: CuratedFood[] = [
   },
   {
     custom_id: "sushi_nigiri_rice",
-    fdc_id: 169756,
+    fdc_id: 168932,
     name_es: "Arroz de sushi (aliñado, cocido)",
     glycemic_index: 73,
     gi_source: "SUGiRS",
@@ -762,7 +762,7 @@ export const CURATED_USDA: CuratedFood[] = [
   },
   {
     custom_id: "cereal_cornflakes",
-    fdc_id: 173521,
+    fdc_id: 174648,
     name_es: "Copos de maiz (cornflakes)",
     glycemic_index: 81,
     gi_source: "SUGiRS",
@@ -771,7 +771,7 @@ export const CURATED_USDA: CuratedFood[] = [
   },
   {
     custom_id: "toast_white",
-    fdc_id: 172686,
+    fdc_id: 174925,
     name_es: "Tostada blanca",
     glycemic_index: 75,
     gi_source: "SUGiRS",
@@ -780,7 +780,7 @@ export const CURATED_USDA: CuratedFood[] = [
   },
   {
     custom_id: "jam",
-    fdc_id: 169401,
+    fdc_id: 169641,
     name_es: "Mermelada",
     glycemic_index: 51,
     gi_source: "SUGiRS",
@@ -789,7 +789,7 @@ export const CURATED_USDA: CuratedFood[] = [
   },
   {
     custom_id: "croissant",
-    fdc_id: 174996,
+    fdc_id: 174987,
     name_es: "Croissant",
     glycemic_index: 67,
     gi_source: "SUGiRS",
@@ -798,7 +798,7 @@ export const CURATED_USDA: CuratedFood[] = [
   },
   {
     custom_id: "tomato_sauce",
-    fdc_id: 169366,
+    fdc_id: 171192,
     name_es: "Salsa de tomate (tipo marinara)",
     glycemic_index: null,
     gi_source: null,
@@ -807,7 +807,7 @@ export const CURATED_USDA: CuratedFood[] = [
   },
   {
     custom_id: "ketchup",
-    fdc_id: 172884,
+    fdc_id: 168556,
     name_es: "Ketchup",
     glycemic_index: null,
     gi_source: null,
@@ -816,7 +816,7 @@ export const CURATED_USDA: CuratedFood[] = [
   },
   {
     custom_id: "mayonnaise",
-    fdc_id: 168433,
+    fdc_id: 171009,
     name_es: "Mayonesa",
     glycemic_index: null,
     gi_source: null,

@@ -21,8 +21,8 @@ function usda(
 }
 
 export const RICE = usda(
-  169756,
-  "Rice, white, long-grain, regular, cooked, enriched",
+  169757,
+  "Rice, white, long-grain, regular, unenriched, cooked without salt",
   "Cereal Grains and Pasta",
   { carbohydrate: 28.17, fibre: 0.4, sugars: 0.05, fat: 0.28, protein: 2.69 },
   { description: "1 cup", grams: 158 },

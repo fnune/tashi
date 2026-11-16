@@ -121,7 +121,7 @@ describe("API routes", () => {
     parser.setResponse("100g white rice", [
       {
         description: "White rice (cooked)",
-        fdc_id: 169756,
+        fdc_id: 169757,
         weight_g: 100,
         assumed_cooked: true,
         confidence: "high",
@@ -528,7 +528,7 @@ describe("API routes", () => {
     parser.setResponse("100g white rice", [
       {
         description: "White rice (cooked)",
-        fdc_id: 169756,
+        fdc_id: 169757,
         weight_g: 100,
         assumed_cooked: true,
         confidence: "high",
@@ -572,7 +572,7 @@ describe("API routes", () => {
 
     const vocab = await repositories.vocabulary.list();
     expect(vocab).toHaveLength(1);
-    expect(vocab[0]!.fdc_id).toBe(169756);
+    expect(vocab[0]!.fdc_id).toBe(169757);
     expect(vocab[0]!.description).toBe("White rice (cooked)");
     expect(vocab[0]!.use_count).toBe(1);
     expect(vocab[0]!.last_used).toBe(now.toISOString());

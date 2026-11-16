@@ -146,7 +146,7 @@ export function fullMeal(n: number, minutes: number): MealEntry {
           query: "white rice",
           results: [
             {
-              fdc_id: 169756,
+              fdc_id: 169757,
               description: "Rice, white",
               net_carbs_per_100g: 28,
             },

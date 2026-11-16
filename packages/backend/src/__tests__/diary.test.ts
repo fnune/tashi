@@ -119,7 +119,7 @@ async function filledDiary(): Promise<Diary> {
     {
       description: "Rice",
       source: "usda_sr_legacy",
-      fdc_id: 169756,
+      fdc_id: 169757,
       catalog_name: "Rice, white, cooked",
       default_weight_g: 150,
       use_count: 3,
