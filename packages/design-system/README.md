@@ -37,7 +37,7 @@ How Air expresses this visually:
 | `scripts/build-css.mjs` | `node scripts/build-css.mjs` regenerates `tokens.css`. |
 | `scripts/check-contrast.mjs` | `node scripts/check-contrast.mjs` checks every colour pair in both themes; exits 1 on failure. |
 | `logo/` | The logo and app icons, generated from the Sora primitives by `logo/generate.py`. See `logo/README.md`. |
-| `CLAUDE.md` | Instructions for coding agents working on this system. |
+| `AGENTS.md` | Instructions for coding agents working on this system. |
 
 ## In this repository
 
