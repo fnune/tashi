@@ -32,7 +32,7 @@ export async function readCatalogFile(path: string): Promise<CatalogBuild> {
       SELECT f.fdc_id, f.data_type, f.description, f.category,
         f.total_carbs, f.fiber, f.sugars, f.fat, f.protein,
         f.serving_g, f.serving_desc,
-        c.custom_id, c.name_es, c.glycemic_index, c.gi_source, c.cooking_multiplier
+        c.custom_id, c.name_es, c.glycemic_index, c.gi_source
       FROM foods f
       LEFT JOIN curated c ON c.fdc_id = f.fdc_id
       ORDER BY f.fdc_id
@@ -83,8 +83,6 @@ function recordOf(row: Record<string, unknown>): CatalogRecord {
                     value: glycemicIndex,
                   }
                 : null,
-            cookingMultiplier:
-              (row.cooking_multiplier as number | null) ?? null,
           }
         : null,
   };

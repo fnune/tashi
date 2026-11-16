@@ -1,5 +1,5 @@
 // Hand-curated overlay data: Spanish translations, glycemic index values,
-// cooking multipliers, and BEDCA-sourced foods that don't exist in USDA.
+// and BEDCA-sourced foods that don't exist in USDA.
 //
 // USDA foods reference their fdc_id (from data_source_id in the original array).
 // BEDCA foods use negative fdc_id values and include full nutritional data
@@ -11,7 +11,6 @@ export interface CuratedFood {
   name_es: string;
   glycemic_index: number | null;
   gi_source: string | null;
-  cooking_multiplier: number | null;
   typical_serving_g: number;
 }
 
@@ -29,7 +28,6 @@ export interface BedcaFood {
   glycemic_index: number | null;
   gi_source: string | null;
   typical_serving_g: number;
-  cooking_multiplier: number | null;
 }
 
 // BEDCA foods have no USDA equivalent. They get inserted into the foods table
@@ -49,7 +47,6 @@ export const BEDCA_FOODS: BedcaFood[] = [
     glycemic_index: null,
     gi_source: null,
     typical_serving_g: 30,
-    cooking_multiplier: null,
   },
   {
     custom_id: "tortilla_patatas",
@@ -65,7 +62,6 @@ export const BEDCA_FOODS: BedcaFood[] = [
     glycemic_index: null,
     gi_source: null,
     typical_serving_g: 150,
-    cooking_multiplier: null,
   },
   {
     custom_id: "jamon_serrano",
@@ -81,7 +77,6 @@ export const BEDCA_FOODS: BedcaFood[] = [
     glycemic_index: null,
     gi_source: null,
     typical_serving_g: 50,
-    cooking_multiplier: null,
   },
   {
     custom_id: "chorizo",
@@ -97,7 +92,6 @@ export const BEDCA_FOODS: BedcaFood[] = [
     glycemic_index: null,
     gi_source: null,
     typical_serving_g: 30,
-    cooking_multiplier: null,
   },
   {
     custom_id: "croquetas",
@@ -113,7 +107,6 @@ export const BEDCA_FOODS: BedcaFood[] = [
     glycemic_index: null,
     gi_source: null,
     typical_serving_g: 30,
-    cooking_multiplier: null,
   },
   {
     custom_id: "paella_mixta",
@@ -129,7 +122,6 @@ export const BEDCA_FOODS: BedcaFood[] = [
     glycemic_index: null,
     gi_source: null,
     typical_serving_g: 350,
-    cooking_multiplier: null,
   },
   {
     custom_id: "gazpacho",
@@ -145,7 +137,6 @@ export const BEDCA_FOODS: BedcaFood[] = [
     glycemic_index: null,
     gi_source: null,
     typical_serving_g: 250,
-    cooking_multiplier: null,
   },
   {
     custom_id: "pan_baguette",
@@ -161,7 +152,6 @@ export const BEDCA_FOODS: BedcaFood[] = [
     glycemic_index: 95,
     gi_source: "SUGiRS",
     typical_serving_g: 60,
-    cooking_multiplier: null,
   },
   {
     custom_id: "empanada",
@@ -177,11 +167,10 @@ export const BEDCA_FOODS: BedcaFood[] = [
     glycemic_index: null,
     gi_source: null,
     typical_serving_g: 150,
-    cooking_multiplier: null,
   },
 ];
 
-// USDA foods that have curated overlay data (Spanish names, GI, cooking multipliers).
+// USDA foods that have curated overlay data (Spanish names, GI).
 // fdc_id values map to USDA FoodData Central SR Legacy IDs.
 export const CURATED_USDA: CuratedFood[] = [
   {
@@ -190,7 +179,6 @@ export const CURATED_USDA: CuratedFood[] = [
     name_es: "Arroz blanco, cocido",
     glycemic_index: 73,
     gi_source: "SUGiRS",
-    cooking_multiplier: 2.5,
     typical_serving_g: 150,
   },
   {
@@ -199,7 +187,6 @@ export const CURATED_USDA: CuratedFood[] = [
     name_es: "Arroz integral, cocido",
     glycemic_index: 68,
     gi_source: "SUGiRS",
-    cooking_multiplier: 2.5,
     typical_serving_g: 150,
   },
   {
@@ -208,7 +195,6 @@ export const CURATED_USDA: CuratedFood[] = [
     name_es: "Pasta (espagueti), cocida",
     glycemic_index: 49,
     gi_source: "SUGiRS",
-    cooking_multiplier: 2.5,
     typical_serving_g: 180,
   },
   {
@@ -217,7 +203,6 @@ export const CURATED_USDA: CuratedFood[] = [
     name_es: "Pasta integral, cocida",
     glycemic_index: 42,
     gi_source: "SUGiRS",
-    cooking_multiplier: 2.5,
     typical_serving_g: 180,
   },
   {
@@ -226,7 +211,6 @@ export const CURATED_USDA: CuratedFood[] = [
     name_es: "Pan blanco",
     glycemic_index: 75,
     gi_source: "SUGiRS",
-    cooking_multiplier: null,
     typical_serving_g: 30,
   },
   {
@@ -235,7 +219,6 @@ export const CURATED_USDA: CuratedFood[] = [
     name_es: "Pan integral",
     glycemic_index: 74,
     gi_source: "SUGiRS",
-    cooking_multiplier: null,
     typical_serving_g: 30,
   },
   {
@@ -244,7 +227,6 @@ export const CURATED_USDA: CuratedFood[] = [
     name_es: "Patata, hervida (sin piel)",
     glycemic_index: 78,
     gi_source: "SUGiRS",
-    cooking_multiplier: null,
     typical_serving_g: 150,
   },
   {
@@ -253,7 +235,6 @@ export const CURATED_USDA: CuratedFood[] = [
     name_es: "Patata, al horno (con piel)",
     glycemic_index: 85,
     gi_source: "SUGiRS",
-    cooking_multiplier: null,
     typical_serving_g: 170,
   },
   {
@@ -262,7 +243,6 @@ export const CURATED_USDA: CuratedFood[] = [
     name_es: "Boniato, cocido",
     glycemic_index: 63,
     gi_source: "SUGiRS",
-    cooking_multiplier: null,
     typical_serving_g: 150,
   },
   {
@@ -271,7 +251,6 @@ export const CURATED_USDA: CuratedFood[] = [
     name_es: "Avena, cocida",
     glycemic_index: 55,
     gi_source: "SUGiRS",
-    cooking_multiplier: 4.0,
     typical_serving_g: 240,
   },
   {
@@ -280,7 +259,6 @@ export const CURATED_USDA: CuratedFood[] = [
     name_es: "Quinoa, cocida",
     glycemic_index: 53,
     gi_source: "SUGiRS",
-    cooking_multiplier: 2.8,
     typical_serving_g: 150,
   },
   {
@@ -289,7 +267,6 @@ export const CURATED_USDA: CuratedFood[] = [
     name_es: "Cuscus, cocido",
     glycemic_index: 65,
     gi_source: "SUGiRS",
-    cooking_multiplier: 2.5,
     typical_serving_g: 150,
   },
   {
@@ -298,7 +275,6 @@ export const CURATED_USDA: CuratedFood[] = [
     name_es: "Tortilla de maiz",
     glycemic_index: 52,
     gi_source: "SUGiRS",
-    cooking_multiplier: null,
     typical_serving_g: 30,
   },
   {
@@ -307,7 +283,6 @@ export const CURATED_USDA: CuratedFood[] = [
     name_es: "Tortilla de harina",
     glycemic_index: 30,
     gi_source: "SUGiRS",
-    cooking_multiplier: null,
     typical_serving_g: 45,
   },
   {
@@ -316,7 +291,6 @@ export const CURATED_USDA: CuratedFood[] = [
     name_es: "Lentejas, cocidas",
     glycemic_index: 32,
     gi_source: "SUGiRS",
-    cooking_multiplier: 2.5,
     typical_serving_g: 200,
   },
   {
@@ -325,7 +299,6 @@ export const CURATED_USDA: CuratedFood[] = [
     name_es: "Garbanzos, cocidos",
     glycemic_index: 28,
     gi_source: "SUGiRS",
-    cooking_multiplier: 2.0,
     typical_serving_g: 200,
   },
   {
@@ -334,7 +307,6 @@ export const CURATED_USDA: CuratedFood[] = [
     name_es: "Alubias negras, cocidas",
     glycemic_index: 30,
     gi_source: "SUGiRS",
-    cooking_multiplier: 2.0,
     typical_serving_g: 200,
   },
   {
@@ -343,7 +315,6 @@ export const CURATED_USDA: CuratedFood[] = [
     name_es: "Alubias blancas, cocidas",
     glycemic_index: 31,
     gi_source: "SUGiRS",
-    cooking_multiplier: 2.0,
     typical_serving_g: 200,
   },
   {
@@ -352,7 +323,6 @@ export const CURATED_USDA: CuratedFood[] = [
     name_es: "Guisantes, cocidos",
     glycemic_index: 48,
     gi_source: "SUGiRS",
-    cooking_multiplier: null,
     typical_serving_g: 80,
   },
   {
@@ -361,7 +331,6 @@ export const CURATED_USDA: CuratedFood[] = [
     name_es: "Platano",
     glycemic_index: 51,
     gi_source: "SUGiRS",
-    cooking_multiplier: null,
     typical_serving_g: 120,
   },
   {
@@ -370,7 +339,6 @@ export const CURATED_USDA: CuratedFood[] = [
     name_es: "Manzana (con piel)",
     glycemic_index: 36,
     gi_source: "SUGiRS",
-    cooking_multiplier: null,
     typical_serving_g: 180,
   },
   {
@@ -379,7 +347,6 @@ export const CURATED_USDA: CuratedFood[] = [
     name_es: "Naranja",
     glycemic_index: 43,
     gi_source: "SUGiRS",
-    cooking_multiplier: null,
     typical_serving_g: 130,
   },
   {
@@ -388,7 +355,6 @@ export const CURATED_USDA: CuratedFood[] = [
     name_es: "Fresas",
     glycemic_index: 40,
     gi_source: "SUGiRS",
-    cooking_multiplier: null,
     typical_serving_g: 150,
   },
   {
@@ -397,7 +363,6 @@ export const CURATED_USDA: CuratedFood[] = [
     name_es: "Uvas",
     glycemic_index: 59,
     gi_source: "SUGiRS",
-    cooking_multiplier: null,
     typical_serving_g: 150,
   },
   {
@@ -406,7 +371,6 @@ export const CURATED_USDA: CuratedFood[] = [
     name_es: "Sandia",
     glycemic_index: 76,
     gi_source: "SUGiRS",
-    cooking_multiplier: null,
     typical_serving_g: 200,
   },
   {
@@ -415,7 +379,6 @@ export const CURATED_USDA: CuratedFood[] = [
     name_es: "Mango",
     glycemic_index: 51,
     gi_source: "SUGiRS",
-    cooking_multiplier: null,
     typical_serving_g: 200,
   },
   {
@@ -424,7 +387,6 @@ export const CURATED_USDA: CuratedFood[] = [
     name_es: "Pera",
     glycemic_index: 38,
     gi_source: "SUGiRS",
-    cooking_multiplier: null,
     typical_serving_g: 170,
   },
   {
@@ -433,7 +395,6 @@ export const CURATED_USDA: CuratedFood[] = [
     name_es: "Melocoton",
     glycemic_index: 42,
     gi_source: "SUGiRS",
-    cooking_multiplier: null,
     typical_serving_g: 150,
   },
   {
@@ -442,7 +403,6 @@ export const CURATED_USDA: CuratedFood[] = [
     name_es: "Pina",
     glycemic_index: 59,
     gi_source: "SUGiRS",
-    cooking_multiplier: null,
     typical_serving_g: 150,
   },
   {
@@ -451,7 +411,6 @@ export const CURATED_USDA: CuratedFood[] = [
     name_es: "Kiwi",
     glycemic_index: 53,
     gi_source: "SUGiRS",
-    cooking_multiplier: null,
     typical_serving_g: 75,
   },
   {
@@ -460,7 +419,6 @@ export const CURATED_USDA: CuratedFood[] = [
     name_es: "Tomate",
     glycemic_index: 15,
     gi_source: "SUGiRS",
-    cooking_multiplier: null,
     typical_serving_g: 120,
   },
   {
@@ -469,7 +427,6 @@ export const CURATED_USDA: CuratedFood[] = [
     name_es: "Cebolla",
     glycemic_index: 10,
     gi_source: "SUGiRS",
-    cooking_multiplier: null,
     typical_serving_g: 100,
   },
   {
@@ -478,7 +435,6 @@ export const CURATED_USDA: CuratedFood[] = [
     name_es: "Zanahoria, cocida",
     glycemic_index: 39,
     gi_source: "SUGiRS",
-    cooking_multiplier: null,
     typical_serving_g: 80,
   },
   {
@@ -487,7 +443,6 @@ export const CURATED_USDA: CuratedFood[] = [
     name_es: "Ensalada mixta (hojas verdes)",
     glycemic_index: null,
     gi_source: null,
-    cooking_multiplier: null,
     typical_serving_g: 80,
   },
   {
@@ -496,7 +451,6 @@ export const CURATED_USDA: CuratedFood[] = [
     name_es: "Brocoli, cocido",
     glycemic_index: null,
     gi_source: null,
-    cooking_multiplier: null,
     typical_serving_g: 80,
   },
   {
@@ -505,7 +459,6 @@ export const CURATED_USDA: CuratedFood[] = [
     name_es: "Maiz dulce, cocido",
     glycemic_index: 52,
     gi_source: "SUGiRS",
-    cooking_multiplier: null,
     typical_serving_g: 80,
   },
   {
@@ -514,7 +467,6 @@ export const CURATED_USDA: CuratedFood[] = [
     name_es: "Pimiento rojo",
     glycemic_index: null,
     gi_source: null,
-    cooking_multiplier: null,
     typical_serving_g: 120,
   },
   {
@@ -523,7 +475,6 @@ export const CURATED_USDA: CuratedFood[] = [
     name_es: "Pechuga de pollo, a la plancha",
     glycemic_index: null,
     gi_source: null,
-    cooking_multiplier: null,
     typical_serving_g: 170,
   },
   {
@@ -532,7 +483,6 @@ export const CURATED_USDA: CuratedFood[] = [
     name_es: "Muslo de pollo, cocido",
     glycemic_index: null,
     gi_source: null,
-    cooking_multiplier: null,
     typical_serving_g: 150,
   },
   {
@@ -541,7 +491,6 @@ export const CURATED_USDA: CuratedFood[] = [
     name_es: "Filete de ternera, cocinado",
     glycemic_index: null,
     gi_source: null,
-    cooking_multiplier: null,
     typical_serving_g: 170,
   },
   {
@@ -550,7 +499,6 @@ export const CURATED_USDA: CuratedFood[] = [
     name_es: "Lomo de cerdo, cocinado",
     glycemic_index: null,
     gi_source: null,
-    cooking_multiplier: null,
     typical_serving_g: 150,
   },
   {
@@ -559,7 +507,6 @@ export const CURATED_USDA: CuratedFood[] = [
     name_es: "Salmon, cocinado",
     glycemic_index: null,
     gi_source: null,
-    cooking_multiplier: null,
     typical_serving_g: 150,
   },
   {
@@ -568,7 +515,6 @@ export const CURATED_USDA: CuratedFood[] = [
     name_es: "Atun, en conserva al natural",
     glycemic_index: null,
     gi_source: null,
-    cooking_multiplier: null,
     typical_serving_g: 100,
   },
   {
@@ -577,7 +523,6 @@ export const CURATED_USDA: CuratedFood[] = [
     name_es: "Huevo, cocido (hervido/frito)",
     glycemic_index: null,
     gi_source: null,
-    cooking_multiplier: null,
     typical_serving_g: 50,
   },
   {
@@ -586,7 +531,6 @@ export const CURATED_USDA: CuratedFood[] = [
     name_es: "Gambas, cocidas",
     glycemic_index: null,
     gi_source: null,
-    cooking_multiplier: null,
     typical_serving_g: 100,
   },
   {
@@ -595,7 +539,6 @@ export const CURATED_USDA: CuratedFood[] = [
     name_es: "Leche entera",
     glycemic_index: 27,
     gi_source: "SUGiRS",
-    cooking_multiplier: null,
     typical_serving_g: 250,
   },
   {
@@ -604,7 +547,6 @@ export const CURATED_USDA: CuratedFood[] = [
     name_es: "Leche semidesnatada",
     glycemic_index: 30,
     gi_source: "SUGiRS",
-    cooking_multiplier: null,
     typical_serving_g: 250,
   },
   {
@@ -613,7 +555,6 @@ export const CURATED_USDA: CuratedFood[] = [
     name_es: "Yogur natural",
     glycemic_index: 36,
     gi_source: "SUGiRS",
-    cooking_multiplier: null,
     typical_serving_g: 125,
   },
   {
@@ -622,7 +563,6 @@ export const CURATED_USDA: CuratedFood[] = [
     name_es: "Queso cheddar",
     glycemic_index: null,
     gi_source: null,
-    cooking_multiplier: null,
     typical_serving_g: 30,
   },
   {
@@ -631,7 +571,6 @@ export const CURATED_USDA: CuratedFood[] = [
     name_es: "Aceite de oliva",
     glycemic_index: null,
     gi_source: null,
-    cooking_multiplier: null,
     typical_serving_g: 15,
   },
   {
@@ -640,7 +579,6 @@ export const CURATED_USDA: CuratedFood[] = [
     name_es: "Mantequilla",
     glycemic_index: null,
     gi_source: null,
-    cooking_multiplier: null,
     typical_serving_g: 10,
   },
   {
@@ -649,7 +587,6 @@ export const CURATED_USDA: CuratedFood[] = [
     name_es: "Aguacate",
     glycemic_index: null,
     gi_source: null,
-    cooking_multiplier: null,
     typical_serving_g: 70,
   },
   {
@@ -658,7 +595,6 @@ export const CURATED_USDA: CuratedFood[] = [
     name_es: "Almendras",
     glycemic_index: null,
     gi_source: null,
-    cooking_multiplier: null,
     typical_serving_g: 30,
   },
   {
@@ -667,7 +603,6 @@ export const CURATED_USDA: CuratedFood[] = [
     name_es: "Nueces",
     glycemic_index: null,
     gi_source: null,
-    cooking_multiplier: null,
     typical_serving_g: 30,
   },
   {
@@ -676,7 +611,6 @@ export const CURATED_USDA: CuratedFood[] = [
     name_es: "Azucar blanco",
     glycemic_index: 65,
     gi_source: "SUGiRS",
-    cooking_multiplier: null,
     typical_serving_g: 5,
   },
   {
@@ -685,7 +619,6 @@ export const CURATED_USDA: CuratedFood[] = [
     name_es: "Miel",
     glycemic_index: 61,
     gi_source: "SUGiRS",
-    cooking_multiplier: null,
     typical_serving_g: 15,
   },
   {
@@ -694,7 +627,6 @@ export const CURATED_USDA: CuratedFood[] = [
     name_es: "Chocolate con leche",
     glycemic_index: 43,
     gi_source: "SUGiRS",
-    cooking_multiplier: null,
     typical_serving_g: 30,
   },
   {
@@ -703,7 +635,6 @@ export const CURATED_USDA: CuratedFood[] = [
     name_es: "Zumo de naranja",
     glycemic_index: 50,
     gi_source: "SUGiRS",
-    cooking_multiplier: null,
     typical_serving_g: 250,
   },
   {
@@ -712,7 +643,6 @@ export const CURATED_USDA: CuratedFood[] = [
     name_es: "Coca-Cola (normal)",
     glycemic_index: 63,
     gi_source: "SUGiRS",
-    cooking_multiplier: null,
     typical_serving_g: 330,
   },
   {
@@ -721,7 +651,6 @@ export const CURATED_USDA: CuratedFood[] = [
     name_es: "Cerveza",
     glycemic_index: 66,
     gi_source: "SUGiRS",
-    cooking_multiplier: null,
     typical_serving_g: 330,
   },
   {
@@ -730,7 +659,6 @@ export const CURATED_USDA: CuratedFood[] = [
     name_es: "Pizza margherita (1 porcion)",
     glycemic_index: 80,
     gi_source: "SUGiRS",
-    cooking_multiplier: null,
     typical_serving_g: 120,
   },
   {
@@ -739,7 +667,6 @@ export const CURATED_USDA: CuratedFood[] = [
     name_es: "Patatas fritas",
     glycemic_index: 75,
     gi_source: "SUGiRS",
-    cooking_multiplier: null,
     typical_serving_g: 150,
   },
   {
@@ -748,7 +675,6 @@ export const CURATED_USDA: CuratedFood[] = [
     name_es: "Pan de hamburguesa",
     glycemic_index: 61,
     gi_source: "SUGiRS",
-    cooking_multiplier: null,
     typical_serving_g: 50,
   },
   {
@@ -757,7 +683,6 @@ export const CURATED_USDA: CuratedFood[] = [
     name_es: "Arroz de sushi (aliñado, cocido)",
     glycemic_index: 73,
     gi_source: "SUGiRS",
-    cooking_multiplier: null,
     typical_serving_g: 25,
   },
   {
@@ -766,7 +691,6 @@ export const CURATED_USDA: CuratedFood[] = [
     name_es: "Copos de maiz (cornflakes)",
     glycemic_index: 81,
     gi_source: "SUGiRS",
-    cooking_multiplier: null,
     typical_serving_g: 30,
   },
   {
@@ -775,7 +699,6 @@ export const CURATED_USDA: CuratedFood[] = [
     name_es: "Tostada blanca",
     glycemic_index: 75,
     gi_source: "SUGiRS",
-    cooking_multiplier: null,
     typical_serving_g: 25,
   },
   {
@@ -784,7 +707,6 @@ export const CURATED_USDA: CuratedFood[] = [
     name_es: "Mermelada",
     glycemic_index: 51,
     gi_source: "SUGiRS",
-    cooking_multiplier: null,
     typical_serving_g: 20,
   },
   {
@@ -793,7 +715,6 @@ export const CURATED_USDA: CuratedFood[] = [
     name_es: "Croissant",
     glycemic_index: 67,
     gi_source: "SUGiRS",
-    cooking_multiplier: null,
     typical_serving_g: 60,
   },
   {
@@ -802,7 +723,6 @@ export const CURATED_USDA: CuratedFood[] = [
     name_es: "Salsa de tomate (tipo marinara)",
     glycemic_index: null,
     gi_source: null,
-    cooking_multiplier: null,
     typical_serving_g: 60,
   },
   {
@@ -811,7 +731,6 @@ export const CURATED_USDA: CuratedFood[] = [
     name_es: "Ketchup",
     glycemic_index: null,
     gi_source: null,
-    cooking_multiplier: null,
     typical_serving_g: 15,
   },
   {
@@ -820,7 +739,6 @@ export const CURATED_USDA: CuratedFood[] = [
     name_es: "Mayonesa",
     glycemic_index: null,
     gi_source: null,
-    cooking_multiplier: null,
     typical_serving_g: 15,
   },
 ];

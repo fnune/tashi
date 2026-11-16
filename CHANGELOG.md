@@ -4,6 +4,8 @@ What changes between versions of Tashi, for people who run their own copy. Each 
 
 ## Unreleased
 
+- Foods the catalog calls cooked, such as rice, pasta, oats, beans and vegetables, now use USDA's cooked entries, which fixes carbs that were counted from the raw or dry food. Nothing to do after updating: the catalog is rebuilt with the app.
+- The catalog no longer has a cooking multiplier, which nothing used. Catalogs and saved meals that still carry it keep working.
 - First version meant for installing from a fork: on Cloudflare from a browser ([INSTALL.md](INSTALL.md)), or on your own server with Node or Nix.
 - Setting up: the first visit goes through a one-time link printed at the end of the build log (Cloudflare) or the server's log (Node), where you choose a name and a strong password.
 - The Anthropic API key and the model are set in Tashi's settings and stored encrypted. Neither Cloudflare nor the server needs any variable or secret.

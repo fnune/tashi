@@ -141,7 +141,7 @@ CREATE UNIQUE INDEX ratio_versions_once ON ratio_versions (window_name, window_s
 
 ## Catalog and snapshots
 
-The catalog (13,670 foods from USDA FoodData Central, a curated layer of 78 foods with Spanish names, glycemic indexes and cooking multipliers, and 9 BEDCA foods) is built from `data/foods.db` into static files: a search index loaded once and the full foods in small shards. It changes only with a build, it is the same for everyone, and on the free D1 plan importing it would take more than a day's 100,000 written rows. So the database holds only what the person did.
+The catalog (13,670 foods from USDA FoodData Central, a curated layer of 78 foods with Spanish names, and glycemic indexes, and 9 BEDCA foods) is built from `data/foods.db` into static files: a search index loaded once and the full foods in small shards. It changes only with a build, it is the same for everyone, and on the free D1 plan importing it would take more than a day's 100,000 written rows. So the database holds only what the person did.
 
 ```sql
 CREATE TABLE catalog_releases (
@@ -150,7 +150,7 @@ CREATE TABLE catalog_releases (
 ```
 
 - A catalog release is the label of a build, a hash of `foods.db` (`sha256:e1543601f418`). Logging a meal records the release it was calculated under, inserting the label the first time it is used.
-- A meal item that came from the catalog keeps `source` and `external_id` (the catalog's id for the food) and `food_snapshot`, the catalog's figures for that food as JSON, as the calculation saw them: name, category, carbohydrate, fibre, sugars, fat, protein, serving, glycemic index, Spanish name and cooking multiplier. A later catalog changes nothing about the meal. The snapshot is validated with the same schema as the catalog's food items when it is read.
+- A meal item that came from the catalog keeps `source` and `external_id` (the catalog's id for the food) and `food_snapshot`, the catalog's figures for that food as JSON, as the calculation saw them: name, category, carbohydrate, fibre, sugars, fat, protein, serving, glycemic index and Spanish name. A later catalog changes nothing about the meal. The snapshot is validated with the same schema as the catalog's food items when it is read.
 - `external_id` and `food_snapshot` are null together, for an item with no catalog food behind it: an estimate, a figure the user gave, or an item logged before foods were recorded.
 - A meal's figures are already stored in its own columns (carbohydrate, fat and protein per 100 g, glycemic index). The snapshot adds what the explainer shows besides: fibre, sugars and where each figure came from.
 

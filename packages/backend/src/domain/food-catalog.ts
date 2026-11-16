@@ -25,7 +25,6 @@ export interface CuratedFood {
   slug: string;
   nameEs: string | null;
   glycemicIndex: { source: FoodSourceId; value: number } | null;
-  cookingMultiplier: number | null;
 }
 
 export interface CatalogBuild {
@@ -72,7 +71,6 @@ export function foodItemOf(record: CatalogRecord): FoodItem | null {
     gi_source: glycemicIndex
       ? dataSourceOfFoodSource(glycemicIndex.source)
       : null,
-    cooking_multiplier: record.food?.cookingMultiplier ?? null,
   };
 }
 

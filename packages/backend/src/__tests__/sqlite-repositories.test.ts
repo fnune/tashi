@@ -133,6 +133,20 @@ describe("sqlite storage", () => {
     await close();
   });
 
+  it("reads a food snapshot saved while foods still had a cooking multiplier", async () => {
+    const { repositories, exec, close } = await emptyDatabase();
+    const meal = fullMeal(1, 10);
+    await repositories.timeline.add([meal]);
+    exec(
+      "UPDATE meal_items SET food_snapshot = json_set(food_snapshot, '$.cooking_multiplier', 2.5) WHERE position = 0",
+    );
+    const page = await repositories.timeline.page({ limit: 5 });
+    const entry = page.entries[0];
+    const food = entry?.type === "meal" ? entry.items[0]?.food_item : undefined;
+    expect(food).toEqual(meal.items[0]?.food_item);
+    await close();
+  });
+
   it("orders entries by time whatever offset their timestamp was written with", async () => {
     const { repositories, close } = await emptyDatabase();
     await repositories.timeline.add([

@@ -137,7 +137,6 @@ export const foodItemSchema = z.object({
   name_es: nullableString,
   glycemic_index: nullableNumber,
   gi_source: nullableString,
-  cooking_multiplier: nullableNumber,
 }) satisfies z.ZodType<FoodItem>;
 
 export const confidenceSchema = z.enum(["high", "medium", "low"]);

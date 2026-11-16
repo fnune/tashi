@@ -246,8 +246,7 @@ async function main() {
       custom_id          TEXT UNIQUE,
       name_es            TEXT,
       glycemic_index     INTEGER,
-      gi_source          TEXT,
-      cooking_multiplier REAL
+      gi_source          TEXT
     );
   `);
 
@@ -387,7 +386,7 @@ async function main() {
   );
   db.run("BEGIN TRANSACTION");
   const insertCurated = db.prepare(
-    "INSERT OR IGNORE INTO curated (fdc_id, custom_id, name_es, glycemic_index, gi_source, cooking_multiplier) VALUES (?, ?, ?, ?, ?, ?)",
+    "INSERT OR IGNORE INTO curated (fdc_id, custom_id, name_es, glycemic_index, gi_source) VALUES (?, ?, ?, ?, ?)",
   );
   for (const f of CURATED_USDA) {
     insertCurated.bind([
@@ -396,7 +395,6 @@ async function main() {
       f.name_es,
       f.glycemic_index,
       f.gi_source,
-      f.cooking_multiplier,
     ]);
     insertCurated.step();
     insertCurated.reset();
@@ -408,7 +406,6 @@ async function main() {
       f.name_es,
       f.glycemic_index,
       f.gi_source,
-      f.cooking_multiplier,
     ]);
     insertCurated.step();
     insertCurated.reset();

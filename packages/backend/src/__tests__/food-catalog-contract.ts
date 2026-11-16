@@ -74,7 +74,6 @@ export function foodCatalogContract(
           name_es: "Arroz blanco, cocido",
           glycemic_index: 73,
           gi_source: "SUGiRS",
-          cooking_multiplier: 2.5,
           serving_g: 158,
           serving_desc: "1 cup",
         });
@@ -85,7 +84,6 @@ export function foodCatalogContract(
           name_es: null,
           glycemic_index: null,
           gi_source: null,
-          cooking_multiplier: null,
           serving_g: 170,
         });
       });

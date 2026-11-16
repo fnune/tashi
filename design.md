@@ -112,7 +112,7 @@ If the LLM can't find a match in the index, it returns a structured "unknown ite
 This is one of the biggest sources of error. 100g of dry pasta is ~250g cooked.
 
 - Default: assume cooked weight (that's what's on the plate)
-- If the user says "75g dry rice" or "75g crudo", use raw weight and apply the cooking multiplier from the database
+- If the user says "75g dry rice" or "75g crudo", use the raw weight and convert it to the cooked weight
 - The output always shows which interpretation was used
 
 ## Nutritional database
@@ -163,7 +163,6 @@ This way, if we later ship in the US (where labels include fibre in carbs), the 
 | Glycemic index (glucose scale) | 73 |
 | GI source | Sydney University GI Database |
 | Typical serving size | 150g |
-| Cooking multiplier | 2.5x (dry to cooked weight) |
 | Data source | USDA FoodData Central #169757 |
 
 ### Composite foods

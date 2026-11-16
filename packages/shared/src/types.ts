@@ -17,7 +17,6 @@ export interface FoodItem {
   name_es: string | null;
   glycemic_index: number | null;
   gi_source: string | null;
-  cooking_multiplier: number | null;
 }
 
 export type UserCarbs =

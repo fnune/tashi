@@ -145,12 +145,11 @@ describe("the catalog file", () => {
         slug: "cheese_manchego",
         nameEs: "Queso manchego",
         glycemicIndex: null,
-        cookingMultiplier: null,
       },
     });
   });
 
-  it("maps the source of a glycemic index to its registry id", async () => {
+  it("maps the source of a glycemic index to its registry id, ignoring the cooking_multiplier column of catalogs built before it was dropped", async () => {
     const path = join(dir, "foods.db");
     await writeFoodsDb(
       path,
@@ -177,7 +176,6 @@ describe("the catalog file", () => {
       slug: "rice",
       nameEs: "Arroz",
       glycemicIndex: { source: "sugirs", value: 73 },
-      cookingMultiplier: 2.5,
     });
   });
 

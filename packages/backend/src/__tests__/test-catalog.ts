@@ -30,7 +30,6 @@ export const RICE = usda(
     slug: "rice_white_cooked",
     nameEs: "Arroz blanco, cocido",
     glycemicIndex: { source: "sugirs", value: 73 },
-    cookingMultiplier: 2.5,
   },
 );
 
@@ -44,7 +43,6 @@ export const BANANA = usda(
     slug: "banana",
     nameEs: "Plátano",
     glycemicIndex: { source: "sugirs", value: 51 },
-    cookingMultiplier: null,
   },
 );
 
