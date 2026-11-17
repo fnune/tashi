@@ -15,59 +15,66 @@ concurrency:
 jobs:
   checks:
     name: Lint, types and unit tests
-    if: github.repository == 'fnune/tashi'
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     steps:
-      - uses: actions/checkout@v5
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v5
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          node-version: 22
-          cache: pnpm
-      - run: pnpm install --frozen-lockfile
-      - run: pnpm --filter @tashi/shared build
-      - run: pnpm check
-      - run: pnpm typecheck
-      - run: pnpm test:unit
+          persist-credentials: false
+      - uses: fnune/ci@622d47de69c75cdca85801f36181a24a1c71b184
+        with:
+          cache-paths: .local/share/pnpm/store
+          cache-key-files: pnpm-lock.yaml
+          command: |
+            pnpm install --frozen-lockfile
+            pnpm --filter @tashi/shared build
+            pnpm check
+            pnpm typecheck
+            pnpm test:unit
 
   e2e:
     name: Browser tests
-    if: github.repository == 'fnune/tashi'
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     env:
       E2E_WORKERS: 2
     steps:
-      - uses: actions/checkout@v5
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v5
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          node-version: 22
-          cache: pnpm
-      - run: pnpm install --frozen-lockfile
-      - run: pnpm --filter @tashi/e2e exec playwright install --with-deps chromium
-      - name: On a Cloudflare Worker with local D1
-        run: pnpm test:e2e
-      - name: On the Node server
-        run: pnpm --filter @tashi/e2e test
-        env:
-          E2E_RUNTIME: node
+          persist-credentials: false
+      - uses: fnune/ci@622d47de69c75cdca85801f36181a24a1c71b184
+        with:
+          env: E2E_WORKERS
+          apt-packages: >-
+            fonts-liberation libasound2 libatk-bridge2.0-0 libatk1.0-0 libatspi2.0-0 libcairo2 libcups2
+            libdbus-1-3 libdrm2 libfontconfig1 libgbm1 libglib2.0-0 libnspr4 libnss3 libpango-1.0-0
+            libx11-6 libxcb1 libxcomposite1 libxdamage1 libxext6 libxfixes3 libxkbcommon0 libxrandr2
+          cache-paths: |
+            .cache/ms-playwright
+            .local/share/pnpm/store
+          cache-key-files: pnpm-lock.yaml
+          command: |
+            pnpm install --frozen-lockfile
+            pnpm --filter @tashi/e2e exec playwright install chromium
+            pnpm test:e2e
+            E2E_RUNTIME=node pnpm --filter @tashi/e2e test
 
   nix:
     name: Nix package
-    if: github.repository == 'fnune/tashi'
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     permissions:
       contents: write
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1 zizmor: ignore[artipacked]
         with:
           ref: ${{ github.head_ref || github.ref }}
-      - uses: cachix/install-nix-action@v31
       # A dependency update changes the hash of the pnpm dependencies; on a
       # branch of this repository, such as Renovate's, the job commits the
       # new one instead of failing.
-      - run: scripts/update-nix-hash
-      - run: nix build .#default
+      - uses: fnune/ci@622d47de69c75cdca85801f36181a24a1c71b184
+        with:
+          dev-shell: ""
+          command: |
+            scripts/update-nix-hash
+            nix build .#default
       - name: Commit the new hash
         if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
         run: |
