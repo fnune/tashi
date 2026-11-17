@@ -20,12 +20,12 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - uses: fnune/ci@622d47de69c75cdca85801f36181a24a1c71b184
+      - uses: fnune/ci@395771a1db7789d50e1070d49e746465de179042
         with:
           cache-paths: .local/share/pnpm/store
           cache-key-files: pnpm-lock.yaml
           command: |
-            pnpm install --frozen-lockfile
+            pnpm install --frozen-lockfile --store-dir ~/.local/share/pnpm/store
             pnpm --filter @tashi/shared build
             pnpm check
             pnpm typecheck
@@ -40,7 +40,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - uses: fnune/ci@622d47de69c75cdca85801f36181a24a1c71b184
+      - uses: fnune/ci@395771a1db7789d50e1070d49e746465de179042
         with:
           env: E2E_WORKERS
           apt-packages: >-
@@ -52,7 +52,7 @@ jobs:
             .local/share/pnpm/store
           cache-key-files: pnpm-lock.yaml
           command: |
-            pnpm install --frozen-lockfile
+            pnpm install --frozen-lockfile --store-dir ~/.local/share/pnpm/store
             pnpm --filter @tashi/e2e exec playwright install chromium
             pnpm test:e2e
             E2E_RUNTIME=node pnpm --filter @tashi/e2e test
@@ -63,13 +63,14 @@ jobs:
     permissions:
       contents: write
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1 zizmor: ignore[artipacked]
+      # zizmor: ignore[artipacked]
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ github.head_ref || github.ref }}
       # A dependency update changes the hash of the pnpm dependencies; on a
       # branch of this repository, such as Renovate's, the job commits the
       # new one instead of failing.
-      - uses: fnune/ci@622d47de69c75cdca85801f36181a24a1c71b184
+      - uses: fnune/ci@395771a1db7789d50e1070d49e746465de179042
         with:
           dev-shell: ""
           command: |
