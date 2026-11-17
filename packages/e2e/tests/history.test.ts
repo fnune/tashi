@@ -155,6 +155,22 @@ test.describe("history", () => {
       .click();
     await expect(page.locator(".event")).toHaveCount(0);
   });
+
+  test("redirects the old /history path to the timeline", async ({
+    request,
+    page,
+  }) => {
+    await page.goto("/history");
+    await expect(page).toHaveURL(/\/timeline$/);
+    await expect(page.getByRole("heading", { name: "History" })).toBeVisible();
+
+    const [id] = await addReadings(request, 1);
+    await page.goto(`/history/${id}?from=bookmark#top`);
+    await expect(page).toHaveURL(`/timeline/${id}?from=bookmark#top`);
+    await expect(page.getByRole("dialog").getByLabel("Glucose")).toHaveValue(
+      "100",
+    );
+  });
 });
 
 test.describe("entries in another time zone", () => {

@@ -204,10 +204,7 @@ function AppShell() {
           path="/fat-protein-info"
           element={<Navigate to="/units-explained#fat-protein" replace />}
         />
-        <Route
-          path="/history/*"
-          element={<Navigate to="/timeline" replace />}
-        />
+        <Route path="/history/*" element={<ToTimeline />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
       <TabBar
@@ -273,6 +270,17 @@ function TimelineRoute({
 function ToUnitsExplained() {
   const { hash } = useLocation();
   return <Navigate to={`/units-explained${hash}`} replace />;
+}
+
+function ToTimeline() {
+  const { "*": rest } = useParams();
+  const { search, hash } = useLocation();
+  return (
+    <Navigate
+      to={`/timeline${rest ? `/${rest}` : ""}${search}${hash}`}
+      replace
+    />
+  );
 }
 
 export function App() {
