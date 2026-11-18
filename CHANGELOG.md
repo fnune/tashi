@@ -4,6 +4,7 @@ What changes between versions of Tashi, for people who run their own copy. Each 
 
 ## Unreleased
 
+- A calculation that the model cannot finish no longer fails with "Something went wrong": the model gets more room for its answer and one more try, and when it still cannot finish, Tashi says so and lists the foods it had looked up. Tashi also says when Anthropic is busy, cannot be reached, or declines a request, and counts the cost of a failed calculation. Nothing to do after updating.
 - Foods the catalog calls cooked, such as rice, pasta, oats, beans and vegetables, now use USDA's cooked entries, which fixes carbs that were counted from the raw or dry food. Nothing to do after updating: the catalog is rebuilt with the app.
 - The catalog no longer has a cooking multiplier, which nothing used. Catalogs and saved meals that still carry it keep working.
 - First version meant for installing from a fork: on Cloudflare from a browser ([INSTALL.md](INSTALL.md)), or on your own server with Node or Nix.

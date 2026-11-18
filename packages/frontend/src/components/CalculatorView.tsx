@@ -61,6 +61,21 @@ const SETUP_ERRORS = new Set([
 
 const API_KEY_ERRORS = new Set(["api_key_missing", "api_key_invalid"]);
 
+function calculationErrorText(lang: Language, err: unknown): string {
+  const text = apiErrorText(lang, err);
+  if (
+    !(err instanceof api.ApiError) ||
+    err.code !== "calculation_unfinished" ||
+    err.lookedUp.length === 0
+  ) {
+    return text;
+  }
+  const lookedUp = new Intl.ListFormat(lang, { type: "conjunction" }).format(
+    err.lookedUp,
+  );
+  return `${text} ${t(lang, "lookedUpBeforeStopping").replace("{foods}", lookedUp)}`;
+}
+
 export function CalculatorView({
   settings,
   onSettingsSaved,
@@ -153,7 +168,7 @@ export function CalculatorView({
           to: API_KEY_ERRORS.has(err.code) ? "/settings#api-key" : "/settings",
         });
       } else {
-        setError(apiErrorText(lang, err));
+        setError(calculationErrorText(lang, err));
       }
     } finally {
       setLoading(false);

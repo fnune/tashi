@@ -310,6 +310,14 @@ const translations = {
     sign_in_failed: "That name and password do not match.",
     sign_in_throttled: "Too many attempts. Wait a moment and try again.",
     password_too_short: "The password needs at least 12 characters.",
+    calculation_unfinished:
+      "Tashi couldn't finish this calculation. Nothing is wrong with your description: calculate again.",
+    ai_busy: "Anthropic is busy right now. Calculate again in a minute.",
+    ai_unreachable:
+      "Tashi couldn't reach Anthropic. Check the connection and calculate again.",
+    ai_declined:
+      "Anthropic declined to answer this calculation. Calculating again may work; if it keeps happening, choose another model in settings.",
+    lookedUpBeforeStopping: "It had looked up: {foods}.",
     validation_failed: "Please check the values you entered.",
     not_found: "Not found.",
     internal_error: "Something went wrong. Please try again.",
@@ -683,6 +691,15 @@ const translations = {
     sign_in_throttled:
       "Demasiados intentos. Espera un momento y vuelve a intentarlo.",
     password_too_short: "La contraseña necesita al menos 12 caracteres.",
+    calculation_unfinished:
+      "Tashi no ha podido terminar este cálculo. Tu descripción está bien: vuelve a calcular.",
+    ai_busy:
+      "Anthropic está ocupado ahora mismo. Vuelve a calcular en un minuto.",
+    ai_unreachable:
+      "Tashi no ha podido conectar con Anthropic. Revisa la conexión y vuelve a calcular.",
+    ai_declined:
+      "Anthropic no ha querido responder a este cálculo. Puede funcionar si vuelves a calcular; si sigue pasando, elige otro modelo en ajustes.",
+    lookedUpBeforeStopping: "Había buscado: {foods}.",
     validation_failed: "Revisa los valores introducidos.",
     not_found: "No encontrado.",
     internal_error: "Algo salió mal. Inténtalo de nuevo.",

@@ -4,7 +4,12 @@ import type {
   ParsedFoodItem,
   SearchTraceEntry,
 } from "@tashi/shared";
+import { z } from "zod";
 import type { AiConnection } from "../domain/ai-connections.js";
+import {
+  CalculationFailedError,
+  type CalculationFailure,
+} from "../domain/errors.js";
 import type { FoodCatalog } from "../domain/food-catalog.js";
 import type { FoodParser, ParseOutcome } from "../domain/food-parser.js";
 import type { ModelUsage } from "../domain/model-usage.js";
@@ -89,6 +94,9 @@ const SEARCH_TOOL: Anthropic.Messages.Tool = {
 };
 
 const MAX_TOOL_ROUNDS = 10;
+const MAX_TOKENS = 16_000;
+// Above about 21,000 tokens the SDK refuses non-streaming requests.
+const MAX_TOKENS_RETRY = 32_000;
 const MAX_VOCAB_ENTRIES = 50;
 
 function buildVocabPrompt(vocabulary: FoodVocabEntry[]): string {
@@ -193,18 +201,54 @@ export class AnthropicFoodParser implements FoodParser {
       cacheReadTokens: 0,
     };
 
-    for (let round = 0; round < MAX_TOOL_ROUNDS; round++) {
-      const response = await client.messages.create({
+    const lookedUp = () => [...new Set(searches.map((search) => search.query))];
+    const fail = (
+      code: CalculationFailure,
+      message: string,
+      cause?: unknown,
+    ): CalculationFailedError =>
+      new CalculationFailedError(code, message, lookedUp(), usage, { cause });
+    const ask = async (maxTokens: number) => {
+      const request = {
         model,
-        max_tokens: 2048,
+        max_tokens: maxTokens,
         system,
         tools: [SEARCH_TOOL],
         messages,
-      });
-      usage.inputTokens += response.usage.input_tokens;
-      usage.outputTokens += response.usage.output_tokens;
-      usage.cacheWriteTokens += response.usage.cache_creation_input_tokens ?? 0;
-      usage.cacheReadTokens += response.usage.cache_read_input_tokens ?? 0;
+      };
+      try {
+        const response =
+          maxTokens > MAX_TOKENS
+            ? await client.messages.stream(request).finalMessage()
+            : await client.messages.create(request);
+        usage.inputTokens += response.usage.input_tokens;
+        usage.outputTokens += response.usage.output_tokens;
+        usage.cacheWriteTokens +=
+          response.usage.cache_creation_input_tokens ?? 0;
+        usage.cacheReadTokens += response.usage.cache_read_input_tokens ?? 0;
+        return response;
+      } catch (e) {
+        throw classifyModelError(e, fail);
+      }
+    };
+
+    for (let round = 0; round < MAX_TOOL_ROUNDS; round++) {
+      let response = await ask(MAX_TOKENS);
+      if (response.stop_reason === "max_tokens") {
+        response = await ask(MAX_TOKENS_RETRY);
+      }
+      if (response.stop_reason === "max_tokens") {
+        throw fail(
+          "calculation_unfinished",
+          `The model reached ${MAX_TOKENS_RETRY} output tokens in round ${round + 1} without answering`,
+        );
+      }
+      if (response.stop_reason === "refusal") {
+        throw fail(
+          "ai_declined",
+          `The model declined the request (${refusalCategory(response) ?? "no category"})`,
+        );
+      }
 
       if (response.stop_reason === "end_turn") {
         const text = response.content.find((b) => b.type === "text");
@@ -217,13 +261,10 @@ export class AnthropicFoodParser implements FoodParser {
         };
 
         if (!rawResponse) {
-          return {
-            status: "needs_clarification",
-            message:
-              "The assistant returned an empty response. Please rephrase your meal description.",
-            trace,
-            usage,
-          };
+          throw fail(
+            "calculation_unfinished",
+            "The model ended its turn without any text",
+          );
         }
 
         const jsonStr = extractJson(rawResponse);
@@ -286,6 +327,42 @@ export class AnthropicFoodParser implements FoodParser {
       messages.push({ role: "user", content: toolResults });
     }
 
-    throw new Error("LLM exceeded maximum tool call rounds");
+    throw fail(
+      "calculation_unfinished",
+      `The model was still searching after ${MAX_TOOL_ROUNDS} rounds`,
+    );
   }
+}
+
+const refusalSchema = z.object({
+  stop_details: z.object({ category: z.string().nullable() }),
+});
+
+function refusalCategory(response: unknown): string | null {
+  const parsed = refusalSchema.safeParse(response);
+  return parsed.success ? parsed.data.stop_details.category : null;
+}
+
+function classifyModelError(
+  error: unknown,
+  fail: (
+    code: CalculationFailure,
+    message: string,
+    cause: unknown,
+  ) => CalculationFailedError,
+): unknown {
+  if (error instanceof Anthropic.APIConnectionError) {
+    return fail("ai_unreachable", "Could not reach Anthropic", error);
+  }
+  if (
+    error instanceof Anthropic.RateLimitError ||
+    error instanceof Anthropic.InternalServerError
+  ) {
+    return fail(
+      "ai_busy",
+      `Anthropic answered ${error.status} after retrying`,
+      error,
+    );
+  }
+  return error;
 }

@@ -275,6 +275,10 @@ export type ApiErrorCode =
   | "api_key_invalid"
   | "signed_out"
   | "credit_exhausted"
+  | "calculation_unfinished"
+  | "ai_busy"
+  | "ai_unreachable"
+  | "ai_declined"
   | "sign_in_failed"
   | "sign_in_throttled"
   | "password_too_short"
@@ -324,6 +328,7 @@ export interface ChooseAiModelRequest {
 export interface ErrorResponse {
   error: string;
   code?: ApiErrorCode;
+  looked_up?: string[];
 }
 
 export type CreateTimelineRequest =

@@ -19,6 +19,13 @@ const FALLBACK_MESSAGES: Record<ApiErrorCode, string> = {
   sign_in_failed: "That name and password do not match.",
   sign_in_throttled: "Too many attempts. Wait a moment and try again.",
   password_too_short: "The password needs at least 8 characters.",
+  calculation_unfinished:
+    "Tashi couldn't finish this calculation. Nothing is wrong with your description; calculate again.",
+  ai_busy: "Anthropic is busy right now. Calculate again in a minute.",
+  ai_unreachable:
+    "Tashi couldn't reach Anthropic. Calculate again in a moment.",
+  ai_declined:
+    "Anthropic declined to answer this calculation. Calculating again may work; if it keeps happening, try another model in settings.",
   validation_failed: "Invalid request.",
   not_found: "Not found.",
   internal_error: "Something went wrong.",
@@ -27,12 +34,14 @@ const FALLBACK_MESSAGES: Record<ApiErrorCode, string> = {
 export function apiError(
   c: Context,
   code: ApiErrorCode,
-  status: 400 | 401 | 404 | 429 | 500,
+  status: 400 | 401 | 404 | 422 | 429 | 500 | 503,
   detail?: string,
+  lookedUp?: string[],
 ) {
   const body: ErrorResponse = {
     error: detail ?? FALLBACK_MESSAGES[code],
     code,
+    ...(lookedUp?.length ? { looked_up: lookedUp } : {}),
   };
   return c.json(body, status);
 }

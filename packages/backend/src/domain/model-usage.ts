@@ -1,6 +1,7 @@
 import type { FoodVocabEntry, UsageSummary } from "@tashi/shared";
 import type { AiConnection } from "./ai-connections.js";
 import type { Clock } from "./clock.js";
+import { CalculationFailedError } from "./errors.js";
 import type { FoodParser, ParseOutcome } from "./food-parser.js";
 import { modelOf, PRICES_CHECKED_ON } from "./models.js";
 import type { ModelUsageRepository } from "./repositories.js";
@@ -57,12 +58,20 @@ export class MeteredFoodParser implements FoodParser {
     language: "en" | "es",
     connection: AiConnection | null,
   ): Promise<ParseOutcome> {
-    const outcome = await this.inner.parse(
-      foodDescription,
-      vocabulary,
-      language,
-      connection,
-    );
+    let outcome: ParseOutcome;
+    try {
+      outcome = await this.inner.parse(
+        foodDescription,
+        vocabulary,
+        language,
+        connection,
+      );
+    } catch (e) {
+      if (e instanceof CalculationFailedError && e.usage) {
+        await this.usage.record(e.usage, this.clock());
+      }
+      throw e;
+    }
     await this.usage.record(outcome.usage, this.clock());
     return outcome;
   }

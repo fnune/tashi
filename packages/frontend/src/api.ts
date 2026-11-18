@@ -36,10 +36,12 @@ export interface SignedInAccount {
 
 export class ApiError extends Error {
   code?: ApiErrorCode;
-  constructor(message: string, code?: ApiErrorCode) {
+  lookedUp: string[];
+  constructor(message: string, code?: ApiErrorCode, lookedUp: string[] = []) {
     super(message);
     this.name = "ApiError";
     this.code = code;
+    this.lookedUp = lookedUp;
   }
 }
 
@@ -107,7 +109,11 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
     if (err.code === "signed_out") {
       window.dispatchEvent(new Event(SIGNED_OUT_EVENT));
     }
-    throw new ApiError(err.error ?? `Request failed: ${res.status}`, err.code);
+    throw new ApiError(
+      err.error ?? `Request failed: ${res.status}`,
+      err.code,
+      err.looked_up,
+    );
   }
 
   return body as T;
