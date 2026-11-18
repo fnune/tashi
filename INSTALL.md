@@ -84,6 +84,7 @@ In Tashi, open **Settings**, then **Your data**, then **Download a copy**, from 
 
 ## If something goes wrong
 
+- **Deploy says "Missing git connection".** Cloudflare has not finished connecting to GitHub yet. Wait a few minutes, reload the page and press **Deploy** again. Don't reinstall anything or make a new fork: that starts the wait over. Afterwards, check that **Workers & Pages** lists one `tashi` Worker and **D1** one `tashi` database; delete any extra ones from earlier tries.
 - **The build failed.** Open the build log and look at the last lines. Pressing **Retry build** in Cloudflare often fixes a hiccup. If it fails again, [open an issue](https://github.com/fnune/tashi/issues) with the end of the log.
 - **The setup link shows "Not found".** Each build makes a new link and only the newest works. Open the log of the latest build and use the link there. If you already set Tashi up, the link is closed: open your Tashi's address and sign in instead.
 - **I lost the setup link.** In Cloudflare, open your `tashi` Worker, then **Deployments**, and press **Retry build** on the latest one. The new build prints a new link.
