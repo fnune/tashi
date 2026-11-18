@@ -325,6 +325,17 @@ export interface ChooseAiModelRequest {
   model: string;
 }
 
+export type CalculationStep =
+  | { type: "reading" }
+  | { type: "looking_up"; query: string }
+  | { type: "taking_longer" }
+  | { type: "working_out" };
+
+export type CalculateStreamEvent =
+  | { type: "step"; step: CalculationStep }
+  | { type: "done"; response: CalculateResponse }
+  | { type: "failed"; status: number; error: ErrorResponse };
+
 export interface ErrorResponse {
   error: string;
   code?: ApiErrorCode;

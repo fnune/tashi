@@ -31,17 +31,26 @@ const FALLBACK_MESSAGES: Record<ApiErrorCode, string> = {
   internal_error: "Something went wrong.",
 };
 
-export function apiError(
-  c: Context,
+export type ErrorStatus = 400 | 401 | 404 | 422 | 429 | 500 | 503;
+
+export function errorBody(
   code: ApiErrorCode,
-  status: 400 | 401 | 404 | 422 | 429 | 500 | 503,
   detail?: string,
   lookedUp?: string[],
-) {
-  const body: ErrorResponse = {
+): ErrorResponse {
+  return {
     error: detail ?? FALLBACK_MESSAGES[code],
     code,
     ...(lookedUp?.length ? { looked_up: lookedUp } : {}),
   };
-  return c.json(body, status);
+}
+
+export function apiError(
+  c: Context,
+  code: ApiErrorCode,
+  status: ErrorStatus,
+  detail?: string,
+  lookedUp?: string[],
+) {
+  return c.json(errorBody(code, detail, lookedUp), status);
 }

@@ -1,4 +1,8 @@
-import type { FoodVocabEntry, UsageSummary } from "@tashi/shared";
+import type {
+  CalculationStep,
+  FoodVocabEntry,
+  UsageSummary,
+} from "@tashi/shared";
 import type { AiConnection } from "./ai-connections.js";
 import type { Clock } from "./clock.js";
 import { CalculationFailedError } from "./errors.js";
@@ -57,6 +61,7 @@ export class MeteredFoodParser implements FoodParser {
     vocabulary: FoodVocabEntry[],
     language: "en" | "es",
     connection: AiConnection | null,
+    onStep?: (step: CalculationStep) => void,
   ): Promise<ParseOutcome> {
     let outcome: ParseOutcome;
     try {
@@ -65,6 +70,7 @@ export class MeteredFoodParser implements FoodParser {
         vocabulary,
         language,
         connection,
+        onStep,
       );
     } catch (e) {
       if (e instanceof CalculationFailedError && e.usage) {

@@ -1,6 +1,7 @@
 import type {
   CalculateRequest,
   CalculationResult,
+  CalculationStep,
   InsulinOnBoard,
   Settings,
   TimelineEntry,
@@ -12,9 +13,16 @@ import {
   toLocalDateString,
   withWeight,
 } from "@tashi/shared";
-import { type Dispatch, type SetStateAction, useState } from "react";
+import {
+  type Dispatch,
+  type SetStateAction,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 import * as api from "../api.js";
 import { apiErrorText, type Language, t } from "../i18n.js";
+import { CalculationProgress } from "./CalculationProgress.js";
 import { ProfileChips } from "./ProfileChips.js";
 import { ProfileSwitcher } from "./ProfileSwitcher.js";
 import { SensorCard } from "./SensorCard.js";
@@ -71,7 +79,7 @@ function calculationErrorText(lang: Language, err: unknown): string {
     return text;
   }
   const lookedUp = new Intl.ListFormat(lang, { type: "conjunction" }).format(
-    err.lookedUp,
+    err.lookedUp.map((food) => t(lang, "quotedFood").replace("{food}", food)),
   );
   return `${text} ${t(lang, "lookedUpBeforeStopping").replace("{foods}", lookedUp)}`;
 }
@@ -94,6 +102,9 @@ export function CalculatorView({
   const update = (patch: Partial<CalculatorFormState>) =>
     onFormChange((current) => ({ ...current, ...patch }));
   const [loading, setLoading] = useState(false);
+  const [steps, setSteps] = useState<CalculationStep[]>([]);
+  const calculation = useRef<AbortController | null>(null);
+  useEffect(() => () => calculation.current?.abort(), []);
   const [error, setError] = useState<string | null>(null);
   const [clarification, setClarification] = useState<{
     kind: "needs_clarification" | "rejected";
@@ -140,13 +151,20 @@ export function CalculatorView({
     setClarification(null);
     setSetupPrompt(null);
     setLogged(null);
+    setSteps([]);
     update({ result: null });
 
     const req: CalculateRequest = { food_description: foodText.trim() };
     if (reading) req.current_blood_sugar = reading.value;
+    const controller = new AbortController();
+    calculation.current = controller;
 
     try {
-      const res = await api.calculate(req);
+      const res = await api.calculateWithSteps(
+        req,
+        (step) => setSteps((current) => [...current, step]),
+        controller.signal,
+      );
       if (res.status === "ok") {
         update({
           result: res.result,
@@ -158,6 +176,7 @@ export function CalculatorView({
         setClarification({ kind: res.status, message: res.message });
       }
     } catch (err) {
+      if (controller.signal.aborted) return;
       if (
         err instanceof api.ApiError &&
         err.code &&
@@ -171,8 +190,13 @@ export function CalculatorView({
         setError(calculationErrorText(lang, err));
       }
     } finally {
+      if (calculation.current === controller) calculation.current = null;
       setLoading(false);
     }
+  }
+
+  function cancelCalculation() {
+    calculation.current?.abort();
   }
 
   async function logMeal(meal: CalculationResult) {
@@ -330,21 +354,25 @@ export function CalculatorView({
               onChange={(minutes) => update({ preBolusMinutes: minutes })}
             />
           </div>
-          <div className="meal-form-submit">
-            <Button
-              type="submit"
-              disabled={!foodText.trim()}
-              aria-busy={loading || undefined}
-            >
-              {loading ? t(lang, "calculating") : t(lang, "calculateUnits")}
-            </Button>
-            <p
-              className="meal-form-why"
-              data-hidden={foodText.trim() !== "" || loading || undefined}
-            >
-              {t(lang, "calculateNeedsFood")}
-            </p>
-          </div>
+          {loading ? (
+            <CalculationProgress
+              steps={steps}
+              lang={lang}
+              onCancel={cancelCalculation}
+            />
+          ) : (
+            <div className="meal-form-submit">
+              <Button type="submit" disabled={!foodText.trim()}>
+                {t(lang, "calculateUnits")}
+              </Button>
+              <p
+                className="meal-form-why"
+                data-hidden={foodText.trim() !== "" || undefined}
+              >
+                {t(lang, "calculateNeedsFood")}
+              </p>
+            </div>
+          )}
         </form>
       )}
 

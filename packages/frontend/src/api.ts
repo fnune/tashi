@@ -3,6 +3,8 @@ import type {
   ApiErrorCode,
   CalculateRequest,
   CalculateResponse,
+  CalculateStreamEvent,
+  CalculationStep,
   ChooseAiModelRequest,
   ConnectAiRequest,
   CreateTimelineRequest,
@@ -102,21 +104,28 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
   }
 
   if (!res.ok) {
-    const err = body as ErrorResponse;
-    if (res.status >= 500) {
-      problem("server_error", `${res.status} ${err.code ?? ""}: ${err.error}`);
-    }
-    if (err.code === "signed_out") {
-      window.dispatchEvent(new Event(SIGNED_OUT_EVENT));
-    }
-    throw new ApiError(
-      err.error ?? `Request failed: ${res.status}`,
-      err.code,
-      err.looked_up,
-    );
+    throw failedRequest(res.status, body as ErrorResponse, problem);
   }
 
   return body as T;
+}
+
+function failedRequest(
+  status: number,
+  err: ErrorResponse,
+  problem: (kind: ClientProblemKind, detail: string) => void,
+): ApiError {
+  if (status >= 500) {
+    problem("server_error", `${status} ${err.code ?? ""}: ${err.error}`);
+  }
+  if (err.code === "signed_out") {
+    window.dispatchEvent(new Event(SIGNED_OUT_EVENT));
+  }
+  return new ApiError(
+    err.error ?? `Request failed: ${status}`,
+    err.code,
+    err.looked_up,
+  );
 }
 
 export function getSettings(): Promise<Settings> {
@@ -135,6 +144,88 @@ export function calculate(req: CalculateRequest): Promise<CalculateResponse> {
     method: "POST",
     body: JSON.stringify(req),
   });
+}
+
+export const CALCULATION_STREAM_TYPE = "application/x-ndjson";
+
+export async function calculateWithSteps(
+  req: CalculateRequest,
+  onStep: (step: CalculationStep) => void,
+  signal: AbortSignal,
+): Promise<CalculateResponse> {
+  const route = "/api/calculate";
+  const problem = (kind: ClientProblemKind, detail: string) =>
+    clientProblems.record({
+      at: new Date(),
+      kind,
+      method: "POST",
+      path: route,
+      detail,
+    });
+  let res: Response;
+  try {
+    res = await fetch(`${BASE}${route}`, {
+      method: "POST",
+      body: JSON.stringify(req),
+      signal,
+      headers: {
+        "Content-Type": "application/json",
+        Accept: CALCULATION_STREAM_TYPE,
+        "X-Timezone": Intl.DateTimeFormat().resolvedOptions().timeZone,
+      },
+    });
+  } catch (error) {
+    if (!signal.aborted) {
+      problem(
+        "network",
+        error instanceof Error ? error.message : String(error),
+      );
+    }
+    throw error;
+  }
+  if (!res.ok || !res.body) {
+    const text = await res.text();
+    let body: ErrorResponse;
+    try {
+      body = JSON.parse(text) as ErrorResponse;
+    } catch {
+      problem(
+        "unreadable_response",
+        `status ${res.status}: ${text.slice(0, 100)}`,
+      );
+      throw new Error(`Request failed: ${res.status}`);
+    }
+    throw failedRequest(res.status, body, problem);
+  }
+
+  for await (const event of calculationEvents(res.body)) {
+    if (event.type === "step") onStep(event.step);
+    if (event.type === "done") return event.response;
+    if (event.type === "failed") {
+      throw failedRequest(event.status, event.error, problem);
+    }
+  }
+  problem("unreadable_response", "calculation stream ended without an answer");
+  throw new Error("The calculation ended without an answer.");
+}
+
+async function* calculationEvents(
+  body: ReadableStream<Uint8Array>,
+): AsyncGenerator<CalculateStreamEvent> {
+  const reader = body.getReader();
+  const decoder = new TextDecoder();
+  let buffered = "";
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    buffered += decoder.decode(value, { stream: true });
+    const complete = buffered.split("\n");
+    buffered = complete.pop() ?? "";
+    for (const line of complete) {
+      if (line.trim()) yield JSON.parse(line) as CalculateStreamEvent;
+    }
+  }
+  if (buffered.trim()) yield JSON.parse(buffered) as CalculateStreamEvent;
 }
 
 export function logMeal(req: LogMealRequest): Promise<LogMealResponse> {

@@ -1,5 +1,5 @@
 import Anthropic from "@anthropic-ai/sdk";
-import type { FoodVocabEntry } from "@tashi/shared";
+import type { CalculationStep, FoodVocabEntry } from "@tashi/shared";
 import type { AiConnection } from "./ai-connections.js";
 import {
   DomainError,
@@ -16,6 +16,7 @@ export class KeyedFoodParser implements FoodParser {
     vocabulary: FoodVocabEntry[],
     language: "en" | "es",
     connection: AiConnection | null,
+    onStep?: (step: CalculationStep) => void,
   ): Promise<ParseOutcome> {
     if (!connection) throw new MissingApiKeyError();
     try {
@@ -24,6 +25,7 @@ export class KeyedFoodParser implements FoodParser {
         vocabulary,
         language,
         connection,
+        onStep,
       );
     } catch (e) {
       if (e instanceof Anthropic.AuthenticationError) {

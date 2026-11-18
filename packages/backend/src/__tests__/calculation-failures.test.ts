@@ -1,4 +1,8 @@
-import { DEFAULT_SETTINGS, type ErrorResponse } from "@tashi/shared";
+import {
+  type CalculateStreamEvent,
+  DEFAULT_SETTINGS,
+  type ErrorResponse,
+} from "@tashi/shared";
 import { beforeEach, describe, expect, it } from "vitest";
 import { AnthropicFoodParser } from "../data/anthropic-food-parser.js";
 import { Calculator } from "../domain/calculator.js";
@@ -118,7 +122,10 @@ describe("a calculation the model does not finish", () => {
     });
   });
 
-  async function calculateWith(model: typeof fetch) {
+  async function calculateWith(
+    model: typeof fetch,
+    headers: Record<string, string> = {},
+  ) {
     const foodCatalog = new InMemoryFoodCatalog(testBuild.records);
     const aiConnections = testAiConnections(repositories);
     await aiConnections.connect(TEST_DATA_KEY, "sk-ant-test");
@@ -147,10 +154,21 @@ describe("a calculation the model does not finish", () => {
     );
     const res = await app.request("/api/calculate", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", ...headers },
       body: JSON.stringify({ food_description: "rice and seeded rye bread" }),
     });
-    return { status: res.status, body: (await res.json()) as ErrorResponse };
+    if (headers.Accept) {
+      return {
+        status: res.status,
+        body: {} as ErrorResponse,
+        text: await res.text(),
+      };
+    }
+    return {
+      status: res.status,
+      body: (await res.json()) as ErrorResponse,
+      text: "",
+    };
   }
 
   it("asks again with room for a longer answer before giving up", async () => {
@@ -226,5 +244,33 @@ describe("a calculation the model does not finish", () => {
     });
     expect(status).toBe(503);
     expect(body.code).toBe("ai_unreachable");
+  });
+
+  it("streams each step, then the failure, when asked for steps", async () => {
+    const { text } = await calculateWith(
+      scripted([
+        searchFor("rice white cooked"),
+        stoppedWith("max_tokens"),
+        streamedStop("max_tokens"),
+      ]),
+      { Accept: "application/x-ndjson" },
+    );
+    const events = text
+      .trim()
+      .split("\n")
+      .map((line) => JSON.parse(line) as CalculateStreamEvent);
+    expect(events).toEqual([
+      { type: "step", step: { type: "reading" } },
+      {
+        type: "step",
+        step: { type: "looking_up", query: "rice white cooked" },
+      },
+      { type: "step", step: { type: "taking_longer" } },
+      expect.objectContaining({
+        type: "failed",
+        status: 500,
+        error: expect.objectContaining({ code: "calculation_unfinished" }),
+      }),
+    ]);
   });
 });

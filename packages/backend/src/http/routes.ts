@@ -1,5 +1,10 @@
-import type { ProblemsResponse, TimelinePageResponse } from "@tashi/shared";
+import type {
+  CalculateStreamEvent,
+  ProblemsResponse,
+  TimelinePageResponse,
+} from "@tashi/shared";
 import { type Context, Hono } from "hono";
+import { stream } from "hono/streaming";
 import type { AiConnections } from "../domain/ai-connections.js";
 import type { DiaryImport } from "../domain/diary-import.js";
 import type { InsulinUnits } from "../domain/insulin-units.js";
@@ -16,7 +21,7 @@ import type { TimelineService } from "../domain/timeline-service.js";
 import { apiError } from "./api-error.js";
 import type { SignedIn } from "./authentication.js";
 import { decodeCursor, encodeCursor } from "./cursor.js";
-import { respondToErrors } from "./logging.js";
+import { describeFailures, respondToErrors } from "./logging.js";
 import {
   calculateSchema,
   chooseAiModelSchema,
@@ -29,6 +34,7 @@ import {
 } from "./request-schemas.js";
 
 const TIME_ZONE_HEADER = "X-Timezone";
+const CALCULATION_STREAM_TYPE = "application/x-ndjson";
 
 export interface RouteDependencies {
   insulinUnits: InsulinUnits;
@@ -60,6 +66,7 @@ export function createRoutes({
   }
 
   api.onError(respondToErrors(logger, problems));
+  const describeFailure = describeFailures(logger, problems);
 
   api.get("/api/problems", async (c) => {
     if (c.get("session").account.role !== "admin") {
@@ -83,13 +90,31 @@ export function createRoutes({
     if (!parsed.success) {
       return apiError(c, "validation_failed", 400, parsed.error.message);
     }
-    return c.json(
-      await insulinUnits.calculate(
-        await aiConnections.get(dataKeyOf(c)),
-        parsed.data,
-        c.req.header(TIME_ZONE_HEADER),
-      ),
-    );
+    const connection = await aiConnections.get(dataKeyOf(c));
+    const timeZone = c.req.header(TIME_ZONE_HEADER);
+    if (!c.req.header("Accept")?.includes(CALCULATION_STREAM_TYPE)) {
+      return c.json(
+        await insulinUnits.calculate(connection, parsed.data, timeZone),
+      );
+    }
+    c.header("Content-Type", CALCULATION_STREAM_TYPE);
+    c.header("Cache-Control", "no-cache");
+    return stream(c, async (out) => {
+      const send = (event: CalculateStreamEvent) =>
+        out.write(`${JSON.stringify(event)}\n`);
+      try {
+        const response = await insulinUnits.calculate(
+          connection,
+          parsed.data,
+          timeZone,
+          (step) => void send({ type: "step", step }),
+        );
+        await send({ type: "done", response });
+      } catch (error) {
+        const { status, body } = await describeFailure(error, c);
+        await send({ type: "failed", status, error: body });
+      }
+    });
   });
 
   api.get("/api/ai-connection", async (c) =>

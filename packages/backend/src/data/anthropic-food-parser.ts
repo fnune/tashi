@@ -1,5 +1,6 @@
 import Anthropic from "@anthropic-ai/sdk";
 import type {
+  CalculationStep,
   FoodVocabEntry,
   ParsedFoodItem,
   SearchTraceEntry,
@@ -172,7 +173,9 @@ export class AnthropicFoodParser implements FoodParser {
     vocabulary: FoodVocabEntry[] = [],
     language: "en" | "es",
     connection: AiConnection | null,
+    onStep: (step: CalculationStep) => void = () => {},
   ): Promise<ParseOutcome> {
+    onStep({ type: "reading" });
     const client = new Anthropic({
       apiKey: connection?.apiKey,
       fetch: this.fetch,
@@ -235,6 +238,7 @@ export class AnthropicFoodParser implements FoodParser {
     for (let round = 0; round < MAX_TOOL_ROUNDS; round++) {
       let response = await ask(MAX_TOKENS);
       if (response.stop_reason === "max_tokens") {
+        onStep({ type: "taking_longer" });
         response = await ask(MAX_TOKENS_RETRY);
       }
       if (response.stop_reason === "max_tokens") {
@@ -285,6 +289,7 @@ export class AnthropicFoodParser implements FoodParser {
         }
 
         if (envelope.status === "ok") {
+          onStep({ type: "working_out" });
           return { status: "ok", items: envelope.items, trace, usage };
         }
         return {
@@ -304,6 +309,7 @@ export class AnthropicFoodParser implements FoodParser {
         if (block.type !== "tool_use") continue;
         if (block.name === "search_foods") {
           const input = block.input as { query: string };
+          onStep({ type: "looking_up", query: input.query });
           const formatted = await this.foodCatalog.search(input.query, 10);
 
           searches.push({

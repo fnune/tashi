@@ -1,4 +1,9 @@
-import type { FoodItem, FoodVocabEntry, ParsedFoodItem } from "@tashi/shared";
+import type {
+  CalculationStep,
+  FoodItem,
+  FoodVocabEntry,
+  ParsedFoodItem,
+} from "@tashi/shared";
 import {
   activeProfile,
   appliedProfile,
@@ -48,12 +53,14 @@ export class Calculator {
     vocabulary: FoodVocabEntry[] = [],
     iob = 0,
     timeZone?: string,
+    onStep?: (step: CalculationStep) => void,
   ): Promise<CalculateOutcome> {
     const outcome = await this.parser.parse(
       foodDescription,
       vocabulary,
       settings.language,
       connection,
+      onStep,
     );
     if (outcome.status !== "ok") {
       return { status: outcome.status, message: outcome.message };

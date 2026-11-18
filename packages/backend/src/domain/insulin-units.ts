@@ -1,4 +1,4 @@
-import type { InsulinOnBoard } from "@tashi/shared";
+import type { CalculationStep, InsulinOnBoard } from "@tashi/shared";
 import { findMealWindow, insulinOnBoard } from "@tashi/shared";
 import type { AiConnection } from "./ai-connections.js";
 import type { CalculateOutcome, Calculator } from "./calculator.js";
@@ -24,6 +24,7 @@ export class InsulinUnits {
     connection: AiConnection | null,
     query: InsulinUnitsQuery,
     timeZone?: string,
+    onStep?: (step: CalculationStep) => void,
   ): Promise<CalculateOutcome> {
     const settings = await this.repositories.settings.get();
     if (settings.bolus_insulin_id === null) {
@@ -50,6 +51,7 @@ export class InsulinUnits {
       vocabulary,
       iobUnits,
       timeZone,
+      onStep,
     );
   }
 
