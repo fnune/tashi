@@ -1,7 +1,10 @@
 description = "tashi: pnpm monorepo, Node backend, Vite frontend, Playwright e2e on a temporary Postgres"
-modules = ["vcs-readwrite", "docs", "nix", "nix-home", "nix-daemon", "node", "playwright", "github", "clipboard"]
+modules = ["vcs-readwrite", "docs", "nix", "nix-daemon", "node", "playwright"]
 
 [[mounts]]
 path = "{repository}/.env"
 mode = "hide"
 missing = "skip"
+
+[[caches]]
+path = "~/.cache/prek"
