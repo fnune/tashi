@@ -1,6 +1,6 @@
 import type { InsulinOnBoard, Settings, TimelineEntry } from "@tashi/shared";
 import { DEFAULT_SETTINGS } from "@tashi/shared";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useState } from "react";
 import {
   BrowserRouter,
   Navigate,
@@ -67,7 +67,7 @@ function AppShell() {
     );
   });
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const store = deviceStore();
     if (!store) return;
     try {
